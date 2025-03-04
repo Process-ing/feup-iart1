@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 
-def main():
+def main() -> None:
     # TODO(Process-ing): Implement project
     pass
 
