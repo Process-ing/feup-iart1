@@ -2,6 +2,9 @@ from typing import Any
 import numpy as np
 
 class Building:
+    BACKBONE_MASK = 1 << 7
+    # TODO(Process-ing): Map characters it if ends up being worth it
+
     def __init__(self, cells: np.ndarray[Any, np.dtype[np.uint8]]):
         self.__cells: np.ndarray[Any, np.dtype[np.uint8]] = cells
 
