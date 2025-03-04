@@ -10,14 +10,16 @@ class Building:
         self.__cells: CellArray = cells
 
     @classmethod
-    def from_text(cls, rows: int, columns: int, text: str) -> 'Building':
+    def from_text(cls, rows: int, columns: int, backbone: tuple[int, ...], text: str) -> 'Building':
         cells = np.frombuffer(text.replace('\n', '').encode(), dtype=np.uint8)
-        cells = cells.reshape((rows, columns))
+        cells = cells.reshape((rows, columns)).copy()
 
-        return Building(cells)
+        cells[backbone] = int.from_bytes(b'b') | cls.BACKBONE_MASK
+
+        return cls(cells)
 
     def __getitem__(self, key: tuple[int | slice, int | slice]) -> CellArray:
-        return self.__cells[key[0], key[1]]
+        return self.__cells[key]
 
-    def __setitem__(self, key: tuple[int | slice, int | slice], new_cell: CellArray) -> None:
-        self.__cells[key[0], key[1]] = new_cell
+    def __str__(self) -> str:
+        return "\n".join("".join(map(chr, row)) for row in self.__cells)
