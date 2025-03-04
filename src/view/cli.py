@@ -1,4 +1,4 @@
-from ..model import RouterProblem, Building
+from ..model import RouterProblem
 
 class Cli:
     def __init__(self) -> None:

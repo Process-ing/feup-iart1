@@ -1,4 +1,5 @@
 from enum import Enum
+from typing import Optional
 from src.model import RouterProblem
 from src.view import Cli
 
@@ -9,8 +10,8 @@ class CommandResult(Enum):
     EXIT = 3
 
 class Controller:
-    def __init__(self, cli: Cli, **kwargs):
-        self.__problem = kwargs.get('problem')
+    def __init__(self, cli: Cli, problem: Optional[RouterProblem] = None):
+        self.__problem = problem
         self.__cli = cli
 
     def run_cli(self) -> None:
@@ -24,7 +25,7 @@ class Controller:
 
     def load_problem(self, filename: str) -> CommandResult:
         try:
-            with open(filename, "r") as file:
+            with open(filename, "r", encoding="utf-8") as file:
                 text = file.read()
                 problem = RouterProblem.from_text(text)
                 if not problem:
@@ -39,16 +40,15 @@ class Controller:
             self.__cli.print_error(f"'{filename}' is a directory")
             return CommandResult.FILE_ERROR
 
-        else:
-            self.__problem = problem
-            self.__cli.print_success(f"Problem loaded from '{filename}'")
-            return CommandResult.SUCCESS
+        self.__problem = problem
+        self.__cli.print_success(f"Problem loaded from '{filename}'")
+        return CommandResult.SUCCESS
 
     def process_command(self, tokens: list[str]) -> CommandResult:
         if tokens[0].startswith("e") or tokens[0].startswith("q"):  # exit, quit
             return CommandResult.EXIT
 
-        elif tokens[0].startswith("l"):  # load
+        if tokens[0].startswith("l"):  # load
             if len(tokens) != 2:
                 self.__cli.print_error("Usage: load <file>")
                 return CommandResult.FAILURE
@@ -56,13 +56,12 @@ class Controller:
             filename = tokens[1]
             return self.load_problem(filename)
 
-        elif tokens[0].startswith("sh"):  # show
+        if tokens[0].startswith("sh"):  # show
             if not self.__problem:
                 self.__cli.print_error("No problem loaded")
                 return CommandResult.FAILURE
             self.__cli.print_problem(self.__problem)
             return CommandResult.SUCCESS
 
-        else:
-            self.__cli.print_error(f"Unknown command '{tokens[0]}'")
-            return CommandResult.FAILURE
+        self.__cli.print_error(f"Unknown command '{tokens[0]}'")
+        return CommandResult.FAILURE
