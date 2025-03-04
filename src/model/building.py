@@ -2,13 +2,13 @@ from typing import Self
 import numpy as np
 
 class Building:
-    def __init__(self, cells: np.char.chararray):
-        self.__cells = cells
+    def __init__(self, cells: np.ndarray):
+        self.__cells: np.ndarray = cells
 
     @staticmethod
     def from_text(rows: int, columns: int, text: str) -> Self:
-        cells = np.char.chararray(rows, columns)
-        cells[:, :] = [list(line) for line in text.split('\n')]
+        cells = np.fromstring(text.replace('\n', ''), dtype=np.uint8)
+        cells = cells.reshape((rows, columns))
 
         return Building(cells)
 
