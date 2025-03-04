@@ -19,7 +19,8 @@ pip install -r requirements.txt
 1. Run the main script:
 
 ```bash
-python3 src/app.py
+./main.py  # or
+python3 main.py
 ```
 
 ## Development Environment
@@ -28,11 +29,16 @@ python3 src/app.py
 
 ```bash
 pylint src/**/*.py   # Source code
-pylint test/**/*.py  # Test code
 ```
 
-2. Run the tests:
+2. Run all tests:
 
 ```bash
 python3 -m unittest discover test
+```
+
+3. Run a specific test:
+
+```bash
+python3 -m unittest test.<test_module>
 ```
