@@ -1,3 +1,5 @@
+from src.model.building import Building
+
 class Cli:
     def __init__(self):
         pass
@@ -9,20 +11,19 @@ class Cli:
     def __print_prefix(self) -> None:
         print("[router-solver]# ", end="")
 
-    def run(self) -> None:
-        while True:
-            self.__print_prefix()
+    def read_input(self) -> list[str]:
+        self.__print_prefix()
 
-            try:
-                text = input()
-            except EOFError:
-                break
+        try:
+            text = input()
+        except EOFError:
+            return ['exit']
 
-            tokens = self.__get_tokens(text)
-            if not tokens:
-                continue
+        tokens = self.__get_tokens(text)
+        return tokens
 
-            if tokens[0] in ["exit", "e", "quit", "q"]:
-                break
-            else:
-                print(f"Unknown command: {tokens[0]}")
+    def print_building(self, building: Building) -> None:
+        print(building)
+
+    def print_error(self, message: str) -> None:
+        print(message)
