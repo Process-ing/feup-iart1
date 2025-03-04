@@ -1,5 +1,5 @@
 from typing import cast
-from src.model.building import Building
+from .building import Building
 
 type BudgetInfo = tuple[int, int, int]
 

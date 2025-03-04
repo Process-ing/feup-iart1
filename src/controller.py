@@ -1,11 +1,12 @@
 from enum import Enum
-from src.model.problem import RouterProblem
-from src.view.cli import Cli
+from src.model import RouterProblem
+from src.view import Cli
 
 class CommandResult(Enum):
     SUCCESS = 0
     FAILURE = 1
-    EXIT = 2
+    FILE_ERROR = 2
+    EXIT = 3
 
 class Controller:
     def __init__(self, cli: Cli, **kwargs):
@@ -21,7 +22,29 @@ class Controller:
             if self.process_command(tokens) == CommandResult.EXIT:
                 break
 
-    def process_command(self, tokens: list[str]) -> bool:
+    def load_problem(self, filename: str) -> CommandResult:
+        try:
+            with open(filename, "r") as file:
+                text = file.read()
+                problem = RouterProblem.from_text(text)
+                if not problem:
+                    self.__cli.print_error("Failed to load problem")
+                    return CommandResult.FAILURE
+
+        except FileNotFoundError:
+            self.__cli.print_error(f"File '{filename}' not found")
+            return CommandResult.FILE_ERROR
+
+        except IsADirectoryError:
+            self.__cli.print_error(f"'{filename}' is a directory")
+            return CommandResult.FILE_ERROR
+
+        else:
+            self.__problem = problem
+            self.__cli.print_success(f"Problem loaded from '{filename}'")
+            return CommandResult.SUCCESS
+
+    def process_command(self, tokens: list[str]) -> CommandResult:
         if tokens[0].startswith("e") or tokens[0].startswith("q"):  # exit, quit
             return CommandResult.EXIT
 
@@ -31,15 +54,7 @@ class Controller:
                 return CommandResult.FAILURE
 
             filename = tokens[1]
-
-            try:
-                with open(filename, "r") as file:
-                    text = file.read()
-                    self.__problem = RouterProblem.from_text(text)
-                    self.__cli.print_success(f"Problem loaded from '{filename}'")
-            except FileNotFoundError:
-                self.__cli.print_error(f"File '{filename}' not found")
-                return CommandResult.FAILURE
+            return self.load_problem(filename)
 
         elif tokens[0].startswith("sh"):  # show
             if not self.__problem:

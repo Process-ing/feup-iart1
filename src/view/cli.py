@@ -1,8 +1,7 @@
-from src.model.problem import RouterProblem
-from src.model.building import Building
+from ..model import RouterProblem, Building
 
 class Cli:
-    def __init__(self):
+    def __init__(self) -> None:
         pass
 
     @staticmethod
