@@ -1,8 +1,10 @@
 #!/usr/bin/env python3
 
+from src.view.cli import Cli
+
 def main() -> None:
-    # TODO(Process-ing): Implement project
-    pass
+    cli = Cli()
+    cli.run()
 
 if __name__ == '__main__':
     main()
