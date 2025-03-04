@@ -1,3 +1,4 @@
+from src.model.problem import RouterProblem
 from src.model.building import Building
 
 class Cli:
@@ -22,8 +23,11 @@ class Cli:
         tokens = self.__get_tokens(text)
         return tokens
 
-    def print_building(self, building: Building) -> None:
-        print(building)
+    def print_problem(self, problem: RouterProblem) -> None:
+        print(problem.building)
+
+    def print_success(self, message: str) -> None:
+        print(message)
 
     def print_error(self, message: str) -> None:
         print(message)

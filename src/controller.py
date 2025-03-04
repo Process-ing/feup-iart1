@@ -24,9 +24,30 @@ class Controller:
     def process_command(self, tokens: list[str]) -> bool:
         if tokens[0].startswith("e") or tokens[0].startswith("q"):  # exit, quit
             return CommandResult.EXIT
+
+        elif tokens[0].startswith("l"):  # load
+            if len(tokens) != 2:
+                self.__cli.print_error("Usage: load <file>")
+                return CommandResult.FAILURE
+
+            filename = tokens[1]
+
+            try:
+                with open(filename, "r") as file:
+                    text = file.read()
+                    self.__problem = RouterProblem.from_text(text)
+                    self.__cli.print_success(f"Problem loaded from '{filename}'")
+            except FileNotFoundError:
+                self.__cli.print_error(f"File '{filename}' not found")
+                return CommandResult.FAILURE
+
         elif tokens[0].startswith("sh"):  # show
-            self.__cli.print_building(self.__problem)
+            if not self.__problem:
+                self.__cli.print_error("No problem loaded")
+                return CommandResult.FAILURE
+            self.__cli.print_problem(self.__problem)
             return CommandResult.SUCCESS
+
         else:
             self.__cli.print_error(f"Unknown command '{tokens[0]}'")
             return CommandResult.FAILURE
