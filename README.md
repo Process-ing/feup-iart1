@@ -9,7 +9,7 @@
 python3 -m venv .venv
 source .venv/bin/activate
 ```
-   
+
 2. Install the required packages:
 
 ```bash
@@ -25,19 +25,25 @@ python3 main.py
 
 ## Development Environment
 
-1. Lint the code:
+1. Perform static type checking:
 
 ```bash
-pylint src/**/*.py   # Source code
+mypy **/*.py
 ```
 
-2. Run all tests:
+2. Lint the code:
+
+```bash
+pylint **/*.py
+```
+
+3. Run all tests:
 
 ```bash
 python3 -m unittest discover test
 ```
 
-3. Run a specific test:
+4. Run a specific test:
 
 ```bash
 python3 -m unittest test.<test_module>

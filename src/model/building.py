@@ -1,13 +1,13 @@
-from typing import Self
+from typing import Any
 import numpy as np
 
 class Building:
-    def __init__(self, cells: np.ndarray):
-        self.__cells: np.ndarray = cells
+    def __init__(self, cells: np.ndarray[Any, np.dtype[np.uint8]]):
+        self.__cells: np.ndarray[Any, np.dtype[np.uint8]] = cells
 
-    @staticmethod
-    def from_text(rows: int, columns: int, text: str) -> Self:
-        cells = np.fromstring(text.replace('\n', ''), dtype=np.uint8)
+    @classmethod
+    def from_text(cls, rows: int, columns: int, text: str) -> 'Building':
+        cells = np.frombuffer(text.replace('\n', '').encode(), dtype=np.uint8)
         cells = cells.reshape((rows, columns))
 
         return Building(cells)
