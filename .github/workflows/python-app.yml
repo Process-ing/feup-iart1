@@ -28,17 +28,14 @@ jobs:
       run: |
         python -m pip install --upgrade pip
         if [ -f requirements.txt ]; then pip install -r requirements.txt; fi
-    - name: File structure
-      run: |
-        sudo apt-get install tree && tree .
     - name: Perform static type checking
       working-directory: ./
       run: |
-        mypy **/*.py
+        mypy $(git ls-files '*.py')
     - name: Lint the code
       working-directory: ./
       run: |
-        pylint **/*.py
+        pylint $(git ls-files '*.py')
     - name: Run all tests
       working-directory: ./
       run: |
