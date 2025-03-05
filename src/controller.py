@@ -49,9 +49,13 @@ class Controller:
         if command in ['exit', 'quit']:
             return CommandResult.EXIT
 
+        if command in ['help']:
+            self.__cli.print_help()
+            return CommandResult.SUCCESS
+
         if command in ['load']:
             if len(tokens) != 2:
-                self.__cli.print_error('Usage: load <file>')
+                self.__cli.print_help("Usage: load <file>")
                 return CommandResult.FAILURE
 
             filename = tokens[1]

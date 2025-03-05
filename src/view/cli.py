@@ -30,3 +30,11 @@ class Cli:
 
     def print_error(self, message: str) -> None:
         print(message)
+
+    def print_help(self) -> None:
+        print('''Commands:
+    load <file>  Load a problem from a file.
+    show         Show the current problem.
+    exit         Exit the program.
+    quit         Exit the program.
+    help         Show this help.''')
