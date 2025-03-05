@@ -30,7 +30,7 @@ jobs:
         if [ -f requirements.txt ]; then pip install -r requirements.txt; fi
     - name: File structure
       run: |
-        apt install tree && tree .
+        sudo apt-get install tree && tree .
     - name: Perform static type checking
       working-directory: ./
       run: |
