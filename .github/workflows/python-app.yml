@@ -29,11 +29,14 @@ jobs:
         python -m pip install --upgrade pip
         if [ -f requirements.txt ]; then pip install -r requirements.txt; fi
     - name: Perform static type checking
+      working-directory: ./
       run: |
         mypy **/*.py
     - name: Lint the code
+      working-directory: ./
       run: |
         pylint **/*.py
     - name: Run all tests
+      working-directory: ./
       run: |
         python3 -m unittest discover test
