@@ -45,23 +45,24 @@ class Controller:
         return CommandResult.SUCCESS
 
     def process_command(self, tokens: list[str]) -> CommandResult:
-        if tokens[0].startswith("e") or tokens[0].startswith("q"):  # exit, quit
+        command = tokens[0]
+        if command in ['exit', 'quit']:
             return CommandResult.EXIT
 
-        if tokens[0].startswith("l"):  # load
+        if command in ['load']:
             if len(tokens) != 2:
-                self.__cli.print_error("Usage: load <file>")
+                self.__cli.print_error('Usage: load <file>')
                 return CommandResult.FAILURE
 
             filename = tokens[1]
             return self.load_problem(filename)
 
-        if tokens[0].startswith("sh"):  # show
+        if command in ['show']:  # show
             if not self.__problem:
-                self.__cli.print_error("No problem loaded")
+                self.__cli.print_error('No problem loaded')
                 return CommandResult.FAILURE
             self.__cli.print_problem(self.__problem)
             return CommandResult.SUCCESS
 
-        self.__cli.print_error(f"Unknown command '{tokens[0]}'")
+        self.__cli.print_error(f"Unknown command '{command}'")
         return CommandResult.FAILURE
