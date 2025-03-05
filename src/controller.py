@@ -25,11 +25,11 @@ class Controller:
 
     def load_problem(self, filename: str) -> CommandResult:
         try:
-            with open(filename, "r", encoding="utf-8") as file:
+            with open(filename, 'r', encoding='utf-8') as file:
                 text = file.read()
                 problem = RouterProblem.from_text(text)
                 if not problem:
-                    self.__cli.print_error("Failed to load problem")
+                    self.__cli.print_error('Failed to load problem')
                     return CommandResult.FAILURE
 
         except FileNotFoundError:

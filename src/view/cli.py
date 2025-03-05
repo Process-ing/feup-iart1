@@ -9,7 +9,7 @@ class Cli:
         return text.strip().split()
 
     def __print_prefix(self) -> None:
-        print("[router-solver]# ", end="")
+        print('[router-solver]# ', end='')
 
     def read_input(self) -> list[str]:
         self.__print_prefix()

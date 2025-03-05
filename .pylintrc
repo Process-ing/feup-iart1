@@ -1,3 +1,5 @@
 [MASTER]
 disable=C0114,C0115,C0116
 fail-under=10.0
+
+check-quote-consistency=yes

@@ -13,7 +13,7 @@ def main() -> None:
         filename = sys.argv[1]
         result = controller.load_problem(filename)
         if result != CommandResult.SUCCESS:
-            cli.print_error("Failed to load problem")
+            cli.print_error('Failed to load problem')
 
     controller.run_cli()
 

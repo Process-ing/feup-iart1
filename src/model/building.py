@@ -22,4 +22,4 @@ class Building:
         return self.__cells[key]
 
     def __str__(self) -> str:
-        return "\n".join("".join(map(chr, row)) for row in self.__cells)
+        return '\n'.join(''.join(map(chr, row)) for row in self.__cells)
