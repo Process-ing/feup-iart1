@@ -55,7 +55,7 @@ class Controller:
 
         if command in ['load']:
             if len(tokens) != 2:
-                self.__cli.print_help("Usage: load <file>")
+                self.__cli.print_error('Usage: load <file>')
                 return CommandResult.FAILURE
 
             filename = tokens[1]
