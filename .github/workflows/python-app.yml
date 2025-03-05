@@ -39,4 +39,4 @@ jobs:
     - name: Run all tests
       working-directory: ./
       run: |
-        python3 -m unittest discover test
+        python3 -m unittest

@@ -48,7 +48,7 @@ pylint **/*.py
 3. Run all tests:
 
 ```bash
-python3 -m unittest discover test
+python3 -m unittest
 ```
 
 4. Run a specific test:
