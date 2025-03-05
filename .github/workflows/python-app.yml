@@ -28,6 +28,9 @@ jobs:
       run: |
         python -m pip install --upgrade pip
         if [ -f requirements.txt ]; then pip install -r requirements.txt; fi
+    - name: File structure
+      run: |
+        apt install tree && tree .
     - name: Perform static type checking
       working-directory: ./
       run: |
