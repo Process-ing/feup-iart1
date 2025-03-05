@@ -16,11 +16,19 @@ source .venv/bin/activate
 pip install -r requirements.txt
 ```
 
-1. Run the main script:
+3. Run the main script:
 
 ```bash
 ./main.py  # or
 python3 main.py
+```
+
+To enable persistent command history, preceed the command with `rlwrap` (you may need to install it first).
+
+4. Print the help message:
+
+```
+[router-solver]# help
 ```
 
 ## Development Environment
