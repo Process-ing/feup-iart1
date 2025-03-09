@@ -40,10 +40,10 @@ class OptimizationView(PygameView):
         pygame.quit()
 
     def render_problem(self, screen: pygame.Surface, cell_size: int) -> None:
-        for (row, column), _cell in self.__problem.building.iter():
+        for row, column, _cell in self.__problem.building.iter():
             color = (row + column) % 255
             pygame.draw.rect(
                 screen,
-                color,
+                (color, color, color),
                 (column * cell_size, row * cell_size, cell_size, cell_size)
             )

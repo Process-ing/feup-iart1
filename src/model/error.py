@@ -1,0 +1,2 @@
+class ProblemLoadError(Exception):
+    pass
