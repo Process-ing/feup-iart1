@@ -23,6 +23,7 @@ class OptimizationView(PygameView):
         pygame.display.set_caption('Router Optimization')
         screen = pygame.display.set_mode((width, height))
         clock = pygame.time.Clock()
+        font = pygame.font.Font('BigBlueTerm437NerdFont-Regular.ttf', 36)
 
         running = True
         while running:
@@ -32,6 +33,9 @@ class OptimizationView(PygameView):
 
             screen.fill((0, 0, 0))
             self.__render_problem(screen, cell_size)
+            text = font.render(f'Score: 0', True, (255, 255, 255))
+            screen.blit(text, (10, 10))
+
             pygame.display.flip()
 
             self.__algorithm.step()
