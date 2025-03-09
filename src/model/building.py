@@ -48,7 +48,7 @@ class Building:
             else:
                 raise ProblemLoadError(f'Invalid character in text \'{chr(cell)}\'')
 
-        cells[backbone] = int.from_bytes(b'b') | cls.BACKBONE_BIT
+        cells[backbone] = CellType.BACKBONE.value | cls.BACKBONE_BIT
 
         return cls(cells)
 

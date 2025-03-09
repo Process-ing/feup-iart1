@@ -1,7 +1,7 @@
 from typing import override
 import pygame
 from src.algorithm import Algorithm
-from src.model import RouterProblem
+from src.model import Building, RouterProblem, CellType
 from src.view.pygameview import PygameView
 
 class OptimizationView(PygameView):
@@ -31,7 +31,7 @@ class OptimizationView(PygameView):
                     running = False
 
             screen.fill((0, 0, 0))
-            self.render_problem(screen, cell_size)
+            self.__render_problem(screen, cell_size)
             pygame.display.flip()
 
             self.__algorithm.step()
@@ -39,11 +39,33 @@ class OptimizationView(PygameView):
 
         pygame.quit()
 
-    def render_problem(self, screen: pygame.Surface, cell_size: int) -> None:
+    def __render_problem(self, screen: pygame.Surface, cell_size: int) -> None:
         for row, column, _cell in self.__problem.building.iter():
-            color = (row + column) % 255
             pygame.draw.rect(
                 screen,
-                (color, color, color),
+                self.__to_color(_cell),
                 (column * cell_size, row * cell_size, cell_size, cell_size)
             )
+
+    def __to_color(self, cell: int) -> tuple[int, int, int]:
+        cell_type = cell & Building.CELL_TYPE_MASK
+        if cell_type == CellType.VOID.value:
+            return 0xece256 if cell & Building.BACKBONE_BIT else 0x360043
+
+        if cell_type == CellType.TARGET.value:
+            if cell & Building.BACKBONE_BIT:
+                return 0xece256
+            if cell & Building.CONNECTED_BIT:
+                return 0x5392a4
+            return 0x206071
+
+        if cell_type == CellType.WALL.value:
+            return 0xcab81c if cell & Building.BACKBONE_BIT else 0x33356c
+
+        if cell_type == CellType.ROUTER.value:
+            return 0x7fc382
+
+        if cell_type == CellType.BACKBONE.value:
+            return 0x00ffff
+
+        raise ValueError(f'Invalid cell type {cell}')
