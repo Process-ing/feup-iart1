@@ -4,6 +4,7 @@ type CellArray = np.ndarray[tuple[int, ...], np.dtype[np.uint8]]
 
 class Building:
     BACKBONE_MASK = 1 << 7
+    CHARACTER_MASK = BACKBONE_MASK - 1
     # TODO(Process-ing): Map characters it if ends up being worth it
 
     def __init__(self, cells: CellArray):
@@ -14,7 +15,7 @@ class Building:
         cells = np.frombuffer(text.replace('\n', '').encode(), dtype=np.uint8)
         cells = cells.reshape((rows, columns)).copy()
 
-        cells[backbone] = int.from_bytes(b'b') | cls.BACKBONE_MASK
+        cells[backbone] = int.from_bytes(b'B') | cls.BACKBONE_MASK
 
         return cls(cells)
 
@@ -22,4 +23,4 @@ class Building:
         return self.__cells[key]
 
     def __str__(self) -> str:
-        return '\n'.join(''.join(map(chr, row)) for row in self.__cells)
+        return '\n'.join(''.join(map(lambda c: chr(c & self.CHARACTER_MASK), row)) for row in self.__cells)
