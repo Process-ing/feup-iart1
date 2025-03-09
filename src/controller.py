@@ -1,7 +1,13 @@
 from enum import Enum
-from typing import Optional
+from typing import Optional, override
+from src.algorithm.algorithm import Algorithm
 from src.model import RouterProblem
-from src.view import Cli
+from src.view import Cli, OptimizationView
+
+class MockAlgorithm(Algorithm):
+    @override
+    def step(self) -> None:
+        pass
 
 class CommandResult(Enum):
     SUCCESS = 0
@@ -65,7 +71,10 @@ class Controller:
             if not self.__problem:
                 self.__cli.print_error('No problem loaded')
                 return CommandResult.FAILURE
-            self.__cli.print_problem(self.__problem)
+            
+            opt_view = OptimizationView(self.__problem, MockAlgorithm())
+            opt_view.render()
+
             return CommandResult.SUCCESS
 
         self.__cli.print_error(f"Unknown command '{command}'")
