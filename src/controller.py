@@ -71,7 +71,7 @@ class Controller:
             if not self.__problem:
                 self.__cli.print_error('No problem loaded')
                 return CommandResult.FAILURE
-            
+
             opt_view = OptimizationView(self.__problem, MockAlgorithm())
             opt_view.render()
 

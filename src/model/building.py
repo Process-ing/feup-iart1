@@ -1,3 +1,4 @@
+from typing import cast
 import numpy as np
 
 type CellArray = np.ndarray[tuple[int, ...], np.dtype[np.uint8]]
@@ -22,17 +23,19 @@ class Building:
         return self.__cells[key]
 
     @property
-    def rows(self) -> tuple[int, int]:
+    def rows(self) -> int:
         return self.__cells.shape[0]
 
     @property
-    def columns(self) -> tuple[int, int]:
+    def columns(self) -> int:
         return self.__cells.shape[1]
 
     @property
     def shape(self) -> tuple[int, int]:
-        return self.__cells.shape
+        return cast(tuple[int, int], self.__cells.shape)
 
     def __str__(self) -> str:
-        return '\n'.join(''.join(map(lambda c: chr(c & self.CHARACTER_MASK), row)) \
-                         for row in self.__cells)
+        return '\n'.join(''.join(map(chr, row)) for row in self.__cells)
+
+    def iter(self) -> np.ndenumerate[np.uint8]:
+        return np.ndenumerate(self.__cells)
