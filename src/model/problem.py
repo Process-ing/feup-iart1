@@ -31,10 +31,34 @@ class RouterProblem:
         return self.__building
 
     def get_score(self) -> int:
-        return -1  # TODO(Process-ing): Implement score calculation
+        cost = 0
+        covered = set()
+
+        # TODO(racoelhosilva): check optimizations
+        for a, b, cell in self.__building.iter():
+            if cell == CellType.ROUTER:
+                cost -= self.router_price
+
+                for dx in range(-self.router_range, self.router_range + 1):
+                    for dy in range(-self.router_range, self.router_range + 1):
+                        x, y = a + dx, b + dy
+                        if not self.__is_blocked((a,b), (x,y)):
+                            covered.add((x,y))
+
+            if cell & Building.BACKBONE_BIT:
+                cost -= self.backbone_price
+        return 1000 * len(covered) + (self.budget - cost)
+
+    def __is_blocked(self, router, cell):
+        for w in range(min(router[0], cell[0]), max(router[0], cell[0]) + 1):
+            for v in range(min(router[1], cell[1]), max(router[1], cell[1]) + 1):
+                if self.__building.as_nparray()[w, v] == CellType.WALL.value:
+                    return True
+        return False
 
     def check_budget(self) -> int:
         cost = 0
+        # TODO(racoelhosilva): check optimizations and cell types
         for _row, _col, cell in self.__building.iter():
             if cell == CellType.ROUTER:
                 cost += self.router_price
