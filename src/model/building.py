@@ -52,9 +52,6 @@ class Building:
 
         return cls(cells)
 
-    def __getitem__(self, key: tuple[int | slice, int | slice]) -> CellArray:
-        return self.__cells[key]
-
     @property
     def rows(self) -> int:
         return self.__cells.shape[0]
@@ -70,8 +67,12 @@ class Building:
     def __str__(self) -> str:
         return '\n'.join(''.join(map(chr, row)) for row in self.__cells)
 
-    def as_nparray(self) -> np.ndarray:
-        return self.__cells()
+    def as_nparray(self) -> CellArray:
+        return self.__cells.copy()
+
+    # TODO(Process-ing): Remove this
+    def place_router(self, row: int, column: int) -> None:
+        self.__cells[row, column] = CellType.ROUTER.value
 
     def iter(self) -> Iterator[tuple[int, int, int]]:
         return ((row, column, int(cell)) for (row, column), cell in np.ndenumerate(self.__cells))

@@ -5,7 +5,6 @@ from src.model import Building, RouterProblem, CellType
 from src.view.pygameview import PygameView
 
 class OptimizationView(PygameView):
-    # def __init__(self, problem: RouterProblem) -> None:
     def __init__(self, problem: RouterProblem, algorithm: Algorithm) -> None:
         self.__problem = problem
         self.__algorithm = algorithm
@@ -14,10 +13,11 @@ class OptimizationView(PygameView):
     def render(self) -> None:
         pygame.init()
 
-        monitor_width = pygame.display.Info().current_w
-        monitor_height = pygame.display.Info().current_h
         problem_height, problem_width = self.__problem.building.shape
-        cell_size = max(min(monitor_width // problem_width, monitor_height // problem_height), 1)
+        cell_size = max(min(
+            pygame.display.Info().current_w // problem_width,
+            pygame.display.Info().current_h // problem_height
+        ), 1)
         height, width = problem_height * cell_size, problem_width * cell_size
 
         pygame.display.set_caption('Router Optimization')
@@ -40,7 +40,7 @@ class OptimizationView(PygameView):
             self.__render_problem(problem_screen)
             scaled_problem = pygame.transform.scale(problem_screen, (width, height))
 
-            text = font.render(f'Score: {score}; FPS: {clock.get_fps()}', True, (255, 255, 255))
+            text = font.render(f'Score: {score}', True, (255, 255, 255))
 
             screen.blit(scaled_problem, (0, 0))
             screen.blit(text, (10, 10))
@@ -54,35 +54,37 @@ class OptimizationView(PygameView):
         pygame.quit()
 
     def __create_pallete(self) -> list[tuple[int, int, int]]:
-        def int_to_rgb(color: int) -> tuple[int, int, int]:
-            return ((color >> 16) & 0xFF, (color >> 8) & 0xFF, color & 0xFF)
+        palette = [(0, 0, 0)] * 256
 
-        palette = [(64, 64, 64)] * 256
+        palette[CellType.VOID.value] = (0x36, 0x00, 0x43)
+        palette[CellType.VOID.value | Building.BACKBONE_BIT] = (0xec, 0xe2, 0x56)
+        palette[CellType.VOID.value | Building.CONNECTED_BIT] = (0x36, 0x00, 0x43)
+        palette[CellType.VOID.value | Building.BACKBONE_BIT
+                | Building.CONNECTED_BIT] = (0xec, 0xe2, 0x56)
 
-        palette[CellType.VOID.value] = int_to_rgb(0x360043)
-        palette[CellType.VOID.value | Building.BACKBONE_BIT] = int_to_rgb(0xece256)
-        palette[CellType.VOID.value | Building.CONNECTED_BIT] = int_to_rgb(0x360043)
-        palette[CellType.VOID.value | Building.BACKBONE_BIT | Building.CONNECTED_BIT] = int_to_rgb(0xece256)
+        palette[CellType.TARGET.value] = (0x20, 0x60, 0x71)
+        palette[CellType.TARGET.value | Building.BACKBONE_BIT] = (0xec, 0xe2, 0x56)
+        palette[CellType.TARGET.value | Building.CONNECTED_BIT] = (0x53, 0x92, 0xa4)
+        palette[CellType.TARGET.value | Building.BACKBONE_BIT
+                | Building.CONNECTED_BIT] = (0xec, 0xe2, 0x56)
 
-        palette[CellType.TARGET.value] = int_to_rgb(0x206071)
-        palette[CellType.TARGET.value | Building.BACKBONE_BIT] = int_to_rgb(0xece256)
-        palette[CellType.TARGET.value | Building.CONNECTED_BIT] = int_to_rgb(0x5392a4)
-        palette[CellType.TARGET.value | Building.BACKBONE_BIT | Building.CONNECTED_BIT] = int_to_rgb(0xece256)
+        palette[CellType.WALL.value] = (0x33, 0x35, 0x6c)
+        palette[CellType.WALL.value | Building.BACKBONE_BIT] = (0xca, 0xb8, 0x1c)
+        palette[CellType.WALL.value | Building.CONNECTED_BIT] = (0x33, 0x35, 0x6c)
+        palette[CellType.WALL.value | Building.BACKBONE_BIT
+                | Building.CONNECTED_BIT] = (0xca, 0xb8, 0x1c)
 
-        palette[CellType.WALL.value] = int_to_rgb(0x33356c)
-        palette[CellType.WALL.value | Building.BACKBONE_BIT] = int_to_rgb(0xcab81c)
-        palette[CellType.WALL.value | Building.CONNECTED_BIT] = int_to_rgb(0x33356c)
-        palette[CellType.WALL.value | Building.BACKBONE_BIT | Building.CONNECTED_BIT] = int_to_rgb(0xcab81c)
+        palette[CellType.ROUTER.value] = (0x7f, 0xc3, 0x82)
+        palette[CellType.ROUTER.value | Building.BACKBONE_BIT] = (0x7f, 0xc3, 0x82)
+        palette[CellType.ROUTER.value | Building.CONNECTED_BIT] = (0x7f, 0xc3, 0x82)
+        palette[CellType.ROUTER.value | Building.BACKBONE_BIT
+                | Building.CONNECTED_BIT] = (0x7f, 0xc3, 0x82)
 
-        palette[CellType.ROUTER.value] = int_to_rgb(0x7fc382)
-        palette[CellType.ROUTER.value | Building.BACKBONE_BIT] = int_to_rgb(0x7fc382)
-        palette[CellType.ROUTER.value | Building.CONNECTED_BIT] = int_to_rgb(0x7fc382)
-        palette[CellType.ROUTER.value | Building.BACKBONE_BIT | Building.CONNECTED_BIT] = int_to_rgb(0x7fc382)
-
-        palette[CellType.BACKBONE.value] = int_to_rgb(0x00ffff)
-        palette[CellType.BACKBONE.value | Building.BACKBONE_BIT] = int_to_rgb(0x00ffff)
-        palette[CellType.BACKBONE.value | Building.CONNECTED_BIT] = int_to_rgb(0x00ffff)
-        palette[CellType.BACKBONE.value | Building.BACKBONE_BIT | Building.CONNECTED_BIT] = int_to_rgb(0x00ffff)
+        palette[CellType.BACKBONE.value] = (0x00, 0xff, 0xff)
+        palette[CellType.BACKBONE.value | Building.BACKBONE_BIT] = (0x00, 0xff, 0xff)
+        palette[CellType.BACKBONE.value | Building.CONNECTED_BIT] = (0x00, 0xff, 0xff)
+        palette[CellType.BACKBONE.value | Building.BACKBONE_BIT
+                | Building.CONNECTED_BIT] = (0x00, 0xff, 0xff)
 
         return palette
 
