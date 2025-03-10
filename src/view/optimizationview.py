@@ -25,6 +25,8 @@ class OptimizationView(PygameView):
         clock = pygame.time.Clock()
         font = pygame.font.Font('BigBlueTerm437NerdFont-Regular.ttf', 36)
 
+        score = self.__problem.get_score()
+
         running = True
         while running:
             for event in pygame.event.get():
@@ -33,12 +35,13 @@ class OptimizationView(PygameView):
 
             screen.fill((0, 0, 0))
             self.__render_problem(screen, cell_size)
-            text = font.render(f'Score: 0', True, (255, 255, 255))
+            text = font.render(f'Score: {score}', True, (255, 255, 255))
             screen.blit(text, (10, 10))
 
             pygame.display.flip()
 
             self.__algorithm.step()
+            score = self.__problem.get_score()
             clock.tick(60)
 
         pygame.quit()
@@ -51,7 +54,7 @@ class OptimizationView(PygameView):
                 (column * cell_size, row * cell_size, cell_size, cell_size)
             )
 
-    def __to_color(self, cell: int) -> tuple[int, int, int]:
+    def __to_color(self, cell: int) -> int:
         cell_type = cell & Building.CELL_TYPE_MASK
         if cell_type == CellType.VOID.value:
             return 0xece256 if cell & Building.BACKBONE_BIT else 0x360043
