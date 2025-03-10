@@ -70,5 +70,8 @@ class Building:
     def __str__(self) -> str:
         return '\n'.join(''.join(map(chr, row)) for row in self.__cells)
 
+    def as_nparray(self) -> np.ndarray:
+        return self.__cells()
+
     def iter(self) -> Iterator[tuple[int, int, int]]:
         return ((row, column, int(cell)) for (row, column), cell in np.ndenumerate(self.__cells))

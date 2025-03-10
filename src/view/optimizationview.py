@@ -22,8 +22,12 @@ class OptimizationView(PygameView):
 
         pygame.display.set_caption('Router Optimization')
         screen = pygame.display.set_mode((width, height))
+        problem_screen = pygame.Surface((problem_width, problem_height))
+        problem_screen = problem_screen.convert(8)
+        problem_screen.set_palette(self.__create_pallete())
+
         clock = pygame.time.Clock()
-        font = pygame.font.Font('BigBlueTerm437NerdFont-Regular.ttf', 36)
+        font = pygame.font.Font('BigBlueTerm437NerdFont-Regular.ttf', 18)
 
         score = self.__problem.get_score()
 
@@ -33,46 +37,54 @@ class OptimizationView(PygameView):
                 if event.type == pygame.QUIT:
                     running = False
 
-            screen.fill((0, 0, 0))
-            self.__render_problem(screen, cell_size)
-            text = font.render(f'Score: {score}', True, (255, 255, 255))
+            self.__render_problem(problem_screen)
+            scaled_problem = pygame.transform.scale(problem_screen, (width, height))
+
+            text = font.render(f'Score: {score}; FPS: {clock.get_fps()}', True, (255, 255, 255))
+
+            screen.blit(scaled_problem, (0, 0))
             screen.blit(text, (10, 10))
 
             pygame.display.flip()
 
             self.__algorithm.step()
             score = self.__problem.get_score()
-            clock.tick(60)
+            clock.tick()
 
         pygame.quit()
 
-    def __render_problem(self, screen: pygame.Surface, cell_size: int) -> None:
-        for row, column, _cell in self.__problem.building.iter():
-            pygame.draw.rect(
-                screen,
-                self.__to_color(_cell),
-                (column * cell_size, row * cell_size, cell_size, cell_size)
-            )
+    def __create_pallete(self) -> list[tuple[int, int, int]]:
+        def int_to_rgb(color: int) -> tuple[int, int, int]:
+            return ((color >> 16) & 0xFF, (color >> 8) & 0xFF, color & 0xFF)
 
-    def __to_color(self, cell: int) -> int:
-        cell_type = cell & Building.CELL_TYPE_MASK
-        if cell_type == CellType.VOID.value:
-            return 0xece256 if cell & Building.BACKBONE_BIT else 0x360043
+        palette = [(64, 64, 64)] * 256
 
-        if cell_type == CellType.TARGET.value:
-            if cell & Building.BACKBONE_BIT:
-                return 0xece256
-            if cell & Building.CONNECTED_BIT:
-                return 0x5392a4
-            return 0x206071
+        palette[CellType.VOID.value] = int_to_rgb(0x360043)
+        palette[CellType.VOID.value | Building.BACKBONE_BIT] = int_to_rgb(0xece256)
+        palette[CellType.VOID.value | Building.CONNECTED_BIT] = int_to_rgb(0x360043)
+        palette[CellType.VOID.value | Building.BACKBONE_BIT | Building.CONNECTED_BIT] = int_to_rgb(0xece256)
 
-        if cell_type == CellType.WALL.value:
-            return 0xcab81c if cell & Building.BACKBONE_BIT else 0x33356c
+        palette[CellType.TARGET.value] = int_to_rgb(0x206071)
+        palette[CellType.TARGET.value | Building.BACKBONE_BIT] = int_to_rgb(0xece256)
+        palette[CellType.TARGET.value | Building.CONNECTED_BIT] = int_to_rgb(0x5392a4)
+        palette[CellType.TARGET.value | Building.BACKBONE_BIT | Building.CONNECTED_BIT] = int_to_rgb(0xece256)
 
-        if cell_type == CellType.ROUTER.value:
-            return 0x7fc382
+        palette[CellType.WALL.value] = int_to_rgb(0x33356c)
+        palette[CellType.WALL.value | Building.BACKBONE_BIT] = int_to_rgb(0xcab81c)
+        palette[CellType.WALL.value | Building.CONNECTED_BIT] = int_to_rgb(0x33356c)
+        palette[CellType.WALL.value | Building.BACKBONE_BIT | Building.CONNECTED_BIT] = int_to_rgb(0xcab81c)
 
-        if cell_type == CellType.BACKBONE.value:
-            return 0x00ffff
+        palette[CellType.ROUTER.value] = int_to_rgb(0x7fc382)
+        palette[CellType.ROUTER.value | Building.BACKBONE_BIT] = int_to_rgb(0x7fc382)
+        palette[CellType.ROUTER.value | Building.CONNECTED_BIT] = int_to_rgb(0x7fc382)
+        palette[CellType.ROUTER.value | Building.BACKBONE_BIT | Building.CONNECTED_BIT] = int_to_rgb(0x7fc382)
 
-        raise ValueError(f'Invalid cell type {cell}')
+        palette[CellType.BACKBONE.value] = int_to_rgb(0x00ffff)
+        palette[CellType.BACKBONE.value | Building.BACKBONE_BIT] = int_to_rgb(0x00ffff)
+        palette[CellType.BACKBONE.value | Building.CONNECTED_BIT] = int_to_rgb(0x00ffff)
+        palette[CellType.BACKBONE.value | Building.BACKBONE_BIT | Building.CONNECTED_BIT] = int_to_rgb(0x00ffff)
+
+        return palette
+
+    def __render_problem(self, screen: pygame.Surface) -> None:
+        pygame.pixelcopy.array_to_surface(screen, self.__problem.building.as_nparray().transpose())
