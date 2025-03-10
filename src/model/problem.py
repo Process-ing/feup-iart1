@@ -29,3 +29,6 @@ class RouterProblem:
     @property
     def building(self) -> Building:
         return self.__building
+
+    def get_score(self) -> int:
+        return -1  # TODO(Process-ing): Implement score calculation

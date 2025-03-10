@@ -1,10 +1,16 @@
 #!/usr/bin/env python3
 
 import sys
+from os import environ
 
+# Hide pygame prompt on import
+environ['PYGAME_HIDE_SUPPORT_PROMPT'] = '1'
+
+# pylint: disable=wrong-import-position
 from src.controller import CommandResult, Controller
 from src.view import Cli
 from src.view.usage import print_usage
+
 
 def main() -> None:
     cli = Cli()

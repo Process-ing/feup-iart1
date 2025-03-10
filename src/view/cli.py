@@ -1,3 +1,4 @@
+import sys
 from ..model import RouterProblem
 
 class Cli:
@@ -17,7 +18,12 @@ class Cli:
         try:
             text = input()
         except EOFError:
-            return ['exit']
+            self.__print_prefix()
+            print('quit')
+            return ['quit']
+        except KeyboardInterrupt:
+            print('^C')
+            sys.exit(1)
 
         tokens = self.__get_tokens(text)
         return tokens

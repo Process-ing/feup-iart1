@@ -1,5 +1,7 @@
 [MASTER]
-disable=C0114,C0115,C0116,R0911
+disable=C0114,C0115,C0116,R0903,R0911
 fail-under=10.0
 
 check-quote-consistency=yes
+
+extension-pkg-whitelist=pygame
