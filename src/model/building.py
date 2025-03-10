@@ -69,6 +69,9 @@ class Building:
     def as_nparray(self) -> CellArray:
         return self.__cells.copy()
 
+    def as_nparray_transposed(self) -> CellArray:
+        return self.__cells.transpose()
+
     # TODO(Process-ing): Remove this
     def place_router(self, row: int, column: int) -> None:
         self.__cells[row, column] = CellType.ROUTER.value
