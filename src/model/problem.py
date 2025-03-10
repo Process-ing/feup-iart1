@@ -1,5 +1,5 @@
 from typing import cast
-from .building import Building
+from .building import Building, CellType
 
 type BudgetInfo = tuple[int, int, int]
 
@@ -32,3 +32,12 @@ class RouterProblem:
 
     def get_score(self) -> int:
         return -1  # TODO(Process-ing): Implement score calculation
+
+    def check_budget(self) -> int:
+        cost = 0
+        for _row, _col, cell in self.__building.iter():
+            if cell == CellType.ROUTER:
+                cost += self.router_price
+            if cell & Building.BACKBONE_BIT:
+                cost += self.backbone_price
+        return cost <= self.budget
