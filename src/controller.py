@@ -2,7 +2,8 @@ from enum import Enum
 from typing import Optional, override
 from src.algorithm import Algorithm
 from src.model import RouterProblem
-from src.view import Cli, OptimizationView
+from src.view import Cli
+from src.view.window import OptimizationWindow
 
 # TODO(Process-ing): Remove this
 class MockAlgorithm(Algorithm):
@@ -85,8 +86,8 @@ class Controller:
                 return CommandResult.FAILURE
 
             algorithm = MockAlgorithm(self.__problem)
-            opt_view = OptimizationView(self.__problem, algorithm)
-            opt_view.render()
+            opt_window = OptimizationWindow(self.__problem, algorithm)
+            opt_window.launch()
 
             return CommandResult.SUCCESS
 
