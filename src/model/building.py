@@ -11,7 +11,6 @@ class CellType(Enum):
     TARGET = 1
     WALL = 2
     ROUTER = 3
-    BACKBONE = 4
 
 class Building:
     BACKBONE_BIT = 1 << 7  # Marks a cell connected to the backbone
@@ -48,7 +47,7 @@ class Building:
             else:
                 raise ProblemLoadError(f'Invalid character in text \'{chr(cell)}\'')
 
-        cells[backbone] = CellType.BACKBONE.value | cls.BACKBONE_BIT
+        cells[backbone] |= cls.BACKBONE_BIT
 
         return cls(cells)
 
