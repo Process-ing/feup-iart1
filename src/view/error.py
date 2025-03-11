@@ -1,0 +1,2 @@
+class UnitializedError(Exception):
+    pass

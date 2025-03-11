@@ -9,17 +9,12 @@ class ProblemWindow(PygameWindow):
     def __init__(self, problem: RouterProblem) -> None:
         super().__init__(max_framerate=1)
         self.__problem = problem
+        self.__building_viewer = BuildingViewer()
 
     @override
     def get_window_size(self) -> tuple[int, int]:
-        problem_height, problem_width = self.__problem.building.shape
-        cell_size = max(min(
-            pygame.display.Info().current_w // problem_width,
-            pygame.display.Info().current_h // problem_height
-        ), 1)
-        height, width = problem_height * cell_size, problem_width * cell_size
-
-        return width, height
+        building = self.__problem.building
+        return self.__building_viewer.get_preferred_size(building)
 
     @override
     def get_window_caption(self) -> str:
@@ -27,7 +22,7 @@ class ProblemWindow(PygameWindow):
 
     @override
     def on_init(self) -> None:
-        self.__building_viewer = BuildingViewer()
+        pass
 
     @override
     def on_display(self, screen: pygame.Surface) -> None:

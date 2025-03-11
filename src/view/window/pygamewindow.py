@@ -6,14 +6,12 @@ class PygameWindow:
     def __init__(self, max_framerate: float = 0) -> None:
         self._max_framerate = max_framerate
 
-    @classmethod
     @abstractmethod
-    def get_window_size(cls) -> tuple[int, int]:
+    def get_window_size(self) -> tuple[int, int]:
         pass
 
-    @classmethod
     @abstractmethod
-    def get_window_caption(cls) -> str:
+    def get_window_caption(self) -> str:
         pass
 
     @abstractmethod

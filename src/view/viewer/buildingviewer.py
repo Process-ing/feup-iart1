@@ -6,17 +6,17 @@ from src.view.viewer.pygameviewer import PygameViewer
 
 class BuildingViewer(PygameViewer[Building]):
     def __init__(self) -> None:
-        self.PALETTE = self.__create_pallete()
+        self.__palette = self.__create_pallete()
 
     @override
-    def render(self, building: Building) -> pygame.Surface:
-        height, width = building.shape
+    def render(self, entity: Building) -> pygame.Surface:
+        height, width = entity.shape
 
         screen = pygame.Surface((width, height))
         screen = screen.convert(8)
-        screen.set_palette(self.PALETTE)
+        screen.set_palette(self.__palette)
 
-        array = building.as_nparray_transposed()
+        array = entity.as_nparray_transposed()
         pygame.pixelcopy.array_to_surface(screen, array)
 
         return screen
@@ -50,3 +50,13 @@ class BuildingViewer(PygameViewer[Building]):
             (0x7f, 0xc3, 0x82)
 
         return palette
+
+    def get_preferred_size(self, building: Building) -> tuple[int, int]:
+        problem_height, problem_width = building.shape
+        cell_size = max(min(
+            pygame.display.Info().current_w // problem_width,
+            pygame.display.Info().current_h // problem_height
+        ), 1)
+        height, width = problem_height * cell_size, problem_width * cell_size
+
+        return width, height
