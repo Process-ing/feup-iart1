@@ -7,6 +7,7 @@ from src.view.viewer import BuildingViewer
 
 class ProblemWindow(PygameWindow):
     def __init__(self, problem: RouterProblem) -> None:
+        super().__init__(max_framerate=1)
         self.__problem = problem
 
     @override

@@ -3,7 +3,7 @@ from typing import Optional, override
 from src.algorithm import Algorithm
 from src.model import RouterProblem
 from src.view import Cli
-from src.view.window import OptimizationWindow
+from src.view.window import OptimizationWindow, ProblemWindow
 
 # TODO(Process-ing): Remove this
 class MockAlgorithm(Algorithm):
@@ -80,14 +80,24 @@ class Controller:
             filename = tokens[1]
             return self.load_problem(filename)
 
-        if command in ['show']:  # show
+        if command in ['show']:
+            if not self.__problem:
+                self.__cli.print_error('No problem loaded')
+                return CommandResult.FAILURE
+
+            problem_win = ProblemWindow(self.__problem)
+            problem_win.launch()
+
+            return CommandResult.SUCCESS
+
+        if command in ['solve']:
             if not self.__problem:
                 self.__cli.print_error('No problem loaded')
                 return CommandResult.FAILURE
 
             algorithm = MockAlgorithm(self.__problem)
-            opt_window = OptimizationWindow(self.__problem, algorithm)
-            opt_window.launch()
+            opt_win = OptimizationWindow(self.__problem, algorithm)
+            opt_win.launch()
 
             return CommandResult.SUCCESS
 

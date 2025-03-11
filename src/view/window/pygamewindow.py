@@ -44,10 +44,10 @@ class PygameWindow:
                     running = False
 
             self.on_display(screen)
-            print(f"\r{int(clock.get_fps())}", end="")  # TODO(Process-ing): Remove this
+            print(f"\r{round(clock.get_fps())}", end="")  # TODO(Process-ing): Remove this
             pygame.display.flip()
 
             self.on_update()
-            clock.tick()
+            clock.tick(self._max_framerate)
 
         pygame.quit()
