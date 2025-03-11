@@ -41,6 +41,7 @@ class Cli:
         print('''Commands:
     load <file>  Load a problem from a file.
     show         Show the current problem.
+    solve        Solve the current problem.
     exit         Exit the program.
     quit         Exit the program.
     help         Show this help.''')
