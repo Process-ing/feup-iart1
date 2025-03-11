@@ -1,22 +1,22 @@
 from typing import override
 import pygame
-from src.model import Building, RouterProblem, CellType
+from src.model import Building, CellType
 from src.view.viewer.pygameviewer import PygameViewer
 
 
-class ProblemViewer(PygameViewer[RouterProblem]):
+class BuildingViewer(PygameViewer[Building]):
     def __init__(self) -> None:
         self.PALETTE = self.__create_pallete()
 
     @override
-    def render(self, problem: RouterProblem) -> pygame.Surface:
-        height, width = problem.building.shape
+    def render(self, building: Building) -> pygame.Surface:
+        height, width = building.shape
 
         screen = pygame.Surface((width, height))
         screen = screen.convert(8)
         screen.set_palette(self.PALETTE)
 
-        array = problem.building.as_nparray_transposed()
+        array = building.as_nparray_transposed()
         pygame.pixelcopy.array_to_surface(screen, array)
 
         return screen

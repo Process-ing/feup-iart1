@@ -2,7 +2,7 @@ from typing import override
 import pygame
 from src.algorithm import Algorithm
 from src.model import RouterProblem
-from src.view.viewer import ProblemViewer
+from src.view.viewer import BuildingViewer
 from src.view.window.pygamewindow import PygameWindow
 
 class OptimizationWindow(PygameWindow):
@@ -29,10 +29,10 @@ class OptimizationWindow(PygameWindow):
 
     def on_init(self) -> None:
         self.__font = pygame.font.Font('BigBlueTerm437NerdFont-Regular.ttf', 18)
-        self.__problem_viewer = ProblemViewer()
+        self.__building_viewer = BuildingViewer()
 
     def on_display(self, screen: pygame.Surface) -> None:
-        problem_screen = self.__problem_viewer.render(self.__problem)
+        problem_screen = self.__building_viewer.render(self.__problem.building)
         scaled_problem = pygame.transform.scale(problem_screen, screen.get_size())
         screen.blit(scaled_problem, (0, 0))
 
