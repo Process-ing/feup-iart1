@@ -5,6 +5,7 @@ from src.model import RouterProblem
 from src.view.viewer import BuildingViewer, PauseButton
 from src.view.window.pygamewindow import PygameWindow
 from src.view.error import UnitializedError
+from src.view.viewer import ChartButton
 
 class OptimizationWindow(PygameWindow):
     def __init__(self, problem: RouterProblem, algorithm: Algorithm,
@@ -30,7 +31,8 @@ class OptimizationWindow(PygameWindow):
 
     def on_init(self, screen: pygame.Surface) -> None:
         width = self.get_window_size()[0]
-        self.__pause_button = PauseButton(width - 58, 10)
+        self.__pause_button = PauseButton(width - (48 + 10) * 2, 10)
+        self.__chart_button = ChartButton(width - (48 + 10), 10)
         self.__font = pygame.font.Font('BigBlueTerm437NerdFont-Regular.ttf', 18)
 
     def __display(self, screen: pygame.Surface) -> None:
@@ -43,14 +45,18 @@ class OptimizationWindow(PygameWindow):
         text = self.__font.render(f'Score: {self.__score}', True, (255, 255, 255))
         screen.blit(text, (10, 10))
 
-        button_screen = self.__pause_button.render(self.__paused)
-        screen.blit(button_screen, self.__pause_button.topLeftCorner)
+        chart_button_screen = self.__chart_button.render(None)
+        screen.blit(chart_button_screen, self.__chart_button.topLeftCorner)
+
+        pause_button_screen = self.__pause_button.render(self.__paused)
+        screen.blit(pause_button_screen, self.__pause_button.topLeftCorner)
 
     def on_update(self, events: List[pygame.event.Event], screen: pygame.Surface) -> None:
         for event in events:
             if event.type == pygame.MOUSEBUTTONDOWN and event.button == 1:
                 click_pos = pygame.mouse.get_pos()
                 self.__pause_button.handle_click(click_pos, self.toggle_pause)
+                self.__chart_button.handle_click(click_pos, self.pause)
 
         self.__display(screen)
         pygame.display.flip()
@@ -63,3 +69,6 @@ class OptimizationWindow(PygameWindow):
 
     def toggle_pause(self) -> None:
         self.__paused = not self.__paused
+
+    def pause(self) -> None:
+        self.__paused = True
