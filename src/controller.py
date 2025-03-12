@@ -96,7 +96,7 @@ class Controller:
                 return CommandResult.FAILURE
 
             algorithm = MockAlgorithm(self.__problem)
-            opt_win = OptimizationWindow(self.__problem, algorithm)
+            opt_win = OptimizationWindow(self.__problem, algorithm, max_framerate=300)
             opt_win.launch()
 
             return CommandResult.SUCCESS

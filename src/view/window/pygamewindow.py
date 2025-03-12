@@ -19,7 +19,7 @@ class PygameWindow:
         pass
 
     @abstractmethod
-    def on_update(self, screen: pygame.Surface) -> None:
+    def on_update(self, event: pygame.event.Event, screen: pygame.Surface) -> None:
         pass
 
     def launch(self) -> None:
@@ -33,12 +33,13 @@ class PygameWindow:
 
         running = True
         while running:
-            for event in pygame.event.get():
+            events = pygame.event.get()
+            for event in events:
                 if event.type == pygame.QUIT:
                     running = False
 
-            print(f"\r{round(clock.get_fps())}", end="")  # TODO(Process-ing): Remove this
-            self.on_update(screen)
+            print(f"\r{round(clock.get_fps(), 1)}", end="")  # TODO(Process-ing): Remove this
+            self.on_update(events, screen)
             clock.tick(self._max_framerate)
 
         pygame.quit()

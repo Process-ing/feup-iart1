@@ -1,8 +1,8 @@
-from typing import override
+from typing import List, override
 import pygame
 from src.algorithm import Algorithm
 from src.model import RouterProblem
-from src.view.viewer import BuildingViewer
+from src.view.viewer import BuildingViewer, PauseButton
 from src.view.window.pygamewindow import PygameWindow
 from src.view.error import UnitializedError
 
@@ -11,11 +11,14 @@ class OptimizationWindow(PygameWindow):
         max_framerate: float = 0) -> None:
 
         super().__init__(max_framerate)
+
         self.__problem = problem
         self.__score = problem.get_score()
         self.__algorithm = algorithm
         self.__font: pygame.font.Font | None = None
         self.__building_viewer = BuildingViewer()
+        self.__pause_button = PauseButton(10, 100, self.toggle_pause)
+        self.__paused = False
 
     @override
     def get_window_size(self) -> tuple[int, int]:
@@ -39,12 +42,23 @@ class OptimizationWindow(PygameWindow):
         text = self.__font.render(f'Score: {self.__score}', True, (255, 255, 255))
         screen.blit(text, (10, 10))
 
-    def on_update(self, screen: pygame.Surface) -> None:
+        button_screen = self.__pause_button.render(None)
+        screen.blit(button_screen, self.__pause_button.topLeftCorner)
+
+    def on_update(self, events: List[pygame.event.Event], screen: pygame.Surface) -> None:
+        for event in events:
+            if event.type == pygame.MOUSEBUTTONDOWN and event.button == 1:
+                click_pos = pygame.mouse.get_pos()
+                self.__pause_button.handle_click(click_pos, None)
+
+        if self.__paused:
+            return
+
         self.__display(screen)
         pygame.display.flip()
 
         self.__algorithm.step()
         self.__score = self.__problem.get_score()
 
-    def pause(self) -> None:
-        self.__algorithm.pause()
+    def toggle_pause(self) -> None:
+        self.__paused = not self.__paused

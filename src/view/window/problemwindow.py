@@ -1,4 +1,4 @@
-from typing import override
+from typing import List, override
 
 import pygame
 from src.model import RouterProblem
@@ -29,5 +29,5 @@ class ProblemWindow(PygameWindow):
         pygame.display.flip()
 
     @override
-    def on_update(self, screen: pygame.Surface) -> None:
+    def on_update(self, events: List[pygame.event.Event], screen: pygame.Surface) -> None:
         pass
