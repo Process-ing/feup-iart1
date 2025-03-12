@@ -17,7 +17,6 @@ class OptimizationWindow(PygameWindow):
         self.__algorithm = algorithm
         self.__font: pygame.font.Font | None = None
         self.__building_viewer = BuildingViewer()
-        self.__pause_button = PauseButton(10, 100)
         self.__paused = False
 
     @override
@@ -30,6 +29,8 @@ class OptimizationWindow(PygameWindow):
         return 'Router Optimization'
 
     def on_init(self, screen: pygame.Surface) -> None:
+        width = self.get_window_size()[0]
+        self.__pause_button = PauseButton(width - 58, 10)
         self.__font = pygame.font.Font('BigBlueTerm437NerdFont-Regular.ttf', 18)
 
     def __display(self, screen: pygame.Surface) -> None:
