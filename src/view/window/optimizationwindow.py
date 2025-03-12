@@ -17,7 +17,7 @@ class OptimizationWindow(PygameWindow):
         self.__algorithm = algorithm
         self.__font: pygame.font.Font | None = None
         self.__building_viewer = BuildingViewer()
-        self.__pause_button = PauseButton(10, 100, self.toggle_pause)
+        self.__pause_button = PauseButton(10, 100)
         self.__paused = False
 
     @override
@@ -43,15 +43,13 @@ class OptimizationWindow(PygameWindow):
         screen.blit(text, (10, 10))
 
         button_screen = self.__pause_button.render(self.__paused)
-        print(self.__paused)
-        print()
         screen.blit(button_screen, self.__pause_button.topLeftCorner)
 
     def on_update(self, events: List[pygame.event.Event], screen: pygame.Surface) -> None:
         for event in events:
             if event.type == pygame.MOUSEBUTTONDOWN and event.button == 1:
                 click_pos = pygame.mouse.get_pos()
-                self.__pause_button.handle_click(click_pos, None)
+                self.__pause_button.handle_click(click_pos, self.toggle_pause)
 
         self.__display(screen)
         pygame.display.flip()

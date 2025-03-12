@@ -1,3 +1,4 @@
+from copy import deepcopy
 from enum import Enum
 from typing import Optional, override
 from src.algorithm import Algorithm
@@ -95,8 +96,9 @@ class Controller:
                 self.__cli.print_error('No problem loaded')
                 return CommandResult.FAILURE
 
-            algorithm = MockAlgorithm(self.__problem)
-            opt_win = OptimizationWindow(self.__problem, algorithm, max_framerate=300)
+            problem = deepcopy(self.__problem)
+            algorithm = MockAlgorithm(problem)
+            opt_win = OptimizationWindow(problem, algorithm, max_framerate=300)
             opt_win.launch()
 
             return CommandResult.SUCCESS

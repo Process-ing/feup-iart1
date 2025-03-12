@@ -3,17 +3,15 @@ import pygame
 from src.view.viewer.buttonviewer import ButtonViewer
 
 
-class PauseButton(ButtonViewer[bool]):
+class PauseButton(ButtonViewer[Callable[[], bool], bool]):
     WIDTH = 48
     HEIGHT = 48
 
-    def __init__(self, x: int, y: int, toggle_pause: Callable[[], None]) -> None:
+    def __init__(self, x: int, y: int) -> None:
         super().__init__(x, y, 48, 48)
 
-        self.toggle_pause = toggle_pause
-
-    def on_click(self, entity: None) -> None:
-        self.toggle_pause()
+    def on_click(self, toggle_pause: Callable[[], bool]) -> None:
+        toggle_pause()
 
     def render(self, paused: bool):
         screen = pygame.Surface((self.WIDTH, self.HEIGHT))
@@ -27,4 +25,5 @@ class PauseButton(ButtonViewer[bool]):
             pygame.draw.polygon(triangle, (255, 255, 255), [(2, 2), (3, 2), (9, 5), (9, 6), (3, 9), (2, 9)])
             triangle = pygame.transform.scale(triangle, (self.WIDTH, self.HEIGHT))
             screen.blit(triangle, (0, 0))
+        
         return screen
