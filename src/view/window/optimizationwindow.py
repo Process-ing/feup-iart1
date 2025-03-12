@@ -42,7 +42,9 @@ class OptimizationWindow(PygameWindow):
         text = self.__font.render(f'Score: {self.__score}', True, (255, 255, 255))
         screen.blit(text, (10, 10))
 
-        button_screen = self.__pause_button.render(None)
+        button_screen = self.__pause_button.render(self.__paused)
+        print(self.__paused)
+        print()
         screen.blit(button_screen, self.__pause_button.topLeftCorner)
 
     def on_update(self, events: List[pygame.event.Event], screen: pygame.Surface) -> None:
@@ -51,11 +53,11 @@ class OptimizationWindow(PygameWindow):
                 click_pos = pygame.mouse.get_pos()
                 self.__pause_button.handle_click(click_pos, None)
 
-        if self.__paused:
-            return
-
         self.__display(screen)
         pygame.display.flip()
+
+        if self.__paused:
+            return
 
         self.__algorithm.step()
         self.__score = self.__problem.get_score()
