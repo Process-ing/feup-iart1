@@ -7,7 +7,7 @@ from src.view.viewer import BuildingViewer
 
 class ProblemWindow(PygameWindow):
     def __init__(self, problem: RouterProblem) -> None:
-        super().__init__(max_framerate=1)
+        super().__init__(max_framerate=60)  # A low framerate slows down window exit
         self.__problem = problem
         self.__building_viewer = BuildingViewer()
 
@@ -21,15 +21,13 @@ class ProblemWindow(PygameWindow):
         return 'Router Problem'
 
     @override
-    def on_init(self) -> None:
-        pass
-
-    @override
-    def on_display(self, screen: pygame.Surface) -> None:
+    def on_init(self, screen: pygame.Surface) -> None:
         problem_screen = self.__building_viewer.render(self.__problem.building)
         scaled_problem = pygame.transform.scale(problem_screen, screen.get_size())
+
         screen.blit(scaled_problem, (0, 0))
+        pygame.display.flip()
 
     @override
-    def on_update(self) -> None:
+    def on_update(self, screen: pygame.Surface) -> None:
         pass

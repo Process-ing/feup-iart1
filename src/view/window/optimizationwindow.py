@@ -26,10 +26,10 @@ class OptimizationWindow(PygameWindow):
     def get_window_caption(self) -> str:
         return 'Router Optimization'
 
-    def on_init(self) -> None:
+    def on_init(self, screen: pygame.Surface) -> None:
         self.__font = pygame.font.Font('BigBlueTerm437NerdFont-Regular.ttf', 18)
 
-    def on_display(self, screen: pygame.Surface) -> None:
+    def __display(self, screen: pygame.Surface) -> None:
         problem_screen = self.__building_viewer.render(self.__problem.building)
         scaled_problem = pygame.transform.scale(problem_screen, screen.get_size())
         screen.blit(scaled_problem, (0, 0))
@@ -39,6 +39,12 @@ class OptimizationWindow(PygameWindow):
         text = self.__font.render(f'Score: {self.__score}', True, (255, 255, 255))
         screen.blit(text, (10, 10))
 
-    def on_update(self) -> None:
+    def on_update(self, screen: pygame.Surface) -> None:
+        self.__display(screen)
+        pygame.display.flip()
+
         self.__algorithm.step()
         self.__score = self.__problem.get_score()
+
+    def pause(self) -> None:
+        self.__algorithm.pause()
