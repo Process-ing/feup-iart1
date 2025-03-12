@@ -18,6 +18,8 @@ class OptimizationWindow(PygameWindow):
         self.__algorithm = algorithm
         self.__font: pygame.font.Font | None = None
         self.__building_viewer = BuildingViewer()
+        self.__pause_button: PauseButton | None = None
+        self.__chart_button: ChartButton | None = None
         self.__paused = False
 
     @override
@@ -45,15 +47,21 @@ class OptimizationWindow(PygameWindow):
         text = self.__font.render(f'Score: {self.__score}', True, (255, 255, 255))
         screen.blit(text, (10, 10))
 
+        assert self.__pause_button is not None
+        assert self.__chart_button is not None
+
         chart_button_screen = self.__chart_button.render(None)
-        screen.blit(chart_button_screen, self.__chart_button.topLeftCorner)
+        screen.blit(chart_button_screen, self.__chart_button.top_left_corner)
 
         pause_button_screen = self.__pause_button.render(self.__paused)
-        screen.blit(pause_button_screen, self.__pause_button.topLeftCorner)
+        screen.blit(pause_button_screen, self.__pause_button.top_left_corner)
 
     def on_update(self, events: List[pygame.event.Event], screen: pygame.Surface) -> None:
         for event in events:
             if event.type == pygame.MOUSEBUTTONDOWN and event.button == 1:
+                assert self.__pause_button is not None
+                assert self.__chart_button is not None
+
                 click_pos = pygame.mouse.get_pos()
                 self.__pause_button.handle_click(click_pos, self.toggle_pause)
                 self.__chart_button.handle_click(click_pos, self.pause)

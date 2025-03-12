@@ -1,4 +1,5 @@
 from abc import abstractmethod
+from typing import List
 
 import pygame
 
@@ -19,7 +20,7 @@ class PygameWindow:
         pass
 
     @abstractmethod
-    def on_update(self, event: pygame.event.Event, screen: pygame.Surface) -> None:
+    def on_update(self, event: List[pygame.event.Event], screen: pygame.Surface) -> None:
         pass
 
     def launch(self) -> None:

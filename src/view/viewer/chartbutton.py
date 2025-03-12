@@ -1,11 +1,16 @@
 from typing import Callable, override
+import numpy as np
 
 import pygame
 from src.view.viewer.buttonviewer import ButtonViewer
-import numpy as np
 
 
-class ChartButton(ButtonViewer[None, Callable[[], bool]]):
+class ChartButton(ButtonViewer[None, Callable[[], None]]):
+    WIDTH = 48
+    HEIGHT = 48
+    ICON_WIDTH = 12
+    ICON_HEIGHT = 12
+
     ICON = (np.array([
         [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
         [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
@@ -21,16 +26,11 @@ class ChartButton(ButtonViewer[None, Callable[[], bool]]):
         [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
     ]) * (256 ** 3 - 1)).transpose()
 
-    WIDTH = 48
-    HEIGHT = 48
-    ICON_WIDTH = 12
-    ICON_HEIGHT = 12
-
     def __init__(self, x: int, y: int) -> None:
         super().__init__(x, y, self.WIDTH, self.HEIGHT)
 
     @override
-    def render(self, entity: None) -> np.ndarray:
+    def render(self, entity: None) -> pygame.Surface:
         screen = pygame.Surface((self.WIDTH, self.HEIGHT))
 
         icon_screen = pygame.Surface((self.ICON_WIDTH, self.ICON_HEIGHT))
@@ -42,6 +42,6 @@ class ChartButton(ButtonViewer[None, Callable[[], bool]]):
         return screen
 
     @override
-    def on_click(self, pause: Callable[[], bool]) -> None:
+    def on_click(self, pause: Callable[[], None]) -> None:
         pause()
         # TODO(Process-ing): Show score chart
