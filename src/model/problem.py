@@ -35,7 +35,7 @@ class RouterProblem:
         cost = 0
         covered = set()
 
-        routers = self.__building.get_connected_routers(self.start_backbone)        
+        routers, backbones = self.__building.get_connected_routers(self.start_backbone)        
 
         # TODO(racoelhosilva): check optimizations
         for a, b in routers:
@@ -46,10 +46,7 @@ class RouterProblem:
                         if 0 <= x < self.__building.rows and 0 <= y < self.__building.columns and \
                             not self.__is_blocked((a,b), (x,y)):
                             covered.add((x,y))
-        
-        for a, b, cell in self.__building.iter():
-            if (a,b) != self.start_backbone and cell & Building.BACKBONE_BIT:
-                cost += self.backbone_price
+        cost += (len(backbones) - 1) * self.backbone_price
 
         return 1000 * len(covered) + (self.budget - cost)
 
@@ -61,11 +58,7 @@ class RouterProblem:
         return False
 
     def check_budget(self) -> int:
-        cost = 0
         # TODO(racoelhosilva): check optimizations and cell types
-        for _row, _col, cell in self.__building.iter():
-            if cell == CellType.ROUTER:
-                cost += self.router_price
-            if cell & Building.BACKBONE_BIT:
-                cost += self.backbone_price
+        routers, backbones = self.__building.get_connected_routers(self.start_backbone)
+        cost = len(routers) * self.router_price + (len(backbones) - 1) * self.backbone_price
         return cost <= self.budget

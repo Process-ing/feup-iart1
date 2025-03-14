@@ -90,9 +90,9 @@ class Building:
     
     def get_connected_routers(self, root):
         routers = set()
-        visited = set()
+        backbones = set()
         queue = deque([root])
-        visited.add(root)
+        backbones.add(root)
         directions = [0, 1, 0, -1, 0]
 
         while queue:
@@ -102,10 +102,10 @@ class Building:
             for i in range(4):
                 nr, nc = row + directions[i], col + directions[i+1]
                 if 0 <= nr < self.rows and 0 <= nc < self.columns and \
-                        (nr, nc) not in visited and \
+                        (nr, nc) not in backbones and \
                         self.__cells[nr, nc] & self.BACKBONE_BIT:
                     queue.append((nr, nc))
-                    visited.add((nr, nc))
-        return routers
+                    backbones.add((nr, nc))
+        return routers, backbones
 
 
