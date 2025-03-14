@@ -1,7 +1,7 @@
 from enum import Enum
 from typing import Iterator, Tuple, cast
-import numpy as np
 from collections import deque
+import numpy as np
 
 from src.model.error import ProblemLoadError
 
@@ -87,8 +87,9 @@ class Building:
 
     def iter(self) -> Iterator[tuple[int, int, int]]:
         return ((row, column, int(cell)) for (row, column), cell in np.ndenumerate(self.__cells))
-    
-    def get_connected_routers(self, root):
+
+    def get_connected_routers(self, root: tuple[int, int]) \
+        -> tuple[set[tuple[int, int]], set[tuple[int, int]]]:
         routers = set()
         backbones = set()
         queue = deque([root])
@@ -107,5 +108,3 @@ class Building:
                     queue.append((nr, nc))
                     backbones.add((nr, nc))
         return routers, backbones
-
-

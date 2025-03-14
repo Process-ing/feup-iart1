@@ -4,7 +4,8 @@ from .building import Building, CellType
 type BudgetInfo = tuple[int, int, int]
 
 class RouterProblem:
-    def __init__(self, building: Building, router_range: int, budget_info: BudgetInfo, start_backbone : tuple[int, ...]):
+    def __init__(self, building: Building, router_range: int, \
+                 budget_info: BudgetInfo, start_backbone : tuple[int, int]):
         self.__building = building
         self.router_range = router_range
         self.backbone_price = budget_info[0]
@@ -21,7 +22,7 @@ class RouterProblem:
 
         rows, columns, router_range = initial_section[0:3]
         budget_info = cast(BudgetInfo, tuple(initial_section[3:6]))
-        backbone = tuple(initial_section[6:8])
+        backbone = cast(tuple[int, int], tuple(initial_section[6:8]))
 
         building = Building.from_text((rows, columns), backbone, building_section, router_range)
 
@@ -35,22 +36,22 @@ class RouterProblem:
         cost = 0
         covered = set()
 
-        routers, backbones = self.__building.get_connected_routers(self.start_backbone)        
+        routers, backbones = self.__building.get_connected_routers(self.start_backbone)
 
         # TODO(racoelhosilva): check optimizations
         for a, b in routers:
             cost += self.router_price
             for dx in range(-self.router_range, self.router_range + 1):
-                    for dy in range(-self.router_range, self.router_range + 1):
-                        x, y = a + dx, b + dy
-                        if 0 <= x < self.__building.rows and 0 <= y < self.__building.columns and \
-                            not self.__is_blocked((a,b), (x,y)):
-                            covered.add((x,y))
+                for dy in range(-self.router_range, self.router_range + 1):
+                    x, y = a + dx, b + dy
+                    if 0 <= x < self.__building.rows and 0 <= y < self.__building.columns and \
+                        not self.__is_blocked((a,b), (x,y)):
+                        covered.add((x,y))
         cost += (len(backbones) - 1) * self.backbone_price
 
         return 1000 * len(covered) + (self.budget - cost)
 
-    def __is_blocked(self, router, cell):
+    def __is_blocked(self, router: tuple[int, int], cell: tuple[int, int]) -> bool:
         for w in range(min(router[0], cell[0]), max(router[0], cell[0]) + 1):
             for v in range(min(router[1], cell[1]), max(router[1], cell[1]) + 1):
                 if self.__building.as_nparray()[w, v] == CellType.WALL.value:
