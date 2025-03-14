@@ -63,3 +63,18 @@ class RouterProblem:
         routers, backbones = self.__building.get_connected_routers(self.start_backbone)
         cost = len(routers) * self.router_price + (len(backbones) - 1) * self.backbone_price
         return cost <= self.budget
+
+    def dump_to_file(self, filename: str) -> None:
+        reverse_char_cell_map = {v.value: k for k, v in Building.CHAR_CELL_MAP.items()}
+        reverse_char_cell_map[CellType.ROUTER.value] = ord('R')
+        reverse_char_cell_map[CellType.WALL.value] = ord('#')
+        reverse_char_cell_map[CellType.TARGET.value] = ord('.')
+        reverse_char_cell_map[CellType.VOID.value] = ord('-')
+
+        with open(filename, 'w', encoding='utf-8') as file:
+            for row in self.__building.as_nparray():
+                file.write(''.join(
+                    'B' if cell & Building.BACKBONE_BIT else \
+                        chr(reverse_char_cell_map[cell & Building.CELL_TYPE_MASK])
+                    for cell in row
+                ) + '\n')
