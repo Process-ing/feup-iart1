@@ -4,12 +4,13 @@ from .building import Building, CellType
 type BudgetInfo = tuple[int, int, int]
 
 class RouterProblem:
-    def __init__(self, building: Building, router_range: int, budget_info: BudgetInfo):
+    def __init__(self, building: Building, router_range: int, budget_info: BudgetInfo, start_backbone : tuple[int, ...]):
         self.__building = building
         self.router_range = router_range
         self.backbone_price = budget_info[0]
         self.router_price = budget_info[1]
         self.budget = budget_info[2]
+        self.start_backbone = start_backbone
 
     @classmethod
     def from_text(cls, text: str) -> 'RouterProblem':
@@ -24,7 +25,7 @@ class RouterProblem:
 
         building = Building.from_text((rows, columns), backbone, building_section, router_range)
 
-        return cls(building, router_range, budget_info)
+        return cls(building, router_range, budget_info, backbone)
 
     @property
     def building(self) -> Building:
@@ -34,19 +35,22 @@ class RouterProblem:
         cost = 0
         covered = set()
 
-        # TODO(racoelhosilva): check optimizations
-        for a, b, cell in self.__building.iter():
-            if cell == CellType.ROUTER:
-                cost -= self.router_price
+        routers = self.__building.get_connected_routers(self.start_backbone)        
 
-                for dx in range(-self.router_range, self.router_range + 1):
+        # TODO(racoelhosilva): check optimizations
+        for a, b in routers:
+            cost += self.router_price
+            for dx in range(-self.router_range, self.router_range + 1):
                     for dy in range(-self.router_range, self.router_range + 1):
                         x, y = a + dx, b + dy
-                        if not self.__is_blocked((a,b), (x,y)):
+                        if 0 <= x < self.__building.rows and 0 <= y < self.__building.columns and \
+                            not self.__is_blocked((a,b), (x,y)):
                             covered.add((x,y))
+        
+        for a, b, cell in self.__building.iter():
+            if (a,b) != self.start_backbone and cell & Building.BACKBONE_BIT:
+                cost += self.backbone_price
 
-            if cell & Building.BACKBONE_BIT:
-                cost -= self.backbone_price
         return 1000 * len(covered) + (self.budget - cost)
 
     def __is_blocked(self, router, cell):
