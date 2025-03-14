@@ -1,5 +1,5 @@
 from enum import Enum
-from typing import Iterator, cast
+from typing import Iterator, Tuple, cast
 import numpy as np
 
 from src.model.error import ProblemLoadError
@@ -23,11 +23,14 @@ class Building:
         ord('#'): CellType.WALL,
     }
 
-    def __init__(self, cells: CellArray):
+    def __init__(self, cells: CellArray, router_range: int) -> None:
         self.__cells: CellArray = cells
+        self.__router_range = router_range
 
     @classmethod
-    def from_text(cls, rows: int, columns: int, backbone: tuple[int, ...], text: str) -> 'Building':
+    def from_text(cls, shape: Tuple[int, int], backbone: tuple[int, ...],
+                  text: str, router_range: int) -> 'Building':
+        rows, columns = shape
         if rows < 1 or columns < 1:
             raise ProblemLoadError(f'Invalid building size {rows}x{columns}')
         if backbone[0] < 0 or backbone[0] >= rows or backbone[1] < 0 or backbone[1] >= columns:
@@ -49,7 +52,7 @@ class Building:
 
         cells[backbone] |= cls.BACKBONE_BIT
 
-        return cls(cells)
+        return cls(cells, router_range)
 
     @property
     def rows(self) -> int:
@@ -69,9 +72,17 @@ class Building:
     def as_nparray(self) -> CellArray:
         return self.__cells.copy()
 
+    def as_nparray_transposed(self) -> CellArray:
+        return self.__cells.transpose()
+
     # TODO(Process-ing): Remove this
     def place_router(self, row: int, column: int) -> None:
-        self.__cells[row, column] = CellType.ROUTER.value
+        if self.__cells[row, column] & self.CELL_TYPE_MASK != CellType.WALL.value:
+            self.__cells[row, column] = CellType.ROUTER.value
+            # NOTE(Process-ing): This is not checking walls while specifying connectivity!
+            self.__cells[row - self.__router_range:row + self.__router_range + 1,
+                         column - self.__router_range:column + self.__router_range + 1] \
+                |= self.CONNECTED_BIT
 
     def iter(self) -> Iterator[tuple[int, int, int]]:
         return ((row, column, int(cell)) for (row, column), cell in np.ndenumerate(self.__cells))

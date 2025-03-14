@@ -1,4 +1,3 @@
-from .example import TestStringMethods
+from test.example import TestStringMethods
 
-__all__ = [
-    'TestStringMethods',]
+__all__ = ['TestStringMethods']

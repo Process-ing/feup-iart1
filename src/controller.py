@@ -1,8 +1,10 @@
+from copy import deepcopy
 from enum import Enum
 from typing import Optional, override
 from src.algorithm import Algorithm
 from src.model import RouterProblem
-from src.view import Cli, OptimizationView
+from src.view import Cli
+from src.view.window import OptimizationWindow, ProblemWindow
 
 # TODO(Process-ing): Remove this
 class MockAlgorithm(Algorithm):
@@ -79,14 +81,25 @@ class Controller:
             filename = tokens[1]
             return self.load_problem(filename)
 
-        if command in ['show']:  # show
+        if command in ['show']:
             if not self.__problem:
                 self.__cli.print_error('No problem loaded')
                 return CommandResult.FAILURE
 
-            algorithm = MockAlgorithm(self.__problem)
-            opt_view = OptimizationView(self.__problem, algorithm)
-            opt_view.render()
+            problem_win = ProblemWindow(self.__problem)
+            problem_win.launch()
+
+            return CommandResult.SUCCESS
+
+        if command in ['solve']:
+            if not self.__problem:
+                self.__cli.print_error('No problem loaded')
+                return CommandResult.FAILURE
+
+            problem = deepcopy(self.__problem)
+            algorithm = MockAlgorithm(problem)
+            opt_win = OptimizationWindow(problem, algorithm, max_framerate=300)
+            opt_win.launch()
 
             return CommandResult.SUCCESS
 
