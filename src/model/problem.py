@@ -22,7 +22,7 @@ class RouterProblem:
         budget_info = cast(BudgetInfo, tuple(initial_section[3:6]))
         backbone = tuple(initial_section[6:8])
 
-        building = Building.from_text(rows, columns, backbone, building_section, router_range)
+        building = Building.from_text((rows, columns), backbone, building_section, router_range)
 
         return cls(building, router_range, budget_info)
 

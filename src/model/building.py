@@ -1,5 +1,5 @@
 from enum import Enum
-from typing import Iterator, cast
+from typing import Iterator, Tuple, cast
 import numpy as np
 
 from src.model.error import ProblemLoadError
@@ -28,7 +28,9 @@ class Building:
         self.__router_range = router_range
 
     @classmethod
-    def from_text(cls, rows: int, columns: int, backbone: tuple[int, ...], text: str, router_range: int) -> 'Building':
+    def from_text(cls, shape: Tuple[int, int], backbone: tuple[int, ...],
+                  text: str, router_range: int) -> 'Building':
+        rows, columns = shape
         if rows < 1 or columns < 1:
             raise ProblemLoadError(f'Invalid building size {rows}x{columns}')
         if backbone[0] < 0 or backbone[0] >= rows or backbone[1] < 0 or backbone[1] >= columns:
@@ -79,7 +81,8 @@ class Building:
             self.__cells[row, column] = CellType.ROUTER.value
             # NOTE(Process-ing): This is not checking walls while specifying connectivity!
             self.__cells[row - self.__router_range:row + self.__router_range + 1,
-                         column - self.__router_range:column + self.__router_range + 1] |= self.CONNECTED_BIT
+                         column - self.__router_range:column + self.__router_range + 1] \
+                |= self.CONNECTED_BIT
 
     def iter(self) -> Iterator[tuple[int, int, int]]:
         return ((row, column, int(cell)) for (row, column), cell in np.ndenumerate(self.__cells))

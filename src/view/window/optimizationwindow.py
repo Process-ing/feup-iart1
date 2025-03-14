@@ -4,7 +4,6 @@ from src.algorithm import Algorithm
 from src.model import RouterProblem
 from src.view.viewer import BuildingViewer, PauseButton
 from src.view.window.pygamewindow import PygameWindow
-from src.view.error import UnitializedError
 from src.view.viewer import ChartButton
 
 class OptimizationWindow(PygameWindow):
@@ -40,15 +39,15 @@ class OptimizationWindow(PygameWindow):
     def __draw_info(self, screen: pygame.Surface) -> None:
         assert self.__font is not None
 
-        INFO_WIDTH = 50
-        INFO_HEIGHT = 12
+        info_width = 50
+        info_height = 12
 
-        info_screen = pygame.Surface((INFO_WIDTH, INFO_HEIGHT), pygame.SRCALPHA)
+        info_screen = pygame.Surface((info_width, info_height), pygame.SRCALPHA)
         pygame.draw.polygon(info_screen, (0, 0, 0, 128), [
-            (0, 0), (INFO_WIDTH - 1, 0), (INFO_WIDTH - 1, INFO_HEIGHT - 4),
-            (INFO_WIDTH - 4, INFO_HEIGHT - 1), (0, INFO_HEIGHT - 1)
+            (0, 0), (info_width - 1, 0), (info_width - 1, info_height - 4),
+            (info_width - 4, info_height - 1), (0, info_height - 1)
         ])
-        info_screen = pygame.transform.scale(info_screen, (INFO_WIDTH * 4, INFO_HEIGHT * 4))
+        info_screen = pygame.transform.scale(info_screen, (info_width * 4, info_height * 4))
 
         text = self.__font.render(f'Score: {self.__score}', True, (255, 255, 255))
 
@@ -60,21 +59,21 @@ class OptimizationWindow(PygameWindow):
         assert self.__chart_button is not None
 
         screen_width = screen.get_size()[0]
-        QUAD_WIDTH = 2 * (12 + 2) + 3
-        QUAD_HEIGHT = 12 + 2 + 3
+        quad_width = 2 * (12 + 2) + 3
+        quad_height = 12 + 2 + 3
 
-        quad = pygame.Surface((QUAD_WIDTH, QUAD_HEIGHT), pygame.SRCALPHA)
+        quad = pygame.Surface((quad_width, quad_height), pygame.SRCALPHA)
         pygame.draw.polygon(quad, (0, 0, 0), [
-            (0, 0), (QUAD_WIDTH - 1, 0), (QUAD_WIDTH - 1, QUAD_HEIGHT - 1),
-            (3, QUAD_HEIGHT - 1), (0, QUAD_HEIGHT - 4)
+            (0, 0), (quad_width - 1, 0), (quad_width - 1, quad_height - 1),
+            (3, quad_height - 1), (0, quad_height - 4)
         ])
         pygame.draw.lines(quad, (255, 255, 255), False, [
-            (QUAD_WIDTH - 1, QUAD_HEIGHT - 1), (3, QUAD_HEIGHT - 1),
-            (0, QUAD_HEIGHT - 4), (0, 0)
+            (quad_width - 1, quad_height - 1), (3, quad_height - 1),
+            (0, quad_height - 4), (0, 0)
         ])
 
-        quad = pygame.transform.scale(quad, (QUAD_WIDTH * 4, QUAD_HEIGHT * 4))
-        screen.blit(quad, (screen_width - QUAD_WIDTH * 4, 0))
+        quad = pygame.transform.scale(quad, (quad_width * 4, quad_height * 4))
+        screen.blit(quad, (screen_width - quad_width * 4, 0))
 
         chart_button_screen = self.__chart_button.render(None)
         screen.blit(chart_button_screen, self.__chart_button.top_left_corner)
