@@ -1,5 +1,6 @@
 from enum import Enum
 from typing import Iterator, Tuple, cast
+from collections import deque
 import numpy as np
 
 from src.model.error import ProblemLoadError
@@ -86,3 +87,24 @@ class Building:
 
     def iter(self) -> Iterator[tuple[int, int, int]]:
         return ((row, column, int(cell)) for (row, column), cell in np.ndenumerate(self.__cells))
+
+    def get_connected_routers(self, root: tuple[int, int]) \
+        -> tuple[set[tuple[int, int]], set[tuple[int, int]]]:
+        routers = set()
+        backbones = set()
+        queue = deque([root])
+        backbones.add(root)
+        directions = [0, 1, 0, -1, 0]
+
+        while queue:
+            row, col = queue.popleft()
+            if self.__cells[row, col] == CellType.ROUTER.value:
+                routers.add((row,col))
+            for i in range(4):
+                nr, nc = row + directions[i], col + directions[i+1]
+                if 0 <= nr < self.rows and 0 <= nc < self.columns and \
+                        (nr, nc) not in backbones and \
+                        self.__cells[nr, nc] & self.BACKBONE_BIT:
+                    queue.append((nr, nc))
+                    backbones.add((nr, nc))
+        return routers, backbones

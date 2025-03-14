@@ -1,6 +1,7 @@
 from copy import deepcopy
 from enum import Enum
 from typing import Optional, override
+from src.model.building import CellType
 from src.algorithm import Algorithm
 from src.model import RouterProblem
 from src.view import Cli
@@ -15,7 +16,8 @@ class MockAlgorithm(Algorithm):
 
     @override
     def step(self) -> None:
-        self.problem.building.place_router(self.j, self.i)
+        if self.problem.building.as_nparray()[self.j, self.i] != CellType.WALL.value:
+            self.problem.building.place_router(self.j, self.i)
         self.i += 1
         if self.i == self.problem.building.columns:
             self.i = 0
@@ -100,6 +102,7 @@ class Controller:
             algorithm = MockAlgorithm(problem)
             opt_win = OptimizationWindow(problem, algorithm, max_framerate=300)
             opt_win.launch()
+            self.__problem.dump_to_file('output.txt')
 
             return CommandResult.SUCCESS
 
