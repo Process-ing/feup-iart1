@@ -102,7 +102,9 @@ class Controller:
             algorithm = MockAlgorithm(problem)
             opt_win = OptimizationWindow(problem, algorithm, max_framerate=300)
             opt_win.launch()
-            self.__problem.dump_to_file('output.txt')
+
+            problem.dump_to_file('solution.txt')
+            print('Output saved to solution.txt')
 
             return CommandResult.SUCCESS
 

@@ -65,16 +65,16 @@ class RouterProblem:
         return cost <= self.budget
 
     def dump_to_file(self, filename: str) -> None:
-        reverse_char_cell_map = {v.value: k for k, v in Building.CHAR_CELL_MAP.items()}
-        reverse_char_cell_map[CellType.ROUTER.value] = ord('R')
-        reverse_char_cell_map[CellType.WALL.value] = ord('#')
-        reverse_char_cell_map[CellType.TARGET.value] = ord('.')
-        reverse_char_cell_map[CellType.VOID.value] = ord('-')
+        building_map = self.__building.as_nparray();
+        backbone_cells = [(i, j) for i, line in enumerate(building_map) for j, cell in enumerate(line) \
+            if cell & Building.BACKBONE_BIT]
+        router_cells = [(i, j) for i, line in enumerate(building_map) for j, cell in enumerate(line) \
+            if cell & Building.CELL_TYPE_MASK == CellType.ROUTER.value]
 
         with open(filename, 'w', encoding='utf-8') as file:
-            for row in self.__building.as_nparray():
-                file.write(''.join(
-                    'B' if cell & Building.BACKBONE_BIT else \
-                        chr(reverse_char_cell_map[cell & Building.CELL_TYPE_MASK])
-                    for cell in row
-                ) + '\n')
+            file.write(f'{len(backbone_cells)}\n')
+            for (row, col) in backbone_cells:
+                file.write(f'{row} {col}\n')
+            file.write(f'{len(router_cells)}\n')
+            for (row, col) in router_cells:
+                file.write(f'{row} {col}\n')
