@@ -76,15 +76,6 @@ class Building:
     def as_nparray_transposed(self) -> CellArray:
         return self.__cells.transpose()
 
-    # TODO(Process-ing): Remove this
-    def place_router(self, row: int, column: int) -> None:
-        if self.__cells[row, column] & self.CELL_TYPE_MASK != CellType.WALL.value:
-            self.__cells[row, column] = CellType.ROUTER.value
-            # NOTE(Process-ing): This is not checking walls while specifying connectivity!
-            self.__cells[row - self.__router_range:row + self.__router_range + 1,
-                         column - self.__router_range:column + self.__router_range + 1] \
-                |= self.CONNECTED_BIT
-
     def iter(self) -> Iterator[tuple[int, int, int]]:
         return ((row, column, int(cell)) for (row, column), cell in np.ndenumerate(self.__cells))
 
@@ -108,3 +99,63 @@ class Building:
                     queue.append((nr, nc))
                     backbones.add((nr, nc))
         return routers, backbones
+
+    def connect_neighbors(self, row: int, column: int) -> None:
+        neighbors = np.full(
+            (2 * self.__router_range + 1, 2 * self.__router_range + 1),
+            Building.CONNECTED_BIT,
+            dtype=np.uint8
+        )
+        srow, scol = row - self.__router_range, column - self.__router_range
+
+        for nrow in neighbors.shape[0]:
+            for ncol in neighbors.shape[1]:
+                if neighbors[nrow, ncol] != 0 and self.__cells[srow, scol]:
+                    pass
+
+    # TODO(Process-ing): Remove this
+    def place_router(self, row: int, column: int) -> None:
+
+
+        # Check if position is valid
+        current_cell = self.__cells[row, column]
+
+        if current_cell & self.CELL_TYPE_MASK == CellType.WALL.value:
+            return
+
+        # Check if router is already placed
+        if current_cell & self.CELL_TYPE_MASK == CellType.ROUTER.value:
+            return
+
+        # place router
+        self.__cells[row, column] = CellType.ROUTER.value
+
+        # TODO(henriquesfernandes): Connect router to the backbone
+
+        # TODO(henriquesfernandes): Mark cells as connected (attention to walls)
+
+
+
+
+        #
+        # if self.__cells[row, column] & self.CELL_TYPE_MASK != CellType.WALL.value:
+        #     self.__cells[row, column] = CellType.ROUTER.value
+        #     # NOTE(Process-ing): This is not checking walls while specifying connectivity!
+        #     self.__cells[row - self.__router_range:row + self.__router_range + 1,
+        #                  column - self.__router_range:column + self.__router_range + 1] \
+        #         |= self.CONNECTED_BIT
+
+        return self.copy()
+
+    def remove_router(self, row: int, column: int) -> None:
+        pass
+
+    def get_neighborhood(self) -> Iterator['Building']:
+        for row in range(self.__cells.shape[0]):
+            for col in range(self.__cells.shape[1]):
+                if (self.__cells[row, col] & self.CELL_TYPE_MASK) != CellType.WALL.value:
+                    neighbor = self.copy().place_router(row, col)
+                    yield neighbor
+                if self.__cells[row, col] == CellType.ROUTER.value:
+                    neighbor = self.copy().remove_router(row, col)
+                    yield neighbor
