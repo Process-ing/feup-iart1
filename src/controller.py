@@ -6,24 +6,26 @@ from src.algorithm import Algorithm
 from src.model import RouterProblem
 from src.view import Cli
 from src.view.window import OptimizationWindow, ProblemWindow
+import random
 
 # TODO(Process-ing): Remove this
 class MockAlgorithm(Algorithm):
     def __init__(self, problem: RouterProblem) -> None:
-        self.i = 0
-        self.j = 0
+        # self.i = 0
+        # self.j = 0
         self.problem = problem
 
     @override
     def step(self) -> None:
-        if self.problem.building.as_nparray()[self.j, self.i] != CellType.WALL.value:
-            self.problem.building.place_router(self.j, self.i)
-        self.i += 1
-        if self.i == self.problem.building.columns:
-            self.i = 0
-            self.j += 1
-            if self.j == self.problem.building.rows:
-                self.j = 0
+        # if self.problem.building.as_nparray()[self.j, self.i] != CellType.WALL.value:
+        #     self.problem.building.place_router(self.j, self.i)
+        # self.i += 1
+        # if self.i == self.problem.building.columns:
+        #     self.i = 0
+        #     self.j += 1
+        #     if self.j == self.problem.building.rows:
+        #         self.j = 0
+        self.problem.building.place_router(random.randint(0, self.problem.building.rows - 1), random.randint(0, self.problem.building.columns - 1))
 
 class CommandResult(Enum):
     SUCCESS = 0

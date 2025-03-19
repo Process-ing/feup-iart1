@@ -100,35 +100,64 @@ class Building:
                     backbones.add((nr, nc))
         return routers, backbones
 
-    def connect_neighbors(self, row: int, column: int) -> None:
-        neighbors = np.full(
-            (2 * self.__router_range + 1, 2 * self.__router_range + 1),
-            Building.CONNECTED_BIT,
-            dtype=np.uint8
-        )
-        srow, scol = row - self.__router_range, column - self.__router_range
+    def connect_neighbors(self, row: int, col: int) -> None:
+        R = self.__router_range
 
-        for nrow in neighbors.shape[0]:
-            for ncol in neighbors.shape[1]:
-                if neighbors[nrow, ncol] != 0 and self.__cells[srow, scol]:
-                    pass
+        row_start = max(0, row - R)
+        row_len = min(self.__cells.shape[0] - row_start, 2 * R + 1)
+        col_start = max(0, col - R)
+        col_len = min(self.__cells.shape[1] - col_start, 2 * R + 1)
+
+        ctr_row = row - row_start
+        ctr_col = col - col_start
+
+        neighborhood = np.zeros((row_len, col_len), dtype=np.uint8)
+        neighborhood |= self.__cells[row_start:row_start + row_len, col_start:col_start + col_len] & Building.CELL_TYPE_MASK
+
+        line_iters = [
+            ((ctr_row, ncol) for ncol in range(ctr_col + 1, col_len)),
+            ((ctr_row, ncol) for ncol in range(ctr_col - 1, -1, -1)),
+            ((nrow, ctr_col) for nrow in range(ctr_row + 1, row_len)),
+            ((nrow, ctr_col) for nrow in range(ctr_row - 1, -1, -1))
+        ]
+
+        for line_iter in line_iters:
+            for nrow, ncol in line_iter:
+                if neighborhood[nrow, ncol] & self.CELL_TYPE_MASK == CellType.WALL.value:
+                    break
+                neighborhood[nrow, ncol] |= self.CONNECTED_BIT
+
+        square_iters = [
+            (((nrow, ncol) for nrow in range(ctr_row - 1, -1, -1) for ncol in range(ctr_col - 1, -1, -1)), 1, 1),
+            (((nrow, ncol) for nrow in range(ctr_row - 1, -1, -1) for ncol in range(ctr_col + 1, col_len)), 1, -1),
+            (((nrow, ncol) for nrow in range(ctr_row + 1, row_len) for ncol in range(ctr_col - 1, -1, -1)), -1, 1),
+            (((nrow, ncol) for nrow in range(ctr_row + 1, row_len) for ncol in range(ctr_col + 1, col_len)), -1, -1),
+        ]
+
+        for square_iter, rstep, cstep in square_iters:
+            for nrow, ncol in square_iter:
+                if neighborhood[nrow, ncol] & self.CELL_TYPE_MASK != CellType.WALL.value \
+                    and neighborhood[nrow + rstep, ncol] & self.CONNECTED_BIT \
+                    and neighborhood[nrow, ncol + cstep] & self.CONNECTED_BIT:
+                    neighborhood[nrow, ncol] |= self.CONNECTED_BIT
+
+        self.__cells[row_start:row_start + row_len, col_start:col_start + col_len] |= neighborhood
 
     # TODO(Process-ing): Remove this
-    def place_router(self, row: int, column: int) -> None:
-
-
+    def place_router(self, row: int, column: int) -> bool:
         # Check if position is valid
-        current_cell = self.__cells[row, column]
+        # current_cell = self.__cells[row, column]
 
-        if current_cell & self.CELL_TYPE_MASK == CellType.WALL.value:
+        if self.__cells[row, column] & self.CELL_TYPE_MASK == CellType.WALL.value:
             return
 
-        # Check if router is already placed
-        if current_cell & self.CELL_TYPE_MASK == CellType.ROUTER.value:
+        # # Check if router is already placed
+        if self.__cells[row, column] & self.CELL_TYPE_MASK == CellType.ROUTER.value:
             return
 
         # place router
-        self.__cells[row, column] = CellType.ROUTER.value
+        self.__cells[row, column] = CellType.ROUTER.value | self.CONNECTED_BIT
+        self.connect_neighbors(row, column)
 
         # TODO(henriquesfernandes): Connect router to the backbone
 
@@ -145,7 +174,7 @@ class Building:
         #                  column - self.__router_range:column + self.__router_range + 1] \
         #         |= self.CONNECTED_BIT
 
-        return self.copy()
+        # return self.copy()
 
     def remove_router(self, row: int, column: int) -> None:
         pass
