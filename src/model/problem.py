@@ -1,5 +1,6 @@
 from typing import cast
-from .building import Building, CellType
+import numpy as np
+from src.model.building import Building, CellType
 
 type BudgetInfo = tuple[int, int, int]
 
@@ -65,10 +66,10 @@ class RouterProblem:
         return cost <= self.budget
 
     def dump_to_file(self, filename: str) -> None:
-        building_map = self.__building.as_nparray();
-        backbone_cells = [(i, j) for i, line in enumerate(building_map) for j, cell in enumerate(line) \
+        building_map = self.__building.as_nparray()
+        backbone_cells = [(i, j) for (i, j), cell in np.ndenumerate(building_map) \
             if cell & Building.BACKBONE_BIT]
-        router_cells = [(i, j) for i, line in enumerate(building_map) for j, cell in enumerate(line) \
+        router_cells = [(i, j) for (i, j), cell in np.ndenumerate(building_map) \
             if cell & Building.CELL_TYPE_MASK == CellType.ROUTER.value]
 
         with open(filename, 'w', encoding='utf-8') as file:
