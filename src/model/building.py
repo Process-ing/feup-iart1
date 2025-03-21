@@ -14,10 +14,10 @@ class CellType(Enum):
     WALL = 2
 
 class Building:
-    BACKBONE_BIT = 1 << 7  # Marks a cell connected to the backbone
-    COVERED_BIT = 1 << 6  # Marks a cell covered by a router
-    ROUTER_BIT = 1 << 5  # Marks a cell as a router
-    CELL_TYPE_MASK = 0b00011111  # Mask for the cell type
+    BACKBONE_BIT = np.uint8(1 << 7)  # Marks a cell connected to the backbone
+    COVERED_BIT = np.uint8(1 << 6)  # Marks a cell covered by a router
+    ROUTER_BIT = np.uint8(1 << 5)  # Marks a cell as a router
+    CELL_TYPE_MASK = np.uint8(0b00011111)  # Mask for the cell type
 
     CHAR_CELL_MAP = {
         ord('-'): CellType.VOID,
@@ -101,7 +101,7 @@ class Building:
                     backbones.add((nr, nc))
         return routers, backbones
 
-    def connect_neighbors(self, row: int, col: int) -> None:
+    def cover_neighbors(self, row: int, col: int) -> None:
         R = self.__router_range
 
         row_start = max(0, row - R)
@@ -114,6 +114,8 @@ class Building:
 
         neighborhood = np.zeros((row_len, col_len), dtype=np.uint8)
         neighborhood |= self.__cells[row_start:row_start + row_len, col_start:col_start + col_len] & Building.CELL_TYPE_MASK
+
+        neighborhood[ctr_row, ctr_col] |= self.COVERED_BIT
 
         line_iters = [
             ((ctr_row, ncol) for ncol in range(ctr_col + 1, col_len)),
@@ -156,8 +158,8 @@ class Building:
         if (self.__cells[row, column] & self.ROUTER_BIT) != 0:
             return False
 
-        self.__cells[row, column] |= self.ROUTER_BIT | self.COVERED_BIT | self.BACKBONE_BIT
-        self.connect_neighbors(row, column)
+        self.__cells[row, column] |= self.ROUTER_BIT | self.BACKBONE_BIT
+        self.cover_neighbors(row, column)
         return True
 
         # TODO(henriquesfernandes): Connect router to the backbone
@@ -173,12 +175,32 @@ class Building:
 
         # return self.copy()
 
+    def update_neighbor_coverage(self, row: int, column: int) -> None:
+        cell_row_start = max(0, row - self.__router_range)
+        cell_row_end = min(self.__cells.shape[0], row + self.__router_range + 1)
+        cell_col_start = max(0, column - self.__router_range)
+        cell_col_end = min(self.__cells.shape[1], column + self.__router_range + 1)
+
+        self.__cells[cell_row_start:cell_row_end, cell_col_start:cell_col_end] &= ~self.COVERED_BIT
+
+        router_row_start = max(0, row - 2 * self.__router_range)
+        router_row_end = min(self.__cells.shape[0], row + 2 * self.__router_range + 1)
+        router_col_start = max(0, column - 2 * self.__router_range)
+        router_col_end = min(self.__cells.shape[1], column + 2 * self.__router_range + 1)
+
+        for rrow in range(router_row_start, router_row_end):
+            for rcol in range(router_col_start, router_col_end):
+                if self.__cells[rrow, rcol] & self.ROUTER_BIT:
+                    self.__cells[rrow, rcol] |= self.COVERED_BIT
+                    self.cover_neighbors(rrow, rcol)
+
     def remove_router(self, row: int, column: int) -> bool:
         # Ignore if router is already placed
         if (self.__cells[row, column] & self.ROUTER_BIT) == 0:
             return False
 
-        self.__cells[row, column] &= ~self.ROUTER_BIT
+        self.__cells[row, column] &= ~(self.ROUTER_BIT | self.BACKBONE_BIT)
+        self.update_neighbor_coverage(row, column)
         return True
 
     def get_neighborhood(self) -> Iterator['Building']:

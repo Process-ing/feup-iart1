@@ -7,6 +7,7 @@ from src.model import RouterProblem
 from src.view import Cli
 from src.view.window import OptimizationWindow, ProblemWindow
 import random
+from collections import deque
 
 # TODO(Process-ing): Remove this
 class MockAlgorithm(Algorithm):
@@ -14,6 +15,7 @@ class MockAlgorithm(Algorithm):
         # self.i = 0
         # self.j = 0
         self.problem = problem
+        self.routers = deque()
 
     @override
     def step(self) -> None:
@@ -25,7 +27,13 @@ class MockAlgorithm(Algorithm):
         #     self.j += 1
         #     if self.j == self.problem.building.rows:
         #         self.j = 0
-        self.problem.building.place_router(random.randint(0, self.problem.building.rows - 1), random.randint(0, self.problem.building.columns - 1))
+        row = random.randint(0, self.problem.building.rows - 1)
+        column = random.randint(0, self.problem.building.columns - 1)
+        if len(self.routers) < 50 and self.problem.building.place_router(row, column):
+            self.routers.append((row, column))
+        elif self.routers:
+            row, column = self.routers.popleft()
+            self.problem.building.remove_router(row, column)
 
 class CommandResult(Enum):
     SUCCESS = 0
@@ -102,7 +110,7 @@ class Controller:
 
             problem = deepcopy(self.__problem)
             algorithm = MockAlgorithm(problem)
-            opt_win = OptimizationWindow(problem, algorithm, max_framerate=300)
+            opt_win = OptimizationWindow(problem, algorithm, max_framerate=5)
             opt_win.launch()
 
             problem.dump_to_file('solution.txt')
