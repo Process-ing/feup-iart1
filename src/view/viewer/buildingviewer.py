@@ -27,27 +27,25 @@ class BuildingViewer(PygameViewer[Building]):
 
         palette[CellType.VOID.value] = (0x36, 0x00, 0x43)
         palette[CellType.VOID.value | Building.BACKBONE_BIT] = (0xec, 0xe2, 0x56)
-        palette[CellType.VOID.value | Building.CONNECTED_BIT] = (0x36, 0x00, 0x43)
-        palette[CellType.VOID.value | Building.BACKBONE_BIT | Building.CONNECTED_BIT] = \
+        palette[CellType.VOID.value | Building.COVERED_BIT] = (0x36, 0x00, 0x43)
+        palette[CellType.VOID.value | Building.BACKBONE_BIT | Building.COVERED_BIT] = \
             (0xec, 0xe2, 0x56)
+        palette[CellType.VOID.value | Building.ROUTER_BIT | Building.BACKBONE_BIT \
+                | Building.COVERED_BIT] = (0x7f, 0xc3, 0x82)
 
         palette[CellType.TARGET.value] = (0x20, 0x60, 0x71)
         palette[CellType.TARGET.value | Building.BACKBONE_BIT] = (0xec, 0xe2, 0x56)
-        palette[CellType.TARGET.value | Building.CONNECTED_BIT] = (0x53, 0x92, 0xa4)
-        palette[CellType.TARGET.value | Building.BACKBONE_BIT | Building.CONNECTED_BIT] = \
+        palette[CellType.TARGET.value | Building.COVERED_BIT] = (0x53, 0x92, 0xa4)
+        palette[CellType.TARGET.value | Building.BACKBONE_BIT | Building.COVERED_BIT] = \
             (0xec, 0xe2, 0x56)
+        palette[CellType.TARGET.value | Building.ROUTER_BIT | Building.BACKBONE_BIT \
+                | Building.COVERED_BIT] = (0x7f, 0xc3, 0x82)
 
         palette[CellType.WALL.value] = (0x33, 0x35, 0x6c)
         palette[CellType.WALL.value | Building.BACKBONE_BIT] = (0xca, 0xb8, 0x1c)
-        palette[CellType.WALL.value | Building.CONNECTED_BIT] = (0x33, 0x35, 0x6c)
-        palette[CellType.WALL.value | Building.BACKBONE_BIT | Building.CONNECTED_BIT] = \
+        palette[CellType.WALL.value | Building.COVERED_BIT] = (0x33, 0x35, 0x6c)
+        palette[CellType.WALL.value | Building.BACKBONE_BIT | Building.COVERED_BIT] = \
             (0xca, 0xb8, 0x1c)
-
-        palette[CellType.ROUTER.value] = (0x7f, 0xc3, 0x82)
-        palette[CellType.ROUTER.value | Building.BACKBONE_BIT] = (0x7f, 0xc3, 0x82)
-        palette[CellType.ROUTER.value | Building.CONNECTED_BIT] = (0x7f, 0xc3, 0x82)
-        palette[CellType.ROUTER.value | Building.BACKBONE_BIT | Building.CONNECTED_BIT] = \
-            (0x7f, 0xc3, 0x82)
 
         return palette
 

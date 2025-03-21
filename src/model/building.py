@@ -2,6 +2,7 @@ from enum import Enum
 from typing import Iterator, Tuple, cast
 from collections import deque
 import numpy as np
+from copy import deepcopy
 
 from src.model.error import ProblemLoadError
 
@@ -11,12 +12,12 @@ class CellType(Enum):
     VOID = 0
     TARGET = 1
     WALL = 2
-    ROUTER = 3
 
 class Building:
     BACKBONE_BIT = 1 << 7  # Marks a cell connected to the backbone
-    CONNECTED_BIT = 1 << 6  # Marks a cell connected to a router
-    CELL_TYPE_MASK = 0b00111111  # Mask for the cell type
+    COVERED_BIT = 1 << 6  # Marks a cell covered by a router
+    ROUTER_BIT = 1 << 5  # Marks a cell as a router
+    CELL_TYPE_MASK = 0b00011111  # Mask for the cell type
 
     CHAR_CELL_MAP = {
         ord('-'): CellType.VOID,
@@ -89,7 +90,7 @@ class Building:
 
         while queue:
             row, col = queue.popleft()
-            if self.__cells[row, col] == CellType.ROUTER.value:
+            if (self.__cells[row, col] & self.ROUTER_BIT) != 0:
                 routers.add((row,col))
             for i in range(4):
                 nr, nc = row + directions[i], col + directions[i+1]
@@ -125,7 +126,7 @@ class Building:
             for nrow, ncol in line_iter:
                 if neighborhood[nrow, ncol] & self.CELL_TYPE_MASK == CellType.WALL.value:
                     break
-                neighborhood[nrow, ncol] |= self.CONNECTED_BIT
+                neighborhood[nrow, ncol] |= self.COVERED_BIT
 
         square_iters = [
             (((nrow, ncol) for nrow in range(ctr_row - 1, -1, -1) for ncol in range(ctr_col - 1, -1, -1)), 1, 1),
@@ -137,9 +138,9 @@ class Building:
         for square_iter, rstep, cstep in square_iters:
             for nrow, ncol in square_iter:
                 if neighborhood[nrow, ncol] & self.CELL_TYPE_MASK != CellType.WALL.value \
-                    and neighborhood[nrow + rstep, ncol] & self.CONNECTED_BIT \
-                    and neighborhood[nrow, ncol + cstep] & self.CONNECTED_BIT:
-                    neighborhood[nrow, ncol] |= self.CONNECTED_BIT
+                    and neighborhood[nrow + rstep, ncol] & self.COVERED_BIT \
+                    and neighborhood[nrow, ncol + cstep] & self.COVERED_BIT:
+                    neighborhood[nrow, ncol] |= self.COVERED_BIT
 
         self.__cells[row_start:row_start + row_len, col_start:col_start + col_len] |= neighborhood
 
@@ -149,21 +150,17 @@ class Building:
         # current_cell = self.__cells[row, column]
 
         if self.__cells[row, column] & self.CELL_TYPE_MASK == CellType.WALL.value:
-            return
+            return False
 
         # # Check if router is already placed
-        if self.__cells[row, column] & self.CELL_TYPE_MASK == CellType.ROUTER.value:
-            return
+        if (self.__cells[row, column] & self.ROUTER_BIT) != 0:
+            return False
 
-        # place router
-        self.__cells[row, column] = CellType.ROUTER.value | self.CONNECTED_BIT
+        self.__cells[row, column] |= self.ROUTER_BIT | self.COVERED_BIT | self.BACKBONE_BIT
         self.connect_neighbors(row, column)
+        return True
 
         # TODO(henriquesfernandes): Connect router to the backbone
-
-        # TODO(henriquesfernandes): Mark cells as connected (attention to walls)
-
-
 
 
         #
@@ -172,19 +169,23 @@ class Building:
         #     # NOTE(Process-ing): This is not checking walls while specifying connectivity!
         #     self.__cells[row - self.__router_range:row + self.__router_range + 1,
         #                  column - self.__router_range:column + self.__router_range + 1] \
-        #         |= self.CONNECTED_BIT
+        #         |= self.COVERED_BIT
 
         # return self.copy()
 
-    def remove_router(self, row: int, column: int) -> None:
-        pass
+    def remove_router(self, row: int, column: int) -> bool:
+        # Ignore if router is already placed
+        if (self.__cells[row, column] & self.ROUTER_BIT) == 0:
+            return False
+
+        self.__cells[row, column] &= ~self.ROUTER_BIT
+        return True
 
     def get_neighborhood(self) -> Iterator['Building']:
         for row in range(self.__cells.shape[0]):
             for col in range(self.__cells.shape[1]):
-                if (self.__cells[row, col] & self.CELL_TYPE_MASK) != CellType.WALL.value:
-                    neighbor = self.copy().place_router(row, col)
+                neighbor = deepcopy(neighbor)
+                if neighbor.place_router(row, col):
                     yield neighbor
-                if self.__cells[row, col] == CellType.ROUTER.value:
-                    neighbor = self.copy().remove_router(row, col)
+                elif neighbor.remove_router(row, col):
                     yield neighbor
