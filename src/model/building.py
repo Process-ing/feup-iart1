@@ -1,8 +1,8 @@
 from enum import Enum
 from typing import Iterator, Tuple, cast
 from collections import deque
-import numpy as np
 from copy import deepcopy
+import numpy as np
 
 from src.model.error import ProblemLoadError
 
@@ -102,18 +102,19 @@ class Building:
         return routers, backbones
 
     def cover_neighbors(self, row: int, col: int) -> None:
-        R = self.__router_range
+        rrange = self.__router_range
 
-        row_start = max(0, row - R)
-        row_len = min(self.__cells.shape[0] - row_start, 2 * R + 1)
-        col_start = max(0, col - R)
-        col_len = min(self.__cells.shape[1] - col_start, 2 * R + 1)
+        row_start = max(0, row - rrange)
+        row_len = min(self.__cells.shape[0] - row_start, 2 * rrange + 1)
+        col_start = max(0, col - rrange)
+        col_len = min(self.__cells.shape[1] - col_start, 2 * rrange + 1)
 
         ctr_row = row - row_start
         ctr_col = col - col_start
 
         neighborhood = np.zeros((row_len, col_len), dtype=np.uint8)
-        neighborhood |= self.__cells[row_start:row_start + row_len, col_start:col_start + col_len] & Building.CELL_TYPE_MASK
+        neighborhood |= self.__cells[row_start:row_start + row_len, \
+            col_start:col_start + col_len] & Building.CELL_TYPE_MASK
 
         neighborhood[ctr_row, ctr_col] |= self.COVERED_BIT
 
@@ -131,10 +132,14 @@ class Building:
                 neighborhood[nrow, ncol] |= self.COVERED_BIT
 
         square_iters = [
-            (((nrow, ncol) for nrow in range(ctr_row - 1, -1, -1) for ncol in range(ctr_col - 1, -1, -1)), 1, 1),
-            (((nrow, ncol) for nrow in range(ctr_row - 1, -1, -1) for ncol in range(ctr_col + 1, col_len)), 1, -1),
-            (((nrow, ncol) for nrow in range(ctr_row + 1, row_len) for ncol in range(ctr_col - 1, -1, -1)), -1, 1),
-            (((nrow, ncol) for nrow in range(ctr_row + 1, row_len) for ncol in range(ctr_col + 1, col_len)), -1, -1),
+            (((nrow, ncol) for nrow in range(ctr_row - 1, -1, -1)
+                for ncol in range(ctr_col - 1, -1, -1)), 1, 1),
+            (((nrow, ncol) for nrow in range(ctr_row - 1, -1, -1)
+                for ncol in range(ctr_col + 1, col_len)), 1, -1),
+            (((nrow, ncol) for nrow in range(ctr_row + 1, row_len)
+                for ncol in range(ctr_col - 1, -1, -1)), -1, 1),
+            (((nrow, ncol) for nrow in range(ctr_row + 1, row_len)
+                for ncol in range(ctr_col + 1, col_len)), -1, -1),
         ]
 
         for square_iter, rstep, cstep in square_iters:
@@ -206,7 +211,7 @@ class Building:
     def get_neighborhood(self) -> Iterator['Building']:
         for row in range(self.__cells.shape[0]):
             for col in range(self.__cells.shape[1]):
-                neighbor = deepcopy(neighbor)
+                neighbor: Building = deepcopy(neighbor)
                 if neighbor.place_router(row, col):
                     yield neighbor
                 elif neighbor.remove_router(row, col):

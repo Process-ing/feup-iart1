@@ -1,13 +1,13 @@
 from copy import deepcopy
 from enum import Enum
-from typing import Optional, override
-from src.model.building import CellType
+from typing import Optional, Tuple, override
+import random
+from collections import deque
+
 from src.algorithm import Algorithm
 from src.model import RouterProblem
 from src.view import Cli
 from src.view.window import OptimizationWindow, ProblemWindow
-import random
-from collections import deque
 
 # TODO(Process-ing): Remove this
 class MockAlgorithm(Algorithm):
@@ -15,7 +15,7 @@ class MockAlgorithm(Algorithm):
         # self.i = 0
         # self.j = 0
         self.problem = problem
-        self.routers = deque()
+        self.routers: deque[Tuple[int, int]] = deque()
 
     @override
     def step(self) -> None:
