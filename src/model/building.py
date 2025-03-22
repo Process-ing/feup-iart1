@@ -3,6 +3,7 @@ from typing import Iterator, Tuple, cast
 from collections import deque
 from copy import deepcopy
 import numpy as np
+import random
 
 from src.model.error import ProblemLoadError
 
@@ -157,7 +158,7 @@ class Building:
         current_cell = self.__cells[row, column]
 
         # Check if position is valid (routers cannot be placed inside walls)
-        if current_cell & self.CELL_TYPE_MASK == CellType.WALL.value or current_cell & self.CELL_TYPE_MASK == CellType.VOID.value:
+        if current_cell & self.CELL_TYPE_MASK == CellType.WALL.value: #or current_cell & self.CELL_TYPE_MASK == CellType.VOID.value:
             return False
 
         # Check if router is already placed
@@ -234,3 +235,14 @@ class Building:
                     yield neighbor
                 elif neighbor.remove_router(row, col):
                     yield neighbor
+
+    def lazy_next_move(self, place_probability: float) -> Iterator[Tuple[str, int, int]]:
+        while True:
+            if random.random() < place_probability:
+                row = random.randint(0, self.rows - 1)
+                col = random.randint(0, self.columns - 1)
+                print("Placing router at", row, col)
+                yield ('place', row, col)
+            else:
+                print("Removing router")
+                yield ('remove', 0, 0)
