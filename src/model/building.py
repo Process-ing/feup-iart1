@@ -153,32 +153,50 @@ class Building:
 
     # TODO(Process-ing): Remove this
     def place_router(self, row: int, column: int) -> bool:
-        # Check if position is valid
-        # current_cell = self.__cells[row, column]
 
-        if self.__cells[row, column] & self.CELL_TYPE_MASK == CellType.WALL.value:
+        current_cell = self.__cells[row, column]
+
+        # Check if position is valid (routers cannot be placed inside walls)
+        if current_cell & self.CELL_TYPE_MASK == CellType.WALL.value or current_cell & self.CELL_TYPE_MASK == CellType.VOID.value:
             return False
 
-        # # Check if router is already placed
-        if (self.__cells[row, column] & self.ROUTER_BIT) != 0:
+        # Check if router is already placed
+        if (current_cell & self.ROUTER_BIT) != 0:
             return False
 
-        self.__cells[row, column] |= self.ROUTER_BIT | self.BACKBONE_BIT
+        # Place the router
+        self.__cells[row, column] |= self.ROUTER_BIT
+
+        # Connect the router to the backbone (BFS)
+        queue = deque([(row, column)])
+        visited = np.zeros((self.rows, self.columns), dtype=bool)
+        parent = {}
+        directions = [0, 1, 0, -1, 0]
+
+        while queue:
+            r, c = queue.popleft()
+            if visited[r, c]:
+                continue
+            visited[r, c] = True
+
+            if self.__cells[r, c] & self.BACKBONE_BIT:
+                while (r, c) != (row, column):
+                    self.__cells[r, c] |= self.BACKBONE_BIT
+                    r, c = parent[(r, c)]
+                self.__cells[r, c] |= self.BACKBONE_BIT
+                break
+
+            for i in range(4):
+                nr, nc = r + directions[i], c + directions[i+1]
+                if 0 <= nr < self.rows and 0 <= nc < self.columns and not visited[nr, nc]:
+                    queue.append((nr, nc))
+                    parent[(nr, nc)] = (r, c)
+
+
+        # Update router coverage
         self.cover_neighbors(row, column)
+
         return True
-
-        # TODO(henriquesfernandes): Connect router to the backbone
-
-
-        #
-        # if self.__cells[row, column] & self.CELL_TYPE_MASK != CellType.WALL.value:
-        #     self.__cells[row, column] = CellType.ROUTER.value
-        #     # NOTE(Process-ing): This is not checking walls while specifying connectivity!
-        #     self.__cells[row - self.__router_range:row + self.__router_range + 1,
-        #                  column - self.__router_range:column + self.__router_range + 1] \
-        #         |= self.COVERED_BIT
-
-        # return self.copy()
 
     def update_neighbor_coverage(self, row: int, column: int) -> None:
         cell_row_start = max(0, row - self.__router_range)
