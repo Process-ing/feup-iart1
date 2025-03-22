@@ -4,6 +4,7 @@ from collections import deque
 from copy import deepcopy
 import numpy as np
 
+from model.disjoint_set import DisjointSet
 from src.model.error import ProblemLoadError
 
 type CellArray = np.ndarray[tuple[int, ...], np.dtype[np.uint8]]
@@ -207,6 +208,66 @@ class Building:
         self.__cells[row, column] &= ~(self.ROUTER_BIT | self.BACKBONE_BIT)
         self.update_neighbor_coverage(row, column)
         return True
+
+    def reconnect_routers(self) -> None:
+        self.__cells &= ~self.BACKBONE_BIT
+        self.__cells[self.__backbone_root] |= self.BACKBONE_BIT
+
+        routers = [(r, c) for r, c in zip(*np.where(self.__cells & self.ROUTER_BIT))]
+        if not routers:
+            return
+        
+        def reconstruct_path(pred, p):
+            res = set()
+            while p:
+                res.add(p)
+                p = pred.get(p, None)
+            return res
+
+        def steiner_tree(grid, terminals) -> None:
+            ROWS, COLS = len(grid), len(grid[0])
+            directions = [(1, 1), (-1, -1), (1, -1), (-1, 1), (1, 0), (-1, 0), (0, 1), (0, -1)]
+            
+            terminal_indices = {t: i for i, t in enumerate(terminals)}
+            dsu = DisjointSet(len(terminals))
+            queue = deque()
+            source = {}
+            pred = {}
+            res = set()
+
+            for (x, y) in terminals:
+                queue.append(((x, y), (x, y), None, None))
+            
+            while queue and dsu.forests > 1:
+                (x, y), src, p1, p2 = queue.popleft()
+
+                if (x,y) not in source:
+                    source[(x, y)] = src
+                    pred[(x, y)] = p1
+
+                    for dx, dy in directions:
+                        nx, ny = x + dx, y + dy
+                        if 0 <= nx < ROWS and 0 <= ny < COLS and (nx,ny) not in source:
+                            queue.append(((nx, ny), src, (x, y), None))
+                    
+                    continue
+
+                if dsu.connected(terminal_indices[source[(x,y)]], terminal_indices[src]):
+                    continue
+
+                if (x, y) in terminals:
+                    dsu.union(terminal_indices[source[(x, y)]], terminal_indices[src])
+                    res |= reconstruct_path(pred, p1)
+                    res |= reconstruct_path(pred, p2)
+                else:
+                    queue.append((source[(x, y)], src, p1, (x, y)))
+
+            return res
+
+        tree_cells = steiner_tree(self.__cells, [self.__backbone_root] + routers)
+
+        for row, col in tree_cells:
+            self.__cells[row, col] |= self.BACKBONE_BIT
 
     def get_neighborhood(self) -> Iterator['Building']:
         for row in range(self.__cells.shape[0]):
