@@ -355,6 +355,27 @@ class Building:
                 row, col = routers.pop()
                 yield Operator(False, row, col, self.__check_budget)
 
+    def crossover(self, other: 'Building') -> Tuple['Building', 'Building']:
+        stripped_self = self.__cells & ~self.BACKBONE_BIT
+        stripped_self[self.__backbone_root] |= self.BACKBONE_BIT
+        stripped_other = other.__cells & ~other.BACKBONE_BIT
+        stripped_other[other.__backbone_root] |= other.BACKBONE_BIT
+
+        lower_row = random.randint(0, self.rows - 1)
+        upper_row = random.randint(upper_row + 1, self.rows)
+        lower_col = random.randint(0, self.columns - 1)
+        upper_col = random.randint(upper_col + 1, self.columns)
+
+        temp_rect = stripped_self[lower_row:upper_row, lower_col:upper_col].copy()
+        stripped_self[lower_row:upper_row, lower_col:upper_col] = stripped_other[lower_row:upper_row, lower_col:upper_col]
+        stripped_other[lower_row:upper_row, lower_col:upper_col] = temp_rect
+
+        child1 = Building(stripped_self, self.__router_range, self.__backbone_root, self.__check_budget, self.__new_router_probability)
+        child2 = Building(stripped_other, other.__router_range, other.__backbone_root, other.__check_budget, other.__new_router_probability)
+
+        return child1, child2
+
+
     def get_num_targets(self) -> int:
         return np.count_nonzero(self.__cells & self.CELL_TYPE_MASK == CellType.TARGET.value)
 
