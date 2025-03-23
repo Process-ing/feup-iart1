@@ -70,7 +70,7 @@ class RouterProblem:
         backbone_cells = [(i, j) for (i, j), cell in np.ndenumerate(building_map) \
             if cell & Building.BACKBONE_BIT]
         router_cells = [(i, j) for (i, j), cell in np.ndenumerate(building_map) \
-            if cell & Building.CELL_TYPE_MASK == CellType.ROUTER.value]
+            if cell & Building.ROUTER_BIT]
 
         with open(filename, 'w', encoding='utf-8') as file:
             file.write(f'{len(backbone_cells)}\n')
