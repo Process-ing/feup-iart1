@@ -7,7 +7,7 @@ from src.model import RouterProblem
 class RandomDescent(Algorithm):
     """
     Random Descent Algorithm
-    Picks a random neighbor to explore (despite the score)
+    Picks a random neighbor to explore, if it improves the score
     """
     def __init__(self, problem: RouterProblem) -> None:
         self.__problem = problem
@@ -18,8 +18,10 @@ class RandomDescent(Algorithm):
         if self.__done:
             return
 
+        current_score = self.__problem.get_score(self.__problem.building)
+
         for neighbor in self.__problem.building.get_neighborhood():
-            if self.__problem.get_score(neighbor) > self.__problem.get_score(self.__problem.building):
+            if self.__problem.get_score(neighbor) > current_score:
                 self.__problem.building = neighbor
                 return
         self.__done = True

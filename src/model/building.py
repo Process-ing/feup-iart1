@@ -226,9 +226,9 @@ class Building:
             return False
 
         self.__cells[row, column] &= ~(self.ROUTER_BIT | self.BACKBONE_BIT) \
-            if (self.__cells[row, column] & self.BACKBONE_BIT) == 0 \
+            if (row, column) != self.__backbone_root \
             else ~self.ROUTER_BIT
-        
+
         self.update_neighbor_coverage(row, column)
         self.reconnect_routers()
         return True
@@ -250,14 +250,14 @@ class Building:
 
         def steiner_tree(grid, terminals: list[tuple[int, int]]) -> set[tuple[int, int]]:
             rows, cols = len(grid), len(grid[0])
-            directions = [(1, 1), (-1, -1), (1, -1), (-1, 1), (1, 0), (-1, 0), (0, 1), (0, -1)]
+            directions = [(1, 0), (-1, 0), (0, 1), (0, -1), (1, 1), (-1, -1), (1, -1), (-1, 1)]
 
             terminal_indices = {t: i for i, t in enumerate(terminals)}
             dsu = DisjointSet(len(terminals))
             queue = deque()
             source = {}
             pred = {}
-            res = set()
+            res = set(terminals)
 
             for (x, y) in terminals:
                 queue.append(((x, y), (x, y), None, None))
