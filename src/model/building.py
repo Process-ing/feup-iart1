@@ -237,12 +237,19 @@ class Building:
                     yield neighbor
 
     def lazy_next_move(self, place_probability: float) -> Iterator[Tuple[str, int, int]]:
+        used = set()
+
         while True:
             if random.random() < place_probability:
-                row = random.randint(0, self.rows - 1)
-                col = random.randint(0, self.columns - 1)
-                print("Placing router at", row, col)
-                yield ('place', row, col)
+                while True:
+                    row = random.randint(0, self.rows - 1)
+                    col = random.randint(0, self.columns - 1)
+                    if (row, col) not in used:
+                        used.add((row, col))
+                        print("Placing router at", row, col)
+                        yield ('place', row, col)
+                        break;
             else:
+                # TODO(henriquesfernandes): Implement router removal
                 print("Removing router")
                 yield ('remove', 0, 0)

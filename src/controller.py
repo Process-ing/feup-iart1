@@ -49,6 +49,7 @@ class RandAlgorithm(Algorithm):
     @override
     def step(self) -> None:
         next_move = next(self.next_move_generator)
+
         if next_move[0] == "place":
             if self.problem.building.place_router(next_move[1], next_move[2]):
                 self.routers.append((next_move[1], next_move[2]))
