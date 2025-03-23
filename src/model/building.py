@@ -225,8 +225,12 @@ class Building:
         if (self.__cells[row, column] & self.ROUTER_BIT) == 0:
             return False
 
-        self.__cells[row, column] &= ~(self.ROUTER_BIT | self.BACKBONE_BIT)
+        self.__cells[row, column] &= ~(self.ROUTER_BIT | self.BACKBONE_BIT) \
+            if (self.__cells[row, column] & self.BACKBONE_BIT) == 0 \
+            else ~self.ROUTER_BIT
+        
         self.update_neighbor_coverage(row, column)
+        self.reconnect_routers()
         return True
 
     def reconnect_routers(self) -> None:
@@ -293,7 +297,7 @@ class Building:
         while True:
             row = random.randint(0, self.rows - 1)
             col = random.randint(0, self.columns - 1)
-            
+
             neighbor: Building = deepcopy(self)
             if neighbor.place_router(row, col):
                 yield neighbor
@@ -317,3 +321,12 @@ class Building:
                 # TODO(henriquesfernandes): Implement router removal
                 print("Removing router")
                 yield ('remove', 0, 0)
+
+    def get_num_routers(self) -> int:
+        return np.count_nonzero(self.__cells & self.ROUTER_BIT)
+
+    def get_num_connected_cells(self) -> int:
+        return np.count_nonzero(self.__cells & self.BACKBONE_BIT) - 1
+
+    def get_coverage(self) -> int:
+        return np.count_nonzero(self.__cells & (self.CELL_TYPE_MASK | self.COVERED_BIT) == CellType.TARGET.value | self.COVERED_BIT)

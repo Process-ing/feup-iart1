@@ -13,7 +13,7 @@ class OptimizationWindow(PygameWindow):
         super().__init__(max_framerate)
 
         self.__problem = problem
-        self.__score = problem.get_score()
+        self.__score = problem.get_score(problem.building)
         self.__algorithm = algorithm
         self.__font: pygame.font.Font | None = None
         self.__building_viewer = BuildingViewer()
@@ -106,7 +106,7 @@ class OptimizationWindow(PygameWindow):
             return
 
         self.__algorithm.step()
-        self.__score = self.__problem.get_score()
+        self.__score = self.__problem.get_score(self.__problem.building)
 
     def toggle_pause(self) -> None:
         self.__paused = not self.__paused
