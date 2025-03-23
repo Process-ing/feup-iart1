@@ -26,12 +26,13 @@ class Building:
         ord('#'): CellType.WALL,
     }
 
-    def __init__(self, cells: CellArray, router_range: int) -> None:
+    def __init__(self, cells: CellArray, router_range: int, backbone: tuple[int, int]) -> None:
         self.__cells: CellArray = cells
         self.__router_range = router_range
+        self.__backbone_root = backbone
 
     @classmethod
-    def from_text(cls, shape: Tuple[int, int], backbone: tuple[int, ...],
+    def from_text(cls, shape: Tuple[int, int], backbone: tuple[int, int],
                   text: str, router_range: int) -> 'Building':
         rows, columns = shape
         if rows < 1 or columns < 1:
@@ -55,7 +56,7 @@ class Building:
 
         cells[backbone] |= cls.BACKBONE_BIT
 
-        return cls(cells, router_range)
+        return cls(cells, router_range, backbone)
 
     @property
     def rows(self) -> int:
@@ -213,21 +214,21 @@ class Building:
         self.__cells &= ~self.BACKBONE_BIT
         self.__cells[self.__backbone_root] |= self.BACKBONE_BIT
 
-        routers = [(r, c) for r, c in zip(*np.where(self.__cells & self.ROUTER_BIT))]
+        routers = list(zip(*np.where(self.__cells & self.ROUTER_BIT)))
         if not routers:
             return
-        
-        def reconstruct_path(pred, p):
+
+        def reconstruct_path(pred, p: tuple[int, int]) -> set[tuple[int, int]]:
             res = set()
             while p:
                 res.add(p)
                 p = pred.get(p, None)
             return res
 
-        def steiner_tree(grid, terminals) -> None:
-            ROWS, COLS = len(grid), len(grid[0])
+        def steiner_tree(grid, terminals: list[tuple[int, int]]) -> set[tuple[int, int]]:
+            rows, cols = len(grid), len(grid[0])
             directions = [(1, 1), (-1, -1), (1, -1), (-1, 1), (1, 0), (-1, 0), (0, 1), (0, -1)]
-            
+
             terminal_indices = {t: i for i, t in enumerate(terminals)}
             dsu = DisjointSet(len(terminals))
             queue = deque()
@@ -237,7 +238,7 @@ class Building:
 
             for (x, y) in terminals:
                 queue.append(((x, y), (x, y), None, None))
-            
+
             while queue and dsu.forests > 1:
                 (x, y), src, p1, p2 = queue.popleft()
 
@@ -247,9 +248,9 @@ class Building:
 
                     for dx, dy in directions:
                         nx, ny = x + dx, y + dy
-                        if 0 <= nx < ROWS and 0 <= ny < COLS and (nx,ny) not in source:
+                        if 0 <= nx < rows and 0 <= ny < cols and (nx,ny) not in source:
                             queue.append(((nx, ny), src, (x, y), None))
-                    
+
                     continue
 
                 if dsu.connected(terminal_indices[source[(x,y)]], terminal_indices[src]):
