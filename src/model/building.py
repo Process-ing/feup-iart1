@@ -171,14 +171,13 @@ class Building:
         # Connect the router to the backbone (BFS)
         queue = deque([(row, column)])
         visited = np.zeros((self.rows, self.columns), dtype=bool)
+        visited[(row, column)] = True
         parent = {}
-        directions = [0, 1, 0, -1, 0]
+
+        directions = [(-1, -1), (-1, 1), (1, -1), (1, 1),(-1, 0), (1, 0), (0, -1), (0, 1) ]
 
         while queue:
             r, c = queue.popleft()
-            if visited[r, c]:
-                continue
-            visited[r, c] = True
 
             if self.__cells[r, c] & self.BACKBONE_BIT:
                 while (r, c) != (row, column):
@@ -187,10 +186,11 @@ class Building:
                 self.__cells[r, c] |= self.BACKBONE_BIT
                 break
 
-            for i in range(4):
-                nr, nc = r + directions[i], c + directions[i+1]
+            for dr, dc in directions:
+                nr, nc = r + dr, c + dc
                 if 0 <= nr < self.rows and 0 <= nc < self.columns and not visited[nr, nc]:
                     queue.append((nr, nc))
+                    visited[(nr, nc)] = True
                     parent[(nr, nc)] = (r, c)
 
 

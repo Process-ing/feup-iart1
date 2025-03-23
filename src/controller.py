@@ -133,7 +133,7 @@ class Controller:
 
             problem = deepcopy(self.__problem)
             algorithm = RandAlgorithm(problem)
-            opt_win = OptimizationWindow(problem, algorithm, max_framerate=5)
+            opt_win = OptimizationWindow(problem, algorithm, max_framerate=600)
             opt_win.launch()
 
             problem.dump_to_file("solution.txt")
