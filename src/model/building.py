@@ -1,5 +1,5 @@
 from enum import Enum
-from typing import Iterator, Tuple, cast, List
+from typing import Callable, Iterator, Tuple, cast, List
 from collections import deque
 from copy import deepcopy
 import numpy as np
@@ -9,6 +9,27 @@ from src.model.disjoint_set import DisjointSet
 from src.model.error import ProblemLoadError
 
 type CellArray = np.ndarray[tuple[int, ...], np.dtype[np.uint8]]
+
+
+type CheckBudgetCallback = Callable[['Building'], bool]
+
+class Operator:
+    def __init__(self, place: bool, row: int, col: int, check_budget: CheckBudgetCallback) -> None:
+        self.place = place
+        self.row = row
+        self.col = col
+        self.check_budget = check_budget
+
+    def apply(self, building: 'Building') -> 'Building':
+        new_building = deepcopy(building)
+
+        if self.place:
+            success = new_building.place_router(self.row, self.col)
+        else:
+            success = new_building.remove_router(self.row, self.col)
+
+        return new_building if success and self.check_budget(new_building) else None
+
 
 class CellType(Enum):
     VOID = 0
@@ -27,17 +48,17 @@ class Building:
         ord('#'): CellType.WALL,
     }
 
-    def __init__(self, cells: CellArray, router_range: int, backbone: tuple[int, int], new_router_probability: float) -> None:
+    def __init__(self, cells: CellArray, router_range: int, backbone: tuple[int, int],
+                 check_budget: CheckBudgetCallback, new_router_probability: float) -> None:
         self.__cells: CellArray = cells
         self.__router_range = router_range
         self.__backbone_root = backbone
+        self.__check_budget = check_budget
         self.__new_router_probability = new_router_probability
-
-
 
     @classmethod
     def from_text(cls, shape: Tuple[int, int], backbone: tuple[int, int],
-                  text: str, router_range: int) -> 'Building':
+                  text: str, router_range: int, check_budget: CheckBudgetCallback) -> 'Building':
         rows, columns = shape
         if rows < 1 or columns < 1:
             raise ProblemLoadError(f'Invalid building size {rows}x{columns}')
@@ -60,7 +81,7 @@ class Building:
 
         cells[backbone] |= cls.BACKBONE_BIT
 
-        return cls(cells, router_range, backbone, 0.75)
+        return cls(cells, router_range, backbone, check_budget, 1 - 1 / router_range**2)
 
     @property
     def rows(self) -> int:
@@ -74,11 +95,15 @@ class Building:
     def shape(self) -> tuple[int, int]:
         return cast(tuple[int, int], self.__cells.shape)
 
-    def get_routers(self) -> List[tuple[int, int]]:
+    @property
+    def router_range(self) -> int:
+        return self.__router_range
+
+    def  get_routers(self) -> List[tuple[int, int]]:
         return list(zip(*np.where(self.__cells & self.ROUTER_BIT)))
 
     def get_target_cells(self) -> List[tuple[int, int]]:
-        return list(zip(*np.where(self.__cells & self.CELL_TYPE_MASK == CellType.TARGET.value)))
+        return list(zip(*np.where(self.__cells & (self.CELL_TYPE_MASK | self.COVERED_BIT) == CellType.TARGET.value)))
 
     def __str__(self) -> str:
         return '\n'.join(''.join(map(chr, row)) for row in self.__cells)
@@ -185,7 +210,7 @@ class Building:
         visited[(row, column)] = True
         parent = {}
 
-        directions = [(-1, -1), (-1, 1), (1, -1), (1, 1),(-1, 0), (1, 0), (0, -1), (0, 1) ]
+        directions = [(-1, 0), (1, 0), (0, -1), (0, 1), (-1, -1), (-1, 1), (1, -1), (1, 1)]
 
         while queue:
             r, c = queue.popleft()
@@ -302,7 +327,7 @@ class Building:
         for row, col in tree_cells:
             self.__cells[row, col] |= self.BACKBONE_BIT
 
-    def get_neighborhood(self) -> Iterator['Building']:
+    def get_neighborhood(self) -> Iterator[Operator]:
         """
         Generates neighboring building configurations by placing or removing routers.
 
@@ -312,38 +337,26 @@ class Building:
         a router is based on a predefined probability.
 
         Yields:
-            Building: A new building configuration with a router placed or removed.
+            Building: A new building configuration wi'Operator'th a router placed or removed.
         """
         routers = self.get_routers()
         targets = self.get_target_cells()
         random.shuffle(routers)
         random.shuffle(targets)
 
-        while True:
-            neighbor: Building = deepcopy(self)
+        while routers or targets:
+            rand_num = random.random()
 
-            if routers and targets:
-                # If there are routers and targets, choose to place or remove a router based on the probability
-                if random.random() < self.__new_router_probability:
-                    row, col = targets.pop()
-                    if neighbor.place_router(row, col):
-                        yield neighbor
-                else:
-                    row, col = routers.pop()
-                    if neighbor.remove_router(row, col):
-                        yield neighbor
-            elif routers: 
-                # If there are only routers, remove a router
-                row, col = routers.pop()
-                if neighbor.remove_router(row, col):
-                    yield neighbor
-            elif targets:
-                # If there are only targets, place a router
+            if (rand_num < self.__new_router_probability and targets) or not routers:
                 row, col = targets.pop()
-                if neighbor.place_router(row, col):
-                    yield neighbor
+                yield Operator(True, row, col, self.__check_budget)
+
             else:
-                break
+                row, col = routers.pop()
+                yield Operator(False, row, col, self.__check_budget)
+
+    def get_num_targets(self) -> int:
+        return np.count_nonzero(self.__cells & self.CELL_TYPE_MASK == CellType.TARGET.value)
 
     def get_num_routers(self) -> int:
         return np.count_nonzero(self.__cells & self.ROUTER_BIT)

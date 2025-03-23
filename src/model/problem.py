@@ -24,8 +24,9 @@ class RouterProblem:
         rows, columns, router_range = initial_section[0:3]
         budget_info = cast(BudgetInfo, tuple(initial_section[3:6]))
         backbone = cast(tuple[int, int], tuple(initial_section[6:8]))
+        check_budget = lambda building: cls.check_budget(budget_info[1], budget_info[0], budget_info[2], building)
 
-        building = Building.from_text((rows, columns), backbone, building_section, router_range)
+        building = Building.from_text((rows, columns), backbone, building_section, router_range, check_budget)
 
         return cls(building, router_range, budget_info, backbone)
 
@@ -47,13 +48,12 @@ class RouterProblem:
                 (num_routers * self.router_price) - \
                 (num_connected_cells * self.backbone_price))
 
-    def check_budget(self) -> int:
-        num_routers = self.__building.get_num_routers()
-        num_connected_cells = self.__building.get_num_connected_cells()
+    @staticmethod
+    def check_budget(router_price: int, backbone_price: int, budget: int, building: Building) -> int:
+        num_routers = building.get_num_routers()
+        num_connected_cells = building.get_num_connected_cells()
 
-        return (num_routers * self.router_price + \
-                num_connected_cells * self.backbone_price) \
-                    <= self.budget
+        return num_routers * router_price + num_connected_cells * backbone_price <= budget
 
     def dump_to_file(self, filename: str) -> None:
         building_map = self.__building.as_nparray()

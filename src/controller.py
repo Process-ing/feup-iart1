@@ -4,7 +4,7 @@ from typing import Optional, Tuple, override
 import random
 from collections import deque
 
-from src.algorithm import Algorithm, RandomWalk, RandomDescent, SimulatedAnnealing
+from src.algorithm import Algorithm, RandomWalk, RandomDescent, SimulatedAnnealing, TabuSearch
 from src.model import RouterProblem
 from src.view import Cli
 from src.view.window import OptimizationWindow, ProblemWindow
@@ -14,7 +14,6 @@ class CommandResult(Enum):
     FAILURE = 1
     FILE_ERROR = 2
     EXIT = 3
-
 
 class Controller:
     def __init__(self, cli: Cli, problem: Optional[RouterProblem] = None):
@@ -84,7 +83,7 @@ class Controller:
                 return CommandResult.FAILURE
 
             problem = deepcopy(self.__problem)
-            algorithm = SimulatedAnnealing(problem)
+            algorithm = TabuSearch(problem)
             opt_win = OptimizationWindow(problem, algorithm, max_framerate=600)
             opt_win.launch()
 
