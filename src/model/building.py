@@ -1,5 +1,5 @@
 from enum import Enum
-from typing import Iterator, Tuple, cast
+from typing import Iterator, Tuple, cast, List
 from collections import deque
 from copy import deepcopy
 import numpy as np
@@ -27,10 +27,13 @@ class Building:
         ord('#'): CellType.WALL,
     }
 
-    def __init__(self, cells: CellArray, router_range: int, backbone: tuple[int, int]) -> None:
+    def __init__(self, cells: CellArray, router_range: int, backbone: tuple[int, int], new_router_probability: float) -> None:
         self.__cells: CellArray = cells
         self.__router_range = router_range
         self.__backbone_root = backbone
+        self.__new_router_probability = new_router_probability
+
+
 
     @classmethod
     def from_text(cls, shape: Tuple[int, int], backbone: tuple[int, int],
@@ -57,7 +60,7 @@ class Building:
 
         cells[backbone] |= cls.BACKBONE_BIT
 
-        return cls(cells, router_range, backbone)
+        return cls(cells, router_range, backbone, 0.75)
 
     @property
     def rows(self) -> int:
@@ -70,6 +73,12 @@ class Building:
     @property
     def shape(self) -> tuple[int, int]:
         return cast(tuple[int, int], self.__cells.shape)
+
+    def get_routers(self) -> List[tuple[int, int]]:
+        return list(zip(*np.where(self.__cells & self.ROUTER_BIT)))
+
+    def get_target_cells(self) -> List[tuple[int, int]]:
+        return list(zip(*np.where(self.__cells & self.CELL_TYPE_MASK == CellType.TARGET.value)))
 
     def __str__(self) -> str:
         return '\n'.join(''.join(map(chr, row)) for row in self.__cells)
@@ -160,7 +169,7 @@ class Building:
         current_cell = self.__cells[row, column]
 
         # Check if position is valid (routers cannot be placed inside walls)
-        if current_cell & self.CELL_TYPE_MASK == CellType.WALL.value: #or current_cell & self.CELL_TYPE_MASK == CellType.VOID.value:
+        if current_cell & self.CELL_TYPE_MASK == CellType.WALL.value or current_cell & self.CELL_TYPE_MASK == CellType.VOID.value:
             return False
 
         # Check if router is already placed
@@ -294,33 +303,47 @@ class Building:
             self.__cells[row, col] |= self.BACKBONE_BIT
 
     def get_neighborhood(self) -> Iterator['Building']:
-        while True:
-            row = random.randint(0, self.rows - 1)
-            col = random.randint(0, self.columns - 1)
+        """
+        Generates neighboring building configurations by placing or removing routers.
 
+        This method shuffles the list of routers and target cells, then iteratively
+        creates new building configurations by either placing a router in a target cell
+        or removing a router from its current position. The decision to place or remove
+        a router is based on a predefined probability.
+
+        Yields:
+            Building: A new building configuration with a router placed or removed.
+        """
+        routers = self.get_routers()
+        targets = self.get_target_cells()
+        random.shuffle(routers)
+        random.shuffle(targets)
+
+        while True:
             neighbor: Building = deepcopy(self)
-            if neighbor.place_router(row, col):
-                yield neighbor
-            elif neighbor.remove_router(row, col):
-                yield neighbor
 
-    def lazy_next_move(self, place_probability: float) -> Iterator[Tuple[str, int, int]]:
-        used = set()
-
-        while True:
-            if random.random() < place_probability:
-                while True:
-                    row = random.randint(0, self.rows - 1)
-                    col = random.randint(0, self.columns - 1)
-                    if (row, col) not in used:
-                        used.add((row, col))
-                        print("Placing router at", row, col)
-                        yield ('place', row, col)
-                        break;
+            if routers and targets:
+                # If there are routers and targets, choose to place or remove a router based on the probability
+                if random.random() < self.__new_router_probability:
+                    row, col = targets.pop()
+                    if neighbor.place_router(row, col):
+                        yield neighbor
+                else:
+                    row, col = routers.pop()
+                    if neighbor.remove_router(row, col):
+                        yield neighbor
+            elif routers: 
+                # If there are only routers, remove a router
+                row, col = routers.pop()
+                if neighbor.remove_router(row, col):
+                    yield neighbor
+            elif targets:
+                # If there are only targets, place a router
+                row, col = targets.pop()
+                if neighbor.place_router(row, col):
+                    yield neighbor
             else:
-                # TODO(henriquesfernandes): Implement router removal
-                print("Removing router")
-                yield ('remove', 0, 0)
+                break
 
     def get_num_routers(self) -> int:
         return np.count_nonzero(self.__cells & self.ROUTER_BIT)
