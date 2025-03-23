@@ -33,6 +33,10 @@ class RouterProblem:
     def building(self) -> Building:
         return self.__building
 
+    @building.setter
+    def building(self, building: Building) -> None:
+        self.__building = building
+
     def get_score(self) -> int:
         cost = 0
         covered = set()
@@ -79,3 +83,5 @@ class RouterProblem:
             file.write(f'{len(router_cells)}\n')
             for (row, col) in router_cells:
                 file.write(f'{row} {col}\n')
+
+

@@ -5,7 +5,7 @@ from copy import deepcopy
 import numpy as np
 import random
 
-from model.disjoint_set import DisjointSet
+from src.model.disjoint_set import DisjointSet
 from src.model.error import ProblemLoadError
 
 type CellArray = np.ndarray[tuple[int, ...], np.dtype[np.uint8]]
@@ -290,13 +290,15 @@ class Building:
             self.__cells[row, col] |= self.BACKBONE_BIT
 
     def get_neighborhood(self) -> Iterator['Building']:
-        for row in range(self.__cells.shape[0]):
-            for col in range(self.__cells.shape[1]):
-                neighbor: Building = deepcopy(neighbor)
-                if neighbor.place_router(row, col):
-                    yield neighbor
-                elif neighbor.remove_router(row, col):
-                    yield neighbor
+        while True:
+            row = random.randint(0, self.rows - 1)
+            col = random.randint(0, self.columns - 1)
+            
+            neighbor: Building = deepcopy(self)
+            if neighbor.place_router(row, col):
+                yield neighbor
+            elif neighbor.remove_router(row, col):
+                yield neighbor
 
     def lazy_next_move(self, place_probability: float) -> Iterator[Tuple[str, int, int]]:
         used = set()

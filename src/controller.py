@@ -4,7 +4,7 @@ from typing import Optional, Tuple, override
 import random
 from collections import deque
 
-from src.algorithm import Algorithm
+from src.algorithm import Algorithm, RandomWalk
 from src.model import RouterProblem
 from src.view import Cli
 from src.view.window import OptimizationWindow, ProblemWindow
@@ -133,7 +133,7 @@ class Controller:
                 return CommandResult.FAILURE
 
             problem = deepcopy(self.__problem)
-            algorithm = RandAlgorithm(problem)
+            algorithm = RandomWalk(problem)
             opt_win = OptimizationWindow(problem, algorithm, max_framerate=600)
             opt_win.launch()
 
