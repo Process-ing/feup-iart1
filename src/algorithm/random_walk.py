@@ -16,7 +16,10 @@ class RandomWalk(Algorithm):
         if self.__done:
             return
 
-        for neighbor in self.__problem.building.get_neighborhood():
+        for operator in self.__problem.building.get_neighborhood():
+            neighbor = operator.apply(self.__problem.building)
+            if not neighbor:
+                continue
             self.__problem.building = neighbor
             return
         self.__done = True

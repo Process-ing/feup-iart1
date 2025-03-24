@@ -20,7 +20,11 @@ class RandomDescent(Algorithm):
 
         current_score = self.__problem.get_score(self.__problem.building)
 
-        for neighbor in self.__problem.building.get_neighborhood():
+        for operator in self.__problem.building.get_neighborhood():
+            neighbor = operator.apply(self.__problem.building)
+            if not neighbor:
+                continue
+            
             if self.__problem.get_score(neighbor) > current_score:
                 self.__problem.building = neighbor
                 return
