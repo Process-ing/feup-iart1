@@ -44,6 +44,3 @@ class SimulatedAnnealing(Algorithm):
                         yield
 
             self.__temperature *= self.__cooling_schedule
-
-    def done(self) -> bool:
-        return self.__done

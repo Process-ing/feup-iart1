@@ -83,7 +83,7 @@ class Controller:
                 return CommandResult.FAILURE
 
             problem = deepcopy(self.__problem)
-            algorithm = SimulatedAnnealing(problem, max_iterations=200)
+            algorithm = TabuSearch(problem, max_iterations=200)
             opt_win = OptimizationWindow(problem, algorithm, max_framerate=600)
             opt_win.launch()
 
