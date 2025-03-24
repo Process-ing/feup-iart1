@@ -362,9 +362,9 @@ class Building:
         stripped_other[other.__backbone_root] |= other.BACKBONE_BIT
 
         lower_row = random.randint(0, self.rows - 1)
-        upper_row = random.randint(upper_row + 1, self.rows)
+        upper_row = random.randint(lower_row + 1, self.rows)
         lower_col = random.randint(0, self.columns - 1)
-        upper_col = random.randint(upper_col + 1, self.columns)
+        upper_col = random.randint(lower_col + 1, self.columns)
 
         temp_rect = stripped_self[lower_row:upper_row, lower_col:upper_col].copy()
         stripped_self[lower_row:upper_row, lower_col:upper_col] = stripped_other[lower_row:upper_row, lower_col:upper_col]

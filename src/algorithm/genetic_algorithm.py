@@ -1,5 +1,7 @@
 from copy import deepcopy
 import random
+from typing import override
+from src.model import Building
 from src.model import RouterProblem
 from src.algorithm.algorithm import Algorithm
 
@@ -8,7 +10,7 @@ class GeneticAlgorithm(Algorithm):
     """
     Genetic Algorithm
     """
-    def __init__(self, problem: RouterProblem, population_size: int = 10, max_generations: int = 10) -> None:
+    def __init__(self, problem: RouterProblem, population_size: int = 10, max_generations: int = 1000) -> None:
         self.__problem = problem
         self.__population_size = population_size
         self.__max_generations = max_generations
@@ -27,19 +29,31 @@ class GeneticAlgorithm(Algorithm):
             for i in range(self.__population_size)
             if random.random() < probabilities[i]
         ]
+        if len(parents) < 2:
+            parents = self.__population
 
         # Perform crossover to create offspring
-        offspring = []
+        offspring: list[Building] = []
         for _ in range(self.__population_size // 2):
             parent1, parent2 = random.sample(parents, 2)
             child1, child2 = parent1.crossover(parent2)
             offspring.extend([child1, child2])
 
         # Perform mutation on offspring
+        for i, individual in enumerate(offspring):
+            if random.random() < 0.5:  # Mutation probability
+                for operator in individual.get_neighborhood():
+                    mutated = operator.apply(individual)
+                    if mutated is not None and self.__problem.get_score(mutated) > self.__problem.get_score(individual):
+                        offspring[i] = mutated
+                        break
+
+        best_score = self.__problem.get_score(self.__problem.building)
         for individual in offspring:
-            if random.random() < 0.1:  # Mutation probability
-                mutation_point = random.randint(0, len(individual) - 1)
-                individual[mutation_point] = self.__problem.mutate(individual[mutation_point])
+            score = self.__problem.get_score(individual)
+            if score > best_score:
+                best_score = score
+                self.__problem.building = individual
 
         # Replace old population with new offspring
         self.__population = offspring
@@ -47,3 +61,8 @@ class GeneticAlgorithm(Algorithm):
         # Check termination condition
         self.__done = self.__max_generations == 0
         self.__max_generations -= 1
+
+    @override
+    @property
+    def done(self):
+        return self.__done
