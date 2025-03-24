@@ -83,7 +83,7 @@ class Controller:
                 return CommandResult.FAILURE
 
             problem = deepcopy(self.__problem)
-            algorithm = RandomWalk(problem, max_iterations=10)
+            algorithm = RandomDescent(problem)
             opt_win = OptimizationWindow(problem, algorithm, max_framerate=600)
             opt_win.launch()
 

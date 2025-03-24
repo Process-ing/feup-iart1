@@ -11,25 +11,24 @@ class RandomDescent(Algorithm):
     """
     def __init__(self, problem: RouterProblem) -> None:
         self.__problem = problem
-        self.__done = False
 
     @override
-    def step(self):
-        if self.__done:
-            return
+    def run(self):
+        while True:
+            found_neighbor = False
+            current_score = self.__problem.get_score(self.__problem.building)
 
-        current_score = self.__problem.get_score(self.__problem.building)
+            for operator in self.__problem.building.get_neighborhood():
+                neighbor = operator.apply(self.__problem.building)
+                if not neighbor:
+                    yield
+                    continue
 
-        for operator in self.__problem.building.get_neighborhood():
-            neighbor = operator.apply(self.__problem.building)
-            if not neighbor:
-                continue
-            
-            if self.__problem.get_score(neighbor) > current_score:
-                self.__problem.building = neighbor
-                return
-        self.__done = True
+                if self.__problem.get_score(neighbor) > current_score:
+                    self.__problem.building = neighbor
+                    found_neighbor = True
+                    break
 
-    @override
-    def done(self) -> bool:
-        return self.__done
+            yield
+            if not found_neighbor:
+                break

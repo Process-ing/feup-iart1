@@ -5,7 +5,3 @@ class Algorithm:
     @abstractmethod
     def run(self) -> Iterator[None]:
         pass
-
-    @abstractmethod
-    def done(self) -> bool:
-        pass
