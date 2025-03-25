@@ -8,13 +8,14 @@ from src.view.viewer import ChartButton
 
 class OptimizationWindow(PygameWindow):
     def __init__(self, problem: RouterProblem, algorithm: Algorithm,
-        max_framerate: float = 0) -> None:
+        max_framerate: float = 60) -> None:
 
         super().__init__(max_framerate)
 
         self.__problem = problem
-        self.__score = problem.get_score()
+        self.__score = problem.get_score(problem.building)
         self.__algorithm = algorithm
+        self.__run = algorithm.run()
         self.__font: pygame.font.Font | None = None
         self.__building_viewer = BuildingViewer()
         self.__pause_button: PauseButton | None = None
@@ -105,8 +106,8 @@ class OptimizationWindow(PygameWindow):
         if self.__paused:
             return
 
-        self.__algorithm.step()
-        self.__score = self.__problem.get_score()
+        next(self.__run, None)
+        self.__score = self.__problem.get_score(self.__problem.building)
 
     def toggle_pause(self) -> None:
         self.__paused = not self.__paused

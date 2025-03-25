@@ -1,6 +1,7 @@
 from abc import abstractmethod
+from typing import Iterator
 
 class Algorithm:
     @abstractmethod
-    def step(self) -> None:
+    def run(self) -> Iterator[None]:
         pass

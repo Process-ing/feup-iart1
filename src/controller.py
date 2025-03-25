@@ -4,66 +4,16 @@ from typing import Optional, Tuple, override
 import random
 from collections import deque
 
-from src.algorithm import Algorithm
+from src.algorithm import Algorithm, RandomWalk, RandomDescent, SimulatedAnnealing, TabuSearch, GeneticAlgorithm
 from src.model import RouterProblem
 from src.view import Cli
 from src.view.window import OptimizationWindow, ProblemWindow
-
-
-# TODO(Process-ing): Remove this
-class MockAlgorithm(Algorithm):
-    def __init__(self, problem: RouterProblem) -> None:
-        # self.i = 0
-        # self.j = 0
-        self.problem = problem
-        self.routers: deque[Tuple[int, int]] = deque()
-
-    @override
-    def step(self) -> None:
-        # if self.problem.building.as_nparray()[self.j, self.i] != CellType.WALL.value:
-        #     self.problem.building.place_router(self.j, self.i)
-        # self.i += 1
-        # if self.i == self.problem.building.columns:
-        #     self.i = 0
-        #     self.j += 1
-        #     if self.j == self.problem.building.rows:
-        #         self.j = 0
-        row = random.randint(0, self.problem.building.rows - 1)
-        column = random.randint(0, self.problem.building.columns - 1)
-        if len(self.routers) < 50 and self.problem.building.place_router(row, column):
-            self.routers.append((row, column))
-        elif self.routers:
-            row, column = self.routers.popleft()
-            self.problem.building.remove_router(row, column)
-
-
-class RandAlgorithm(Algorithm):
-    def __init__(self, problem: RouterProblem) -> None:
-        # self.i = 0
-        # self.j = 0
-        self.problem = problem
-        self.routers: deque[Tuple[int, int]] = deque()
-        self.new_router_prob = 1
-        self.next_move_generator = problem.building.lazy_next_move(self.new_router_prob)
-
-    @override
-    def step(self) -> None:
-        next_move = next(self.next_move_generator)
-
-        if next_move[0] == "place":
-            if self.problem.building.place_router(next_move[1], next_move[2]):
-                self.routers.append((next_move[1], next_move[2]))
-        elif next_move[0] == "remove" and self.routers:
-            row, column = self.routers.popleft()
-            self.problem.building.remove_router(row, column)
-
 
 class CommandResult(Enum):
     SUCCESS = 0
     FAILURE = 1
     FILE_ERROR = 2
     EXIT = 3
-
 
 class Controller:
     def __init__(self, cli: Cli, problem: Optional[RouterProblem] = None):
@@ -133,8 +83,24 @@ class Controller:
                 return CommandResult.FAILURE
 
             problem = deepcopy(self.__problem)
-            algorithm = RandAlgorithm(problem)
-            opt_win = OptimizationWindow(problem, algorithm, max_framerate=600)
+
+            algorithm_name = tokens[1]
+            if algorithm_name == "random-walk":
+                algorithm = RandomWalk(problem, max_iterations=200)
+            elif algorithm_name == "random-descent":
+                algorithm = RandomDescent(problem)
+            elif algorithm_name == "simulated-annealing":
+                algorithm = SimulatedAnnealing(problem, max_iterations=200)
+            elif algorithm_name == "tabu":
+                algorithm = TabuSearch(problem)
+            elif algorithm_name == "genetic":
+                algorithm = GeneticAlgorithm(problem, max_iterations=200)
+            else:
+                # TODO(Process-ing): Print usage
+                raise SystemError()
+
+
+            opt_win = OptimizationWindow(problem, algorithm)
             opt_win.launch()
 
             problem.dump_to_file("solution.txt")

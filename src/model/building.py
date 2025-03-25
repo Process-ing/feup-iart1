@@ -1,14 +1,35 @@
 from enum import Enum
-from typing import Iterator, Tuple, cast
+from typing import Callable, Iterator, Tuple, cast, List
 from collections import deque
 from copy import deepcopy
 import numpy as np
 import random
 
-from model.disjoint_set import DisjointSet
+from src.model.disjoint_set import DisjointSet
 from src.model.error import ProblemLoadError
 
 type CellArray = np.ndarray[tuple[int, ...], np.dtype[np.uint8]]
+
+
+type CheckBudgetCallback = Callable[['Building'], bool]
+
+class Operator:
+    def __init__(self, place: bool, row: int, col: int, check_budget: CheckBudgetCallback) -> None:
+        self.place = place
+        self.row = row
+        self.col = col
+        self.check_budget = check_budget
+
+    def apply(self, building: 'Building') -> 'Building':
+        new_building = deepcopy(building)
+
+        if self.place:
+            success = new_building.place_router(self.row, self.col)
+        else:
+            success = new_building.remove_router(self.row, self.col)
+
+        return new_building if success and self.check_budget(new_building) else None
+
 
 class CellType(Enum):
     VOID = 0
@@ -27,14 +48,17 @@ class Building:
         ord('#'): CellType.WALL,
     }
 
-    def __init__(self, cells: CellArray, router_range: int, backbone: tuple[int, int]) -> None:
+    def __init__(self, cells: CellArray, router_range: int, backbone: tuple[int, int],
+                 check_budget: CheckBudgetCallback, new_router_probability: float) -> None:
         self.__cells: CellArray = cells
         self.__router_range = router_range
         self.__backbone_root = backbone
+        self.__check_budget = check_budget
+        self.__new_router_probability = new_router_probability
 
     @classmethod
     def from_text(cls, shape: Tuple[int, int], backbone: tuple[int, int],
-                  text: str, router_range: int) -> 'Building':
+                  text: str, router_range: int, check_budget: CheckBudgetCallback) -> 'Building':
         rows, columns = shape
         if rows < 1 or columns < 1:
             raise ProblemLoadError(f'Invalid building size {rows}x{columns}')
@@ -57,7 +81,7 @@ class Building:
 
         cells[backbone] |= cls.BACKBONE_BIT
 
-        return cls(cells, router_range, backbone)
+        return cls(cells, router_range, backbone, check_budget, 1 - 1 / router_range**2)
 
     @property
     def rows(self) -> int:
@@ -70,6 +94,16 @@ class Building:
     @property
     def shape(self) -> tuple[int, int]:
         return cast(tuple[int, int], self.__cells.shape)
+
+    @property
+    def router_range(self) -> int:
+        return self.__router_range
+
+    def  get_routers(self) -> List[tuple[int, int]]:
+        return list(zip(*np.where(self.__cells & self.ROUTER_BIT)))
+
+    def get_target_cells(self) -> List[tuple[int, int]]:
+        return list(zip(*np.where(self.__cells & (self.CELL_TYPE_MASK | self.COVERED_BIT) == CellType.TARGET.value)))
 
     def __str__(self) -> str:
         return '\n'.join(''.join(map(chr, row)) for row in self.__cells)
@@ -160,7 +194,7 @@ class Building:
         current_cell = self.__cells[row, column]
 
         # Check if position is valid (routers cannot be placed inside walls)
-        if current_cell & self.CELL_TYPE_MASK == CellType.WALL.value: #or current_cell & self.CELL_TYPE_MASK == CellType.VOID.value:
+        if current_cell & self.CELL_TYPE_MASK == CellType.WALL.value or current_cell & self.CELL_TYPE_MASK == CellType.VOID.value:
             return False
 
         # Check if router is already placed
@@ -176,7 +210,7 @@ class Building:
         visited[(row, column)] = True
         parent = {}
 
-        directions = [(-1, -1), (-1, 1), (1, -1), (1, 1),(-1, 0), (1, 0), (0, -1), (0, 1) ]
+        directions = [(-1, 0), (1, 0), (0, -1), (0, 1), (-1, -1), (-1, 1), (1, -1), (1, 1)]
 
         while queue:
             r, c = queue.popleft()
@@ -225,8 +259,12 @@ class Building:
         if (self.__cells[row, column] & self.ROUTER_BIT) == 0:
             return False
 
-        self.__cells[row, column] &= ~(self.ROUTER_BIT | self.BACKBONE_BIT)
+        self.__cells[row, column] &= ~(self.ROUTER_BIT | self.BACKBONE_BIT) \
+            if (row, column) != self.__backbone_root \
+            else ~self.ROUTER_BIT
+
         self.update_neighbor_coverage(row, column)
+        self.reconnect_routers()
         return True
 
     def reconnect_routers(self) -> None:
@@ -246,14 +284,14 @@ class Building:
 
         def steiner_tree(grid, terminals: list[tuple[int, int]]) -> set[tuple[int, int]]:
             rows, cols = len(grid), len(grid[0])
-            directions = [(1, 1), (-1, -1), (1, -1), (-1, 1), (1, 0), (-1, 0), (0, 1), (0, -1)]
+            directions = [(1, 0), (-1, 0), (0, 1), (0, -1), (1, 1), (-1, -1), (1, -1), (-1, 1)]
 
             terminal_indices = {t: i for i, t in enumerate(terminals)}
             dsu = DisjointSet(len(terminals))
             queue = deque()
             source = {}
             pred = {}
-            res = set()
+            res = set(terminals)
 
             for (x, y) in terminals:
                 queue.append(((x, y), (x, y), None, None))
@@ -289,29 +327,63 @@ class Building:
         for row, col in tree_cells:
             self.__cells[row, col] |= self.BACKBONE_BIT
 
-    def get_neighborhood(self) -> Iterator['Building']:
-        for row in range(self.__cells.shape[0]):
-            for col in range(self.__cells.shape[1]):
-                neighbor: Building = deepcopy(neighbor)
-                if neighbor.place_router(row, col):
-                    yield neighbor
-                elif neighbor.remove_router(row, col):
-                    yield neighbor
+    def get_neighborhood(self) -> Iterator[Operator]:
+        """
+        Generates neighboring building configurations by placing or removing routers.
 
-    def lazy_next_move(self, place_probability: float) -> Iterator[Tuple[str, int, int]]:
-        used = set()
+        This method shuffles the list of routers and target cells, then iteratively
+        creates new building configurations by either placing a router in a target cell
+        or removing a router from its current position. The decision to place or remove
+        a router is based on a predefined probability.
 
-        while True:
-            if random.random() < place_probability:
-                while True:
-                    row = random.randint(0, self.rows - 1)
-                    col = random.randint(0, self.columns - 1)
-                    if (row, col) not in used:
-                        used.add((row, col))
-                        print("Placing router at", row, col)
-                        yield ('place', row, col)
-                        break;
+        Yields:
+            Building: A new building configuration wi'Operator'th a router placed or removed.
+        """
+        routers = self.get_routers()
+        targets = self.get_target_cells()
+        random.shuffle(routers)
+        random.shuffle(targets)
+
+        while routers or targets:
+            rand_num = random.random()
+
+            if (rand_num < self.__new_router_probability and targets) or not routers:
+                row, col = targets.pop()
+                yield Operator(True, row, col, self.__check_budget)
+
             else:
-                # TODO(henriquesfernandes): Implement router removal
-                print("Removing router")
-                yield ('remove', 0, 0)
+                row, col = routers.pop()
+                yield Operator(False, row, col, self.__check_budget)
+
+    def crossover(self, other: 'Building') -> Tuple['Building', 'Building']:
+        stripped_self = self.__cells & ~self.BACKBONE_BIT
+        stripped_self[self.__backbone_root] |= self.BACKBONE_BIT
+        stripped_other = other.__cells & ~other.BACKBONE_BIT
+        stripped_other[other.__backbone_root] |= other.BACKBONE_BIT
+
+        lower_row = random.randint(0, self.rows - 1)
+        upper_row = random.randint(lower_row + 1, self.rows)
+        lower_col = random.randint(0, self.columns - 1)
+        upper_col = random.randint(lower_col + 1, self.columns)
+
+        temp_rect = stripped_self[lower_row:upper_row, lower_col:upper_col].copy()
+        stripped_self[lower_row:upper_row, lower_col:upper_col] = stripped_other[lower_row:upper_row, lower_col:upper_col]
+        stripped_other[lower_row:upper_row, lower_col:upper_col] = temp_rect
+
+        child1 = Building(stripped_self, self.__router_range, self.__backbone_root, self.__check_budget, self.__new_router_probability)
+        child2 = Building(stripped_other, other.__router_range, other.__backbone_root, other.__check_budget, other.__new_router_probability)
+
+        return child1, child2
+
+
+    def get_num_targets(self) -> int:
+        return np.count_nonzero(self.__cells & self.CELL_TYPE_MASK == CellType.TARGET.value)
+
+    def get_num_routers(self) -> int:
+        return np.count_nonzero(self.__cells & self.ROUTER_BIT)
+
+    def get_num_connected_cells(self) -> int:
+        return np.count_nonzero(self.__cells & self.BACKBONE_BIT) - 1
+
+    def get_coverage(self) -> int:
+        return np.count_nonzero(self.__cells & (self.CELL_TYPE_MASK | self.COVERED_BIT) == CellType.TARGET.value | self.COVERED_BIT)
