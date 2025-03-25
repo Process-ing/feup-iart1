@@ -5,9 +5,10 @@ from src.model import RouterProblem
 from src.view.viewer import BuildingViewer, PauseButton
 from src.view.window.pygamewindow import PygameWindow
 from src.view.viewer import ChartButton
+from src.view.score_visualizer import ScoreVisualizer
 
 class OptimizationWindow(PygameWindow):
-    def __init__(self, problem: RouterProblem, algorithm: Algorithm,
+    def __init__(self, problem: RouterProblem, algorithm: Algorithm, visualizer: ScoreVisualizer,
         max_framerate: float = 60) -> None:
 
         super().__init__(max_framerate)
@@ -15,6 +16,7 @@ class OptimizationWindow(PygameWindow):
         self.__problem = problem
         self.__score = problem.get_score(problem.building)
         self.__algorithm = algorithm
+        self.__visualizer = visualizer
         self.__run = algorithm.run()
         self.__font: pygame.font.Font | None = None
         self.__building_viewer = BuildingViewer()
@@ -108,6 +110,7 @@ class OptimizationWindow(PygameWindow):
 
         next(self.__run, None)
         self.__score = self.__problem.get_score(self.__problem.building)
+        self.__visualizer.update_scores(self.__score)
 
     def toggle_pause(self) -> None:
         self.__paused = not self.__paused
