@@ -349,7 +349,7 @@ class Building:
         a router is based on a predefined probability.
 
         Yields:
-            Building: A new building configuration wi'Operator'th a router placed or removed.
+            Building: A new building configuration with a router placed or removed.
         """
         routers = self.get_routers()
         targets = self.get_target_cells()
