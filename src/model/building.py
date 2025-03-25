@@ -367,18 +367,47 @@ class Building:
                 yield Operator(False, row, col, self.__check_budget)
 
     def crossover(self, other: 'Building') -> Tuple['Building', 'Building'] | None:
-        stripped_self = self.__cells & ~(self.COVERED_BIT | self.BACKBONE_BIT)
-        stripped_self[stripped_self & self.ROUTER_BIT != 0] |= self.BACKBONE_BIT
-        stripped_self[self.__backbone_root] |= self.BACKBONE_BIT
+        max_row, max_col = self.rows, self.columns
 
-        stripped_other = other.__cells & ~(other.COVERED_BIT | other.BACKBONE_BIT)
-        stripped_other[stripped_other & other.ROUTER_BIT != 0] |= other.BACKBONE_BIT
-        stripped_other[other.__backbone_root] |= other.BACKBONE_BIT
+        lower_row = random.randint(0, max_row - 2)
+        upper_row = random.randint(lower_row + 1, max_row - 1)
+        lower_col = random.randint(0, max_col - 2)
+        upper_col = random.randint(lower_col + 1, max_col - 1)
 
-        lower_row = random.randint(0, self.rows - 1)
-        upper_row = random.randint(lower_row + 1, self.rows)
-        lower_col = random.randint(0, self.columns - 1)
-        upper_col = random.randint(lower_col + 1, self.columns)
+        def clear_edges(grid):
+            directions = [(-1, 0), (1, 0), (0, -1), (0, 1), (-1, -1), (-1, 1), (1, -1), (1, 1)]
+            queue = deque()
+
+            for r in range(lower_row, upper_row):
+                if (grid[r, lower_col] & self.BACKBONE_BIT) != 0:
+                    queue.append((r, lower_col))
+                if (grid[r, upper_col] & self.BACKBONE_BIT) != 0:
+                    queue.append((r, upper_col))
+            for c in range(lower_col, upper_col):
+                if (grid[lower_row, c] & self.BACKBONE_BIT) != 0:
+                    queue.append((lower_row, c))
+                if (grid[upper_row, c] & self.BACKBONE_BIT) != 0:
+                    queue.append((upper_row, c))
+            
+            while queue:
+                r, c = queue.popleft()
+
+                grid[r, c] &= ~(self.ROUTER_BIT | self.BACKBONE_BIT) \
+                    if (r, c) != self.__backbone_root \
+                    else ~self.ROUTER_BIT
+
+                for dr, dc in directions:
+                    new_r, new_c = r + dr, c + dc
+                    if 0 <= new_r < max_row and 0 <= new_c < max_col and \
+                        (grid[new_r, new_c] & self.BACKBONE_BIT) != 0 and \
+                        (grid[new_r, new_c] & self.ROUTER_BIT) == 0 and \
+                        (new_r, new_c) != self.__backbone_root:
+                        queue.append((new_r, new_c))
+
+        stripped_self = self.__cells & ~self.COVERED_BIT
+        clear_edges(stripped_self)
+        stripped_other = other.__cells & ~other.COVERED_BIT
+        clear_edges(stripped_self)
 
         temp_rect = stripped_self[lower_row:upper_row, lower_col:upper_col].copy()
         stripped_self[lower_row:upper_row, lower_col:upper_col] = stripped_other[lower_row:upper_row, lower_col:upper_col]
