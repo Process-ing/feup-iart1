@@ -255,23 +255,35 @@ class Building:
                     self.cover_neighbors(rrow, rcol)
 
     def remove_router(self, row: int, column: int) -> bool:
-        # Ignore if router is already placed
         if (self.__cells[row, column] & self.ROUTER_BIT) == 0:
             return False
 
-        self.__cells[row, column] &= ~(self.ROUTER_BIT | self.BACKBONE_BIT) \
-            if (row, column) != self.__backbone_root \
-            else ~self.ROUTER_BIT
+        max_row, max_col = self.rows, self.columns
+        directions = [(-1, 0), (1, 0), (0, -1), (0, 1), (-1, -1), (-1, 1), (1, -1), (1, 1)]
+        queue = deque()
+        queue.append((row, column))
 
-        self.update_neighbor_coverage(row, column)
+        while queue:
+            r, c = queue.popleft()
+
+            self.__cells[r, c] &= ~(self.ROUTER_BIT | self.BACKBONE_BIT) \
+                if (r, c) != self.__backbone_root \
+                else ~self.ROUTER_BIT
+            
+            for dr, dc in directions:
+                new_r, new_c = r + dr, c + dc
+                if 0 <= new_r < max_row and 0 <= new_c < max_col and \
+                    (self.__cells[new_r, new_c] & self.BACKBONE_BIT) != 0 and \
+                    (self.__cells[new_r, new_c] & self.ROUTER_BIT) == 0 and \
+                    (new_r, new_c) != self.__backbone_root:
+                    queue.append((new_r, new_c))
+
         self.reconnect_routers()
+        self.update_neighbor_coverage(row, column)
         return True
 
     def reconnect_routers(self) -> None:
-        self.__cells &= ~self.BACKBONE_BIT
-        self.__cells[self.__backbone_root] |= self.BACKBONE_BIT
-
-        routers = list(zip(*np.where(self.__cells & self.ROUTER_BIT)))
+        routers = list(zip(*np.where(self.__cells & self.BACKBONE_BIT)))
         if not routers:
             return
 
@@ -337,7 +349,7 @@ class Building:
         a router is based on a predefined probability.
 
         Yields:
-            Building: A new building configuration wi'Operator'th a router placed or removed.
+            Building: A new building configuration with a router placed or removed.
         """
         routers = self.get_routers()
         targets = self.get_target_cells()
