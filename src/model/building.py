@@ -366,13 +366,13 @@ class Building:
                 row, col = routers.pop()
                 yield Operator(False, row, col, self.__check_budget)
 
-    def crossover(self, other: 'Building') -> Tuple['Building', 'Building']:
+    def crossover(self, other: 'Building') -> Tuple['Building', 'Building'] | None:
         stripped_self = self.__cells & ~(self.COVERED_BIT | self.BACKBONE_BIT)
-        stripped_self[stripped_self & self.ROUTER_BIT] |= self.BACKBONE_BIT
+        stripped_self[stripped_self & self.ROUTER_BIT != 0] |= self.BACKBONE_BIT
         stripped_self[self.__backbone_root] |= self.BACKBONE_BIT
 
         stripped_other = other.__cells & ~(other.COVERED_BIT | other.BACKBONE_BIT)
-        stripped_self[stripped_self & other.ROUTER_BIT] |= other.BACKBONE_BIT
+        stripped_other[stripped_other & other.ROUTER_BIT != 0] |= other.BACKBONE_BIT
         stripped_other[other.__backbone_root] |= other.BACKBONE_BIT
 
         lower_row = random.randint(0, self.rows - 1)
@@ -386,10 +386,19 @@ class Building:
 
         child1 = Building(stripped_self, self.__router_range, self.__backbone_root, self.__check_budget, self.__new_router_probability)
         child1.reconnect_routers()
+        if not self.__check_budget(child1):
+            return None
+        for router in child1.get_routers():
+            child1.cover_neighbors(*router)
+
         child2 = Building(stripped_other, other.__router_range, other.__backbone_root, other.__check_budget, other.__new_router_probability)
         child2.reconnect_routers()
+        if not other.__check_budget(child2):
+            return None
+        for router in child2.get_routers():
+            child2.cover_neighbors(*router)
 
-        return child1, child2
+        return child1, child1
 
 
     def get_num_targets(self) -> int:

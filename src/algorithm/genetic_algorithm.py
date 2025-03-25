@@ -20,6 +20,8 @@ class GeneticAlgorithm(Algorithm):
     def run(self) -> Iterator[None]:
         original_building = self.__problem.building
         population = []
+        best_score = float('-inf')
+        best_neighbor = None
 
         for _ in range(self.__population_size):
             self.__problem.building = original_building
@@ -53,21 +55,27 @@ class GeneticAlgorithm(Algorithm):
 
             # Perform crossover to create offspring
             offspring: list[Building] = []
-            for _ in range(self.__population_size // 2):
+            num_crosses = 0
+            while num_crosses < self.__population_size // 2:
                 parent1, parent2 = random.choices(population, weights=fitness_scores, k=2)
-                child1, child2 = parent1.crossover(parent2)
-                offspring.extend([child1, child2])
+
+                children = parent1.crossover(parent2)
+                if children is None:
+                    yield
+                    continue
+
+                offspring.extend(children)
+                num_crosses += 1
                 yield
 
             # Perform mutation on offspring
             for i, individual in enumerate(offspring):
-                if random.random() < 0.5:
-                    for operator in individual.get_neighborhood():
-                        mutated = operator.apply(individual)
-                        if mutated is not None and self.__problem.get_score(mutated) > self.__problem.get_score(individual):
-                            offspring[i] = mutated
-                            yield
-                            break
+                for operator in individual.get_neighborhood():
+                    mutated = operator.apply(individual)
+                    if mutated is not None and self.__problem.get_score(mutated) > self.__problem.get_score(individual):
+                        offspring[i] = mutated
+                        yield
+                        break
 
             best_score = self.__problem.get_score(self.__problem.building)
             for individual in offspring:
@@ -75,6 +83,7 @@ class GeneticAlgorithm(Algorithm):
                 if score > best_score:
                     best_score = score
                     self.__problem.building = individual
+            yield
 
             # Replace old population with new offspring
             population = offspring
