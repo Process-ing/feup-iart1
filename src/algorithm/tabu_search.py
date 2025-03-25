@@ -50,12 +50,17 @@ class TabuSearch(Algorithm):
                 else:
                     yield
 
+            if best_neighbor is None:  # Tabu tenure too long, whole neighborhood is tabu
+                self.__tabu.popleft()
+                yield
+                continue
+
             self.__problem.building = best_neighbor
+            self.__tabu.append(best_pos)
 
             if best_score > self.__best_score:
                 self.__best_solution = best_neighbor
                 self.__best_score = best_score
-                self.__tabu.append(best_pos)
 
             elif self.__tabu:
                 self.__tabu.popleft()

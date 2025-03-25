@@ -8,7 +8,7 @@ from src.view.viewer import ChartButton
 
 class OptimizationWindow(PygameWindow):
     def __init__(self, problem: RouterProblem, algorithm: Algorithm,
-        max_framerate: float = 0) -> None:
+        max_framerate: float = 60) -> None:
 
         super().__init__(max_framerate)
 

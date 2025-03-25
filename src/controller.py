@@ -83,8 +83,24 @@ class Controller:
                 return CommandResult.FAILURE
 
             problem = deepcopy(self.__problem)
-            algorithm = TabuSearch(problem, max_iterations=200)
-            opt_win = OptimizationWindow(problem, algorithm, max_framerate=600)
+
+            algorithm_name = tokens[1]
+            if algorithm_name == "random-walk":
+                algorithm = RandomWalk(problem, max_iterations=200)
+            elif algorithm_name == "random-descent":
+                algorithm = RandomDescent(problem)
+            elif algorithm_name == "simulated-annealing":
+                algorithm = SimulatedAnnealing(problem, max_iterations=200)
+            elif algorithm_name == "tabu":
+                algorithm = TabuSearch(problem)
+            elif algorithm_name == "genetic":
+                algorithm = GeneticAlgorithm(problem, max_iterations=200)
+            else:
+                # TODO(Process-ing): Print usage
+                raise SystemError()
+
+
+            opt_win = OptimizationWindow(problem, algorithm)
             opt_win.launch()
 
             problem.dump_to_file("solution.txt")
