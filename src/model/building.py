@@ -10,7 +10,6 @@ from src.model.error import ProblemLoadError
 
 type CellArray = np.ndarray[tuple[int, ...], np.dtype[np.uint8]]
 
-
 type CheckBudgetCallback = Callable[['Building'], bool]
 
 class Operator:
@@ -269,7 +268,7 @@ class Building:
             self.__cells[r, c] &= ~(self.ROUTER_BIT | self.BACKBONE_BIT) \
                 if (r, c) != self.__backbone_root \
                 else ~self.ROUTER_BIT
-            
+
             for dr, dc in directions:
                 new_r, new_c = r + dr, c + dc
                 if 0 <= new_r < max_row and 0 <= new_c < max_col and \
@@ -368,9 +367,12 @@ class Building:
                 yield Operator(False, row, col, self.__check_budget)
 
     def crossover(self, other: 'Building') -> Tuple['Building', 'Building']:
-        stripped_self = self.__cells & ~self.BACKBONE_BIT
+        stripped_self = self.__cells & ~(self.COVERED_BIT | self.BACKBONE_BIT)
+        stripped_self[stripped_self & self.ROUTER_BIT] |= self.BACKBONE_BIT
         stripped_self[self.__backbone_root] |= self.BACKBONE_BIT
-        stripped_other = other.__cells & ~other.BACKBONE_BIT
+
+        stripped_other = other.__cells & ~(other.COVERED_BIT | other.BACKBONE_BIT)
+        stripped_self[stripped_self & other.ROUTER_BIT] |= other.BACKBONE_BIT
         stripped_other[other.__backbone_root] |= other.BACKBONE_BIT
 
         lower_row = random.randint(0, self.rows - 1)
@@ -383,7 +385,9 @@ class Building:
         stripped_other[lower_row:upper_row, lower_col:upper_col] = temp_rect
 
         child1 = Building(stripped_self, self.__router_range, self.__backbone_root, self.__check_budget, self.__new_router_probability)
+        child1.reconnect_routers()
         child2 = Building(stripped_other, other.__router_range, other.__backbone_root, other.__check_budget, other.__new_router_probability)
+        child2.reconnect_routers()
 
         return child1, child2
 

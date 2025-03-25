@@ -94,7 +94,7 @@ class Controller:
             elif algorithm_name == "tabu":
                 algorithm = TabuSearch(problem)
             elif algorithm_name == "genetic":
-                algorithm = GeneticAlgorithm(problem, max_iterations=200)
+                algorithm = GeneticAlgorithm(problem, max_generations=200)
             else:
                 # TODO(Process-ing): Print usage
                 raise SystemError()
