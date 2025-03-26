@@ -407,7 +407,7 @@ class Building:
         stripped_self = self.__cells & ~self.COVERED_BIT
         clear_edges(stripped_self)
         stripped_other = other.__cells & ~other.COVERED_BIT
-        clear_edges(stripped_self)
+        clear_edges(stripped_other)
 
         temp_rect = stripped_self[lower_row:upper_row, lower_col:upper_col].copy()
         stripped_self[lower_row:upper_row, lower_col:upper_col] = stripped_other[lower_row:upper_row, lower_col:upper_col]
@@ -417,18 +417,18 @@ class Building:
         child1.reconnect_routers()
         if not self.__check_budget(child1):
             return None
-        for router in child1.get_routers():
-            child1.cover_neighbors(*router)
-
+        
         child2 = Building(stripped_other, other.__router_range, other.__backbone_root, other.__check_budget, other.__new_router_probability)
         child2.reconnect_routers()
         if not other.__check_budget(child2):
             return None
+
+        for router in child1.get_routers():
+            child1.cover_neighbors(*router)
         for router in child2.get_routers():
             child2.cover_neighbors(*router)
 
-        return child1, child1
-
+        return child1, child2
 
     def get_num_targets(self) -> int:
         return np.count_nonzero(self.__cells & self.CELL_TYPE_MASK == CellType.TARGET.value)
