@@ -40,7 +40,7 @@ class ScoreVisualizer:
             self.__enabled = True
             self.fig, self.ax = plt.subplots()
             (self.line,) = self.ax.plot([], [], "r-", label="Score")
-            (self.max_line,) = self.ax.plot([], [], "b-", label="Max Score")
+            (self.max_line,) = self.ax.plot([], [], "b--", label="Max Score")
             self.ax.legend()
             self.fig.canvas.manager.set_window_title("Score Graph")
             self.update_plot()
