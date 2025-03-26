@@ -100,7 +100,7 @@ class OptimizationWindow(PygameWindow):
 
                 click_pos = pygame.mouse.get_pos()
                 self.__pause_button.handle_click(click_pos, self.toggle_pause)
-                self.__chart_button.handle_click(click_pos, self.pause)
+                self.__chart_button.handle_click(click_pos, self.toggle_show_graf)
 
         self.__display(screen)
         pygame.display.flip()
@@ -114,6 +114,9 @@ class OptimizationWindow(PygameWindow):
 
     def toggle_pause(self) -> None:
         self.__paused = not self.__paused
+
+    def toggle_show_graf(self) -> None:
+        self.__visualizer.toggle_show_graph()
 
     def pause(self) -> None:
         self.__paused = True
