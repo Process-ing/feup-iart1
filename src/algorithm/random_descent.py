@@ -9,12 +9,13 @@ class RandomDescent(Algorithm):
     Random Descent Algorithm
     Picks a random neighbor to explore, if it improves the score
     """
-    def __init__(self, problem: RouterProblem) -> None:
+    def __init__(self, problem: RouterProblem, max_iterations: int = 2000000000000000) -> None:
         self.__problem = problem
+        self.__max_iterations = max_iterations
 
     @override
     def run(self):
-        while True:
+        for _ in range(self.__max_iterations):
             found_neighbor = False
             current_score = self.__problem.get_score(self.__problem.building)
 
@@ -28,6 +29,7 @@ class RandomDescent(Algorithm):
                     self.__problem.building = neighbor
                     found_neighbor = True
                     break
+                yield
 
             yield
             if not found_neighbor:
