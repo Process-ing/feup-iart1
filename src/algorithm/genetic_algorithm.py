@@ -71,7 +71,8 @@ class GeneticAlgorithm(Algorithm):
 
         for _ in range(self.__max_generations):
             # Evaluate fitness of the population
-            fitness_scores = [self.__problem.get_score(individual) for individual in population]
+            min_score = min(self.__problem.get_score(individual) for individual in population)
+            fitness_scores = [self.__problem.get_score(individual) - min_score + 1 for individual in population]
 
             # Perform crossover to create offspring
             offspring: list[Building] = []
@@ -88,42 +89,45 @@ class GeneticAlgorithm(Algorithm):
 
             for i, child in enumerate(offspring):
                 if random.random() < 0.5:
-                    operator = next(child.get_neighborhood(), None)
-                    if operator is not None:
+                    for operator in child.get_neighborhood():
                         neighbor = operator.apply(child)
                         if neighbor is not None:
                             child = neighbor
+                            yield
+                            break
                         yield
-
-                # child_score = self.__problem.get_score(child)
-
-                # for _ in range(5):
-                #     operator = next(child.get_neighborhood())
-                #     neighbor = operator.apply(child)
-                #     if not neighbor:
-                #         yield
-                #         continue
-
-                #     neighbor_score = self.__problem.get_score(neighbor)
-                #     if neighbor_score > child_score:
-                #         child = neighbor
-                #         child_score = neighbor_score
-                #         yield
 
                 offspring[i] = child
 
             self.sort_population(population)
             self.sort_population(offspring)
 
-            # print("", [self.__problem.get_score(individual) for individual in population])
-            # print("", [self.__problem.get_score(individual) for individual in offspring])
 
-            last_index = len(offspring) - 1
-            for i in range(len(population)):
-                if self.__problem.get_score(offspring[last_index - i]) < self.__problem.get_score(population[i]):
+            # Check similarity of individuals
+            filtered_offspring = []
+            for i in range(len(offspring)):
+                not_similar = True
+                for j in range(len(population)):
+                    if offspring[i].is_similar(population[j], max_similarity=0.001):
+                        not_similar = False
+                        break
+
+                for j in range(len(filtered_offspring)):
+                    if offspring[i].is_similar(filtered_offspring[j], max_similarity=0.001):
+                        not_similar = False
+                        break
+
+                if not_similar:
+                    filtered_offspring.append(offspring[i])
+
+            # Replace the worst individuals in the population
+            i = 0
+            for j in range(len(filtered_offspring) - 1, -1, -1):
+                if self.__problem.get_score(filtered_offspring[j]) < self.__problem.get_score(population[i]):
                     break
 
-                population[i] = offspring[last_index - i]
+                population[i] = filtered_offspring[j]
+                i += 1
                 yield
 
             best_individual = self.get_best_individual([population[0], population[-1]])

@@ -394,7 +394,7 @@ class Building:
                     queue.append((lower_row, c))
                 if (grid[upper_row, c] & self.BACKBONE_BIT) != 0:
                     queue.append((upper_row, c))
-            
+
             while queue:
                 r, c = queue.popleft()
 
@@ -423,7 +423,7 @@ class Building:
         child1.reconnect_routers()
         if not self.__check_budget(child1):
             return None
-        
+
         child2 = Building(stripped_other, other.__router_range, other.__backbone_root, other.__check_budget, other.__new_router_probability)
         child2.reconnect_routers()
         if not other.__check_budget(child2):
@@ -435,6 +435,9 @@ class Building:
             child2.cover_neighbors(*router)
 
         return child1, child2
+
+    def is_similar(self, other: 'Building', max_similarity: float) -> bool:
+        return np.count_nonzero(self.__cells != other.__cells) <= max_similarity * self.__cells.size
 
     def get_num_targets(self) -> int:
         return np.count_nonzero(self.__cells & self.CELL_TYPE_MASK == CellType.TARGET.value)
