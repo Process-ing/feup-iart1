@@ -5,6 +5,7 @@ import random
 from collections import deque
 
 from src.algorithm import Algorithm, RandomWalk, RandomDescent, SimulatedAnnealing, TabuSearch, GeneticAlgorithm
+from src.view.score_visualizer import ScoreVisualizer
 from src.model import RouterProblem
 from src.view import Cli
 from src.view.window import OptimizationWindow, ProblemWindow
@@ -100,7 +101,9 @@ class Controller:
                 raise SystemError()
 
 
-            opt_win = OptimizationWindow(problem, algorithm)
+            visualizer = ScoreVisualizer()
+            visualizer.show()
+            opt_win = OptimizationWindow(problem, algorithm, visualizer)
             opt_win.launch()
 
             problem.dump_to_file("solution.txt")
