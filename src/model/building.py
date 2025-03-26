@@ -361,10 +361,16 @@ class Building:
             if (rand_num < self.__new_router_probability and targets) or not routers:
                 row, col = targets.pop()
                 yield Operator(True, row, col, self.__check_budget)
-
             else:
                 row, col = routers.pop()
                 yield Operator(False, row, col, self.__check_budget)
+
+    def get_placement_neighborhood(self) -> Iterator[Operator]:
+        targets = self.get_target_cells()
+        random.shuffle(targets)
+
+        for row, col in targets:
+            yield Operator(True, row, col, self.__check_budget)
 
     def crossover(self, other: 'Building') -> Tuple['Building', 'Building'] | None:
         max_row, max_col = self.rows, self.columns

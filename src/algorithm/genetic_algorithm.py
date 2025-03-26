@@ -11,28 +11,34 @@ class GeneticAlgorithm(Algorithm):
     """
     Genetic Algorithm
     """
-    def __init__(self, problem: RouterProblem, population_size: int = 10, initial_routers: int = 30, max_generations: int = 1000000) -> None:
+    def __init__(self, problem: RouterProblem, population_size: int = 10, initial_routers: int | None = None, max_generations: int = 1000000) -> None:
         self.__problem = problem
         self.__population_size = population_size
         self.__max_generations = max_generations
-        self.__initial_routers = initial_routers
+
+        if initial_routers is None:
+            self.__initial_routers = self.__problem.budget // (self.__problem.router_price + self.__problem.backbone_price)
 
     def placement_descent(self) -> Iterator[None]:
         found_neighbor = False
         current_score = self.__problem.get_score(self.__problem.building)
 
         for _ in range(self.__initial_routers):
-            for operator in self.__problem.building.get_neighborhood():
-                neighbor = operator.apply(self.__problem.building)
-                if not neighbor:
-                    yield
-                    continue
-
-                if self.__problem.get_score(neighbor) > current_score:
-                    self.__problem.building = neighbor
-                    found_neighbor = True
-                    break
+            operator = next(self.__problem.building.get_placement_neighborhood(), None)
+            if not operator:
                 yield
+                continue
+
+            neighbor = operator.apply(self.__problem.building)
+            if not neighbor:
+                yield
+                continue
+
+            neighbor_score = self.__problem.get_score(neighbor)
+            if neighbor_score > current_score:
+                self.__problem.building = neighbor
+                current_score = neighbor_score
+                found_neighbor = True
 
             yield
             if not found_neighbor:
@@ -40,6 +46,9 @@ class GeneticAlgorithm(Algorithm):
 
     def sort_population(self, population: list[Building]) -> None:
         population.sort(key=lambda individual: self.__problem.get_score(individual))
+
+    def get_best_individual(self, population: list[Building]) -> Building:
+        return max(population, key=lambda individual: self.__problem.get_score(individual))
 
     @override
     def run(self) -> Iterator[None]:
@@ -74,40 +83,55 @@ class GeneticAlgorithm(Algorithm):
                     yield
                     continue
 
-                children = list(children)
-                for i, child in enumerate(children):
-                    child_score = self.__problem.get_score(child)
-
-                    for _ in range(self.__initial_routers):
-                        operator = next(child.get_neighborhood())
-                        neighbor = operator.apply(child)
-                        if not neighbor:
-                            yield
-                            continue
-
-                        neighbor_score = self.__problem.get_score(neighbor)
-                        if neighbor_score > child_score:
-                            children[i] = neighbor
-                            child_score = neighbor_score
-                            yield
-
                 offspring.extend(children)
                 yield
+
+            for i, child in enumerate(offspring):
+                if random.random() < 0.5:
+                    operator = next(child.get_neighborhood(), None)
+                    if operator is not None:
+                        neighbor = operator.apply(child)
+                        if neighbor is not None:
+                            child = neighbor
+                        yield
+
+                # child_score = self.__problem.get_score(child)
+
+                # for _ in range(5):
+                #     operator = next(child.get_neighborhood())
+                #     neighbor = operator.apply(child)
+                #     if not neighbor:
+                #         yield
+                #         continue
+
+                #     neighbor_score = self.__problem.get_score(neighbor)
+                #     if neighbor_score > child_score:
+                #         child = neighbor
+                #         child_score = neighbor_score
+                #         yield
+
+                offspring[i] = child
 
             self.sort_population(population)
             self.sort_population(offspring)
 
+            # print("", [self.__problem.get_score(individual) for individual in population])
+            # print("", [self.__problem.get_score(individual) for individual in offspring])
+
+            last_index = len(offspring) - 1
             for i in range(len(population)):
-                if self.__problem.get_score(offspring[i]) < self.__problem.get_score(population[-i]):
+                if self.__problem.get_score(offspring[last_index - i]) < self.__problem.get_score(population[i]):
                     break
 
-                population[-i] = offspring[i]
+                population[i] = offspring[last_index - i]
                 yield
 
-            print("", max(self.__problem.get_score(individual) for individual in population))
-            best_offspring_score = self.__problem.get_score(offspring[0])
-            if best_offspring_score > best_score:
-                best_score = self.__problem.get_score(offspring[0])
-                self.__problem.building = offspring[0]
+            best_individual = self.get_best_individual([population[0], population[-1]])
+            # Best individual is either the first or last in the population
+            best_gen_score = self.__problem.get_score(best_individual)
+
+            if best_gen_score > best_score:
+                best_score = self.__problem.get_score(population[0])
+                self.__problem.building = population[0]
 
             yield
