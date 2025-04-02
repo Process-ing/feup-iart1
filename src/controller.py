@@ -8,6 +8,7 @@ from src.algorithm import Algorithm, RandomWalk, RandomDescent, SimulatedAnneali
 from src.view.score_visualizer import ScoreVisualizer
 from src.model import RouterProblem
 from src.view import Cli
+from src.view.solve_usage import print_solve_usage
 from src.view.window import OptimizationWindow, ProblemWindow
 
 class CommandResult(Enum):
@@ -85,7 +86,7 @@ class Controller:
 
             problem = deepcopy(self.__problem)
 
-            algorithm_name = tokens[1]
+            algorithm_name = None if len(tokens) < 2 else tokens[1]
             if algorithm_name == "random-walk":
                 algorithm = RandomWalk(problem, max_iterations=200)
             elif algorithm_name == "random-descent":
@@ -97,9 +98,8 @@ class Controller:
             elif algorithm_name == "genetic":
                 algorithm = GeneticAlgorithm(problem, max_generations=200)
             else:
-                # TODO(Process-ing): Print usage
-                raise SystemError()
-
+                print_solve_usage()
+                return CommandResult.FAILURE
 
             visualizer = ScoreVisualizer()
             visualizer.show()
