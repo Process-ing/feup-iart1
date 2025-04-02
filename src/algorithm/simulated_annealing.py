@@ -11,7 +11,7 @@ class SimulatedAnnealing(Algorithm):
       - Else only accept with a certain probability (based on a temperature and cooling schedule)
     Always decrease the temperature (based on cooling schedule)
     """
-    def __init__(self, problem, max_iterations: int | None = None, temperature = 100000, cooling_schedule = 0.99) -> None:
+    def __init__(self, problem, temperature = 100000, cooling_schedule = 0.99, max_iterations: int | None = None) -> None:
         self.__problem = problem
         self.__max_iterations = max_iterations
         self.__temperature = temperature
