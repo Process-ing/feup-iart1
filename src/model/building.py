@@ -10,7 +10,6 @@ from src.model.error import ProblemLoadError
 
 type CellArray = np.ndarray[tuple[int, ...], np.dtype[np.uint8]]
 
-
 type CheckBudgetCallback = Callable[['Building'], bool]
 
 class Operator:
@@ -269,7 +268,7 @@ class Building:
             self.__cells[r, c] &= ~(self.ROUTER_BIT | self.BACKBONE_BIT) \
                 if (r, c) != self.__backbone_root \
                 else ~self.ROUTER_BIT
-            
+
             for dr, dc in directions:
                 new_r, new_c = r + dr, c + dc
                 if 0 <= new_r < max_row and 0 <= new_c < max_col and \
@@ -362,31 +361,83 @@ class Building:
             if (rand_num < self.__new_router_probability and targets) or not routers:
                 row, col = targets.pop()
                 yield Operator(True, row, col, self.__check_budget)
-
             else:
                 row, col = routers.pop()
                 yield Operator(False, row, col, self.__check_budget)
 
-    def crossover(self, other: 'Building') -> Tuple['Building', 'Building']:
-        stripped_self = self.__cells & ~self.BACKBONE_BIT
-        stripped_self[self.__backbone_root] |= self.BACKBONE_BIT
-        stripped_other = other.__cells & ~other.BACKBONE_BIT
-        stripped_other[other.__backbone_root] |= other.BACKBONE_BIT
+    def get_placement_neighborhood(self) -> Iterator[Operator]:
+        targets = self.get_target_cells()
+        random.shuffle(targets)
 
-        lower_row = random.randint(0, self.rows - 1)
-        upper_row = random.randint(lower_row + 1, self.rows)
-        lower_col = random.randint(0, self.columns - 1)
-        upper_col = random.randint(lower_col + 1, self.columns)
+        for row, col in targets:
+            yield Operator(True, row, col, self.__check_budget)
+
+    def crossover(self, other: 'Building') -> Tuple['Building', 'Building'] | None:
+        max_row, max_col = self.rows, self.columns
+
+        lower_row = random.randint(0, max_row - 2)
+        upper_row = random.randint(lower_row + 1, max_row - 1)
+        lower_col = random.randint(0, max_col - 2)
+        upper_col = random.randint(lower_col + 1, max_col - 1)
+
+        def clear_edges(grid):
+            directions = [(-1, 0), (1, 0), (0, -1), (0, 1), (-1, -1), (-1, 1), (1, -1), (1, 1)]
+            queue = deque()
+
+            for r in range(lower_row, upper_row):
+                if (grid[r, lower_col] & self.BACKBONE_BIT) != 0:
+                    queue.append((r, lower_col))
+                if (grid[r, upper_col] & self.BACKBONE_BIT) != 0:
+                    queue.append((r, upper_col))
+            for c in range(lower_col, upper_col):
+                if (grid[lower_row, c] & self.BACKBONE_BIT) != 0:
+                    queue.append((lower_row, c))
+                if (grid[upper_row, c] & self.BACKBONE_BIT) != 0:
+                    queue.append((upper_row, c))
+
+            while queue:
+                r, c = queue.popleft()
+
+                grid[r, c] &= ~(self.ROUTER_BIT | self.BACKBONE_BIT) \
+                    if (r, c) != self.__backbone_root \
+                    else ~self.ROUTER_BIT
+
+                for dr, dc in directions:
+                    new_r, new_c = r + dr, c + dc
+                    if 0 <= new_r < max_row and 0 <= new_c < max_col and \
+                        (grid[new_r, new_c] & self.BACKBONE_BIT) != 0 and \
+                        (grid[new_r, new_c] & self.ROUTER_BIT) == 0 and \
+                        (new_r, new_c) != self.__backbone_root:
+                        queue.append((new_r, new_c))
+
+        stripped_self = self.__cells & ~self.COVERED_BIT
+        clear_edges(stripped_self)
+        stripped_other = other.__cells & ~other.COVERED_BIT
+        clear_edges(stripped_other)
 
         temp_rect = stripped_self[lower_row:upper_row, lower_col:upper_col].copy()
         stripped_self[lower_row:upper_row, lower_col:upper_col] = stripped_other[lower_row:upper_row, lower_col:upper_col]
         stripped_other[lower_row:upper_row, lower_col:upper_col] = temp_rect
 
         child1 = Building(stripped_self, self.__router_range, self.__backbone_root, self.__check_budget, self.__new_router_probability)
+        child1.reconnect_routers()
+        if not self.__check_budget(child1):
+            return None
+
         child2 = Building(stripped_other, other.__router_range, other.__backbone_root, other.__check_budget, other.__new_router_probability)
+        child2.reconnect_routers()
+        if not other.__check_budget(child2):
+            return None
+
+        for router in child1.get_routers():
+            child1.cover_neighbors(*router)
+        for router in child2.get_routers():
+            child2.cover_neighbors(*router)
 
         return child1, child2
 
+    def is_similar(self, other: 'Building', max_similarity: float) -> bool:
+        return np.count_nonzero(self.__cells != other.__cells) <= max_similarity * self.__cells.size
 
     def get_num_targets(self) -> int:
         return np.count_nonzero(self.__cells & self.CELL_TYPE_MASK == CellType.TARGET.value)
