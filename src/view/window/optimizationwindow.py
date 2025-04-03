@@ -15,6 +15,8 @@ class OptimizationWindow(PygameWindow):
 
         self.__problem = problem
         self.__score = problem.get_score(problem.building)
+        self.__num_covered_cells = problem.building.get_coverage()
+        self.__num_routers = problem.building.get_num_routers()
         self.__algorithm = algorithm
         self.__visualizer = visualizer
         self.__run = algorithm.run()
@@ -42,8 +44,8 @@ class OptimizationWindow(PygameWindow):
     def __draw_info(self, screen: pygame.Surface) -> None:
         assert self.__font is not None
 
-        info_width = 50
-        info_height = 12
+        info_width = 65
+        info_height = 20
 
         info_screen = pygame.Surface((info_width, info_height), pygame.SRCALPHA)
         pygame.draw.polygon(info_screen, (0, 0, 0, 128), [
@@ -52,10 +54,15 @@ class OptimizationWindow(PygameWindow):
         ])
         info_screen = pygame.transform.scale(info_screen, (info_width * 4, info_height * 4))
 
-        text = self.__font.render(f'Score: {self.__score}', True, (255, 255, 255))
-
         screen.blit(info_screen, (0, 0))
+
+        text = self.__font.render(f'Score: {self.__score}', True, (255, 255, 255))
         screen.blit(text, (10, 10))
+        text = self.__font.render(f'Routers: {self.__num_routers}', True, (255, 255, 255))
+        screen.blit(text, (10, 30))
+        text = self.__font.render(f'Covered: {self.__num_covered_cells}', True, (255, 255, 255))
+        screen.blit(text, (10, 50))
+
 
     def __draw_buttons(self, screen: pygame.Surface) -> None:
         assert self.__pause_button is not None
@@ -110,6 +117,9 @@ class OptimizationWindow(PygameWindow):
 
         next(self.__run, None)
         self.__score = self.__problem.get_score(self.__problem.building)
+        self.__num_covered_cells = self.__problem.building.get_coverage()
+        self.__num_routers = self.__problem.building.get_num_routers()
+        # TODO: read routers and covered cells
         self.__visualizer.update_scores(self.__score)
 
     def toggle_pause(self) -> None:
