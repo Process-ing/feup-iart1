@@ -5,7 +5,7 @@ from matplotlib.axes import Axes
 from matplotlib.lines import Line2D
 import matplotlib
 
-matplotlib.use("TkAgg")
+matplotlib.use('TkAgg')
 
 
 class ScoreVisualizer:
@@ -49,12 +49,12 @@ class ScoreVisualizer:
         else:
             self.__enabled = True
             self.__fig, self.__ax = plt.subplots()
-            self.__line = self.__ax.plot([], [], "r-", label="Score")[0]
-            self.__max_line = self.__ax.plot([], [], "b--", label="Max Score")[0]
+            self.__line = self.__ax.plot([], [], 'r-', label='Score')[0]
+            self.__max_line = self.__ax.plot([], [], 'b--', label='Max Score')[0]
             self.__ax.legend()
             manager = self.__fig.canvas.manager
             assert manager is not None
-            manager.set_window_title("Score Graph")
+            manager.set_window_title('Score Graph')
             self.update_plot()
             self.show()
 

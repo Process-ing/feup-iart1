@@ -19,6 +19,6 @@ Options:
     genetic <population-size> <max-generations>
         Solve using genetic algorithm.
 
-    -h --help  
+    -h --help
         Show this help and exit.
 ''')
