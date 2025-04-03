@@ -114,6 +114,7 @@ class Controller:
             visualizer.show()
             opt_win = OptimizationWindow(problem, algorithm, visualizer)
             opt_win.launch()
+            opt_win.cleanup()
 
             problem.dump_to_file("solution.txt")
             print("Output saved to solution.txt")

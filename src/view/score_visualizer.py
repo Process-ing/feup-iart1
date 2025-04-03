@@ -49,3 +49,7 @@ class ScoreVisualizer:
     def show(self):
         plt.ion()
         plt.show()
+
+    def cleanup(self):
+        if self.__enabled:
+            plt.close(self.fig)

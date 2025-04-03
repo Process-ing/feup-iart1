@@ -6,6 +6,7 @@ from src.view.viewer import BuildingViewer, PauseButton
 from src.view.window.pygamewindow import PygameWindow
 from src.view.viewer import ChartButton
 from src.view.score_visualizer import ScoreVisualizer
+from threading import Thread, Event, get_ident
 
 class OptimizationWindow(PygameWindow):
     def __init__(self, problem: RouterProblem, algorithm: Algorithm, visualizer: ScoreVisualizer,
@@ -22,7 +23,10 @@ class OptimizationWindow(PygameWindow):
         self.__building_viewer = BuildingViewer()
         self.__pause_button: PauseButton | None = None
         self.__chart_button: ChartButton | None = None
-        self.__paused = False
+
+        self.__continue_event = Event()
+        self.__continue_event.set()
+        self.__stop_execution = False
 
     @override
     def get_window_size(self) -> tuple[int, int]:
@@ -33,11 +37,23 @@ class OptimizationWindow(PygameWindow):
     def get_window_caption(self) -> str:
         return 'Router Optimization'
 
+    def __run_algorithm(self) -> None:
+        for _ in self.__algorithm.run():
+            if self.__stop_execution:
+                break
+
+            self.__continue_event.wait()
+            self.__score = self.__problem.get_score(self.__problem.building)
+            pass
+
     def on_init(self, screen: pygame.Surface) -> None:
         width = self.get_window_size()[0]
         self.__pause_button = PauseButton(width - (48 + 8) * 2, 8)
         self.__chart_button = ChartButton(width - (48 + 8), 8)
         self.__font = pygame.font.Font('BigBlueTerm437NerdFont-Regular.ttf', 20)
+
+        self.__execution_thread = Thread(target=self.__run_algorithm)
+        self.__execution_thread.start()
 
     def __draw_info(self, screen: pygame.Surface) -> None:
         assert self.__font is not None
@@ -81,13 +97,14 @@ class OptimizationWindow(PygameWindow):
         chart_button_screen = self.__chart_button.render(None)
         screen.blit(chart_button_screen, self.__chart_button.top_left_corner)
 
-        pause_button_screen = self.__pause_button.render(self.__paused)
+        pause_button_screen = self.__pause_button.render(not self.__continue_event.is_set())
         screen.blit(pause_button_screen, self.__pause_button.top_left_corner)
 
     def __display(self, screen: pygame.Surface) -> None:
-        problem_screen = self.__building_viewer.render(self.__problem.building)
-        scaled_problem = pygame.transform.scale(problem_screen, screen.get_size())
-        screen.blit(scaled_problem, (0, 0))
+        if self.__continue_event.is_set():  # Optimization thread might send an update before fully pausing
+            problem_screen = self.__building_viewer.render(self.__problem.building)
+            scaled_problem = pygame.transform.scale(problem_screen, screen.get_size())
+            screen.blit(scaled_problem, (0, 0))
 
         self.__draw_info(screen)
         self.__draw_buttons(screen)
@@ -105,18 +122,25 @@ class OptimizationWindow(PygameWindow):
         self.__display(screen)
         pygame.display.flip()
 
-        if self.__paused:
-            return
-
-        next(self.__run, None)
-        self.__score = self.__problem.get_score(self.__problem.building)
-        self.__visualizer.update_scores(self.__score)
+        if self.__continue_event.is_set():
+            self.__visualizer.update_scores(self.__score)
 
     def toggle_pause(self) -> None:
-        self.__paused = not self.__paused
+        if self.__continue_event.is_set():
+            self.__continue_event.clear()
+        else:
+            self.__continue_event.set()
 
     def toggle_show_graf(self) -> None:
         self.__visualizer.toggle_show_graph()
 
     def pause(self) -> None:
-        self.__paused = True
+        self.__continue_event.clear()
+
+    def cleanup(self) -> None:
+        self.__stop_execution = True
+        self.__continue_event.set()
+
+        self.__visualizer.cleanup()
+        if self.__execution_thread.ident != get_ident():
+            self.__execution_thread.join()
