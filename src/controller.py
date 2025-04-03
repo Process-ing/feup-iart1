@@ -1,10 +1,9 @@
 from copy import deepcopy
 from enum import Enum
-from typing import Optional, Tuple, override
-import random
-from collections import deque
+from typing import Optional, Union
 
-from src.algorithm import Algorithm, RandomWalk, RandomDescent, SimulatedAnnealing, TabuSearch, GeneticAlgorithm
+from src.algorithm import Algorithm, RandomWalk, RandomDescent, SimulatedAnnealing, \
+    TabuSearch, GeneticAlgorithm
 from src.view.score_visualizer import ScoreVisualizer
 from src.model import RouterProblem
 from src.view import Cli
@@ -33,45 +32,47 @@ class Controller:
 
     def load_problem(self, filename: str) -> CommandResult:
         try:
-            with open(filename, "r", encoding="utf-8") as file:
+            with open(filename, 'r', encoding='utf-8') as file:
                 text = file.read()
                 problem = RouterProblem.from_text(text)
                 if not problem:
-                    self.__cli.print_error("Failed to load problem")
+                    self.__cli.print_error('Failed to load problem')
                     return CommandResult.FAILURE
 
         except FileNotFoundError:
-            self.__cli.print_error(f"File '{filename}' not found")
+            self.__cli.print_error(f'File \'{filename}\' not found')
             return CommandResult.FILE_ERROR
 
         except IsADirectoryError:
-            self.__cli.print_error(f"'{filename}' is a directory")
+            self.__cli.print_error(f'\'{filename}\' is a directory')
             return CommandResult.FILE_ERROR
 
         self.__problem = problem
-        self.__cli.print_success(f"Problem loaded from '{filename}'")
+        self.__cli.print_success(f'Problem loaded from \'{filename}\'')
         return CommandResult.SUCCESS
 
+    # Pylint ignore inserted, because this functions behaves as a switch-case
+    # pylint: disable=too-many-branches
     def process_command(self, tokens: list[str]) -> CommandResult:
         command = tokens[0]
-        if command in ["exit", "quit"]:
+        if command in ['exit', 'quit']:
             return CommandResult.EXIT
 
-        if command in ["help"]:
+        if command in ['help']:
             self.__cli.print_help()
             return CommandResult.SUCCESS
 
-        if command in ["load"]:
+        if command in ['load']:
             if len(tokens) != 2:
-                self.__cli.print_error("Usage: load <file>")
+                self.__cli.print_error('Usage: load <file>')
                 return CommandResult.FAILURE
 
             filename = tokens[1]
             return self.load_problem(filename)
 
-        if command in ["show"]:
+        if command in ['show']:
             if not self.__problem:
-                self.__cli.print_error("No problem loaded")
+                self.__cli.print_error('No problem loaded')
                 return CommandResult.FAILURE
 
             problem_win = ProblemWindow(self.__problem)
@@ -79,33 +80,40 @@ class Controller:
 
             return CommandResult.SUCCESS
 
-        if command in ["solve"]:
+        if command in ['solve']:
             if not self.__problem:
-                self.__cli.print_error("No problem loaded")
+                self.__cli.print_error('No problem loaded')
                 return CommandResult.FAILURE
 
             problem = deepcopy(self.__problem)
 
             algorithm_name = None if len(tokens) < 2 else tokens[1]
-            if algorithm_name == "random-walk":
+            max_iterations: Union[int, None]
+            algorithm: Algorithm
+
+
+            if algorithm_name == 'random-walk':
                 max_iterations = 200 if len(tokens) < 3 else int(tokens[2])
                 algorithm = RandomWalk(problem, max_iterations=max_iterations)
-            elif algorithm_name == "random-descent":
+            elif algorithm_name == 'random-descent':
                 algorithm = RandomDescent(problem)
-            elif algorithm_name == "simulated-annealing":
+            elif algorithm_name == 'simulated-annealing':
                 temperature = 100000 if len(tokens) < 3 else int(tokens[2])
                 cooling_schedule = 0.99 if len(tokens) < 4 else float(tokens[3])
                 max_iterations = 200 if len(tokens) < 5 else int(tokens[4])
-                algorithm = SimulatedAnnealing(problem, temperature=temperature, cooling_schedule=cooling_schedule, max_iterations=max_iterations)
-            elif algorithm_name == "tabu":
+                algorithm = SimulatedAnnealing(problem, temperature=temperature,
+                    cooling_schedule=cooling_schedule, max_iterations=max_iterations)
+            elif algorithm_name == 'tabu':
                 tabu_tenure = None if len(tokens) < 3 else int(tokens[2])
                 neighborhood_len = 10 if len(tokens) < 4 else int(tokens[3])
                 max_iterations = None if len(tokens) < 5 else int(tokens[4])
-                algorithm = TabuSearch(problem, tabu_tenure=tabu_tenure, neighborhood_len=neighborhood_len, max_iterations=max_iterations)
-            elif algorithm_name == "genetic":
+                algorithm = TabuSearch(problem, tabu_tenure=tabu_tenure,
+                    neighborhood_len=neighborhood_len, max_iterations=max_iterations)
+            elif algorithm_name == 'genetic':
                 population_size = 10 if len(tokens) < 3 else int(tokens[2])
                 max_generations = 1000 if len(tokens) < 4 else int(tokens[3])
-                algorithm = GeneticAlgorithm(problem, population_size=population_size, max_generations=max_generations)
+                algorithm = GeneticAlgorithm(problem, population_size=population_size,
+                    max_generations=max_generations)
             else:
                 print_solve_usage()
                 return CommandResult.FAILURE
@@ -114,11 +122,12 @@ class Controller:
             visualizer.show()
             opt_win = OptimizationWindow(problem, algorithm, visualizer)
             opt_win.launch()
+            opt_win.cleanup()
 
-            problem.dump_to_file("solution.txt")
-            print("Output saved to solution.txt")
+            problem.dump_to_file('solution.txt')
+            print('Output saved to solution.txt')
 
             return CommandResult.SUCCESS
 
-        self.__cli.print_error(f"Unknown command '{command}'")
+        self.__cli.print_error(f'Unknown command \'{command}\'')
         return CommandResult.FAILURE

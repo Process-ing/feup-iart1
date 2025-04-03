@@ -1,4 +1,4 @@
-from typing import override
+from typing import Iterator, override
 
 from src.algorithm.algorithm import Algorithm
 from src.model import RouterProblem
@@ -14,10 +14,10 @@ class RandomDescent(Algorithm):
         self.__max_iterations = max_iterations
 
     @override
-    def run(self):
+    def run(self) -> Iterator[None]:
         for _ in range(self.__max_iterations):
             found_neighbor = False
-            current_score = self.__problem.get_score(self.__problem.building)
+            current_score = self.__problem.building.score
 
             for operator in self.__problem.building.get_neighborhood():
                 neighbor = operator.apply(self.__problem.building)
@@ -25,7 +25,7 @@ class RandomDescent(Algorithm):
                     yield
                     continue
 
-                if self.__problem.get_score(neighbor) > current_score:
+                if neighbor.score > current_score:
                     self.__problem.building = neighbor
                     found_neighbor = True
                     break
