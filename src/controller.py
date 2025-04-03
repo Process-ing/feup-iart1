@@ -2,7 +2,8 @@ from copy import deepcopy
 from enum import Enum
 from typing import Optional
 
-from src.algorithm import Algorithm, RandomWalk, RandomDescent, SimulatedAnnealing, TabuSearch, GeneticAlgorithm
+from src.algorithm import Algorithm, RandomWalk, RandomDescent, SimulatedAnnealing, \
+    TabuSearch, GeneticAlgorithm
 from src.view.score_visualizer import ScoreVisualizer
 from src.model import RouterProblem
 from src.view import Cli
@@ -50,6 +51,8 @@ class Controller:
         self.__cli.print_success(f"Problem loaded from '{filename}'")
         return CommandResult.SUCCESS
 
+    # Pylint ignore inserted, because this functions behaves as a switch-case
+    # pylint: disable=too-many-branches
     def process_command(self, tokens: list[str]) -> CommandResult:
         command = tokens[0]
         if command in ["exit", "quit"]:

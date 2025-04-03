@@ -15,8 +15,8 @@ class GeneticAlgorithm(Algorithm):
         self.__max_generations = max_generations
 
         if initial_routers is None:
-            self.__initial_routers = self.__problem.__budget \
-                // (self.__problem.__router_price + self.__problem.__backbone_price)
+            self.__initial_routers = self.__problem.budget \
+                // (self.__problem.router_price + self.__problem.backbone_price)
 
     def placement_descent(self) -> Iterator[None]:
         found_neighbor = False
@@ -49,6 +49,34 @@ class GeneticAlgorithm(Algorithm):
     def get_best_individual(self, population: list[Building]) -> Building:
         return max(population, key=lambda individual: individual.score)
 
+    def crossover(self, population: List[Building], offspring: List[Building]) -> Iterator[None]:
+        min_score = min(individual.score for individual in population)
+        fitness_scores = [individual.score - min_score + 1 for individual in population]
+
+        while len(offspring) < self.__population_size:
+            parent1, parent2 = random.choices(population, weights=fitness_scores, k=2)
+
+            children = parent1.crossover(parent2)
+            if children is None:
+                yield
+                continue
+
+            offspring.extend(children)
+            yield
+
+    def mutate(self, offspring: List[Building]) -> Iterator[None]:
+        for i, child in enumerate(offspring):
+            if random.random() < 0.5:
+                for operator in child.get_neighborhood():
+                    neighbor = operator.apply(child)
+                    if neighbor is not None:
+                        child = neighbor
+                        yield
+                        break
+                    yield
+
+            offspring[i] = child
+
     @override
     def run(self) -> Iterator[None]:
         original_building = self.__problem.building
@@ -70,55 +98,29 @@ class GeneticAlgorithm(Algorithm):
         self.__problem.building = best_neighbor
 
         for _ in range(self.__max_generations):
-            # Evaluate fitness of the population
-            min_score = min(individual.score for individual in population)
-            fitness_scores = [individual.score - min_score + 1 for individual in population]
-
-            # Perform crossover to create offspring
-            offspring: list[Building] = []
-            while len(offspring) < self.__population_size:
-                parent1, parent2 = random.choices(population, weights=fitness_scores, k=2)
-
-                children = parent1.crossover(parent2)
-                if children is None:
-                    yield
-                    continue
-
-                offspring.extend(children)
-                yield
-
-            for i, child in enumerate(offspring):
-                if random.random() < 0.5:
-                    for operator in child.get_neighborhood():
-                        neighbor = operator.apply(child)
-                        if neighbor is not None:
-                            child = neighbor
-                            yield
-                            break
-                        yield
-
-                offspring[i] = child
+            offspring: List[Building] = []
+            yield from self.crossover(population, offspring)
+            yield from self.mutate(population)
 
             self.sort_population(population)
             self.sort_population(offspring)
 
-
             # Check similarity of individuals
             filtered_offspring: List[Building] = []
-            for i in range(len(offspring)):
+            for i, child in enumerate(offspring):
                 not_similar = True
-                for j in range(len(population)):
-                    if offspring[i].is_similar(population[j], max_similarity=0.001):
+                for j, individual in enumerate(population):
+                    if child.is_similar(individual, max_similarity=0.001):
                         not_similar = False
                         break
 
-                for j in range(len(filtered_offspring)):
-                    if offspring[i].is_similar(filtered_offspring[j], max_similarity=0.001):
+                for j, other_child in enumerate(filtered_offspring):
+                    if child.is_similar(other_child, max_similarity=0.001):
                         not_similar = False
                         break
 
                 if not_similar:
-                    filtered_offspring.append(offspring[i])
+                    filtered_offspring.append(child)
 
             # Replace the worst individuals in the population
             i = 0

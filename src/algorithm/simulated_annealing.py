@@ -1,8 +1,9 @@
 from typing import Iterator, override
-from src.model.problem import RouterProblem
-from src.algorithm.algorithm import Algorithm
 import math
 import random
+
+from src.model.problem import RouterProblem
+from src.algorithm.algorithm import Algorithm
 
 class SimulatedAnnealing(Algorithm):
     """
@@ -21,7 +22,9 @@ class SimulatedAnnealing(Algorithm):
 
     @override
     def run(self) -> Iterator[None]:
-        for _ in range(self.__max_iterations) if self.__max_iterations is not None else iter(int, 1):
+        round_iter = range(self.__max_iterations) \
+            if self.__max_iterations is not None else iter(int, 1)
+        for _ in round_iter:
             current_score = self.__problem.building.score
 
             for operator in self.__problem.building.get_neighborhood():
@@ -36,13 +39,13 @@ class SimulatedAnnealing(Algorithm):
                     self.__problem.building = neighbor
                     yield
                     break
-                else:
-                    probability = math.exp(float(neighbor_score - current_score) / self.__temperature)
-                    if random.random() < probability:
-                        self.__problem.building = neighbor
-                        yield
-                        break
-                    else:
-                        yield
+
+                probability = math.exp(float(neighbor_score - current_score)
+                                        / self.__temperature)
+                if random.random() < probability:
+                    self.__problem.building = neighbor
+                    yield
+                    break
+                yield
 
             self.__temperature *= self.__cooling_schedule

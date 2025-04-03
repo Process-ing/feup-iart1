@@ -63,8 +63,8 @@ class Building(GenericBuilding):
                    self.__new_router_probability, self.problem)
 
     @classmethod
-    def from_text(cls, shape: Tuple[int, int], backbone: tuple[int, int],
-                  text: str, router_range: int, problem: Union[GenericRouterProblem, None]) -> 'Building':
+    def from_text(cls, shape: Tuple[int, int], backbone: tuple[int, int], text: str,
+                  router_range: int, problem: Union[GenericRouterProblem, None]) -> 'Building':
         rows, columns = shape
         if rows < 1 or columns < 1:
             raise ProblemLoadError(f'Invalid building size {rows}x{columns}')
@@ -109,7 +109,8 @@ class Building(GenericBuilding):
         return list(zip(*np.where(self.__cells & self.ROUTER_BIT)))
 
     def get_target_cells(self) -> List[tuple[int, int]]:
-        return list(zip(*np.where(self.__cells & (self.CELL_TYPE_MASK | self.COVERED_BIT) == CellType.TARGET.value)))
+        return list(zip(*np.where(self.__cells
+                & (self.CELL_TYPE_MASK | self.COVERED_BIT) == CellType.TARGET.value)))
 
     def __str__(self) -> str:
         return '\n'.join(''.join(map(chr, row)) for row in self.__cells)
@@ -200,7 +201,8 @@ class Building(GenericBuilding):
         current_cell = self.__cells[row, column]
 
         # Check if position is valid (routers cannot be placed inside walls)
-        if current_cell & self.CELL_TYPE_MASK == CellType.WALL.value or current_cell & self.CELL_TYPE_MASK == CellType.VOID.value:
+        if current_cell & self.CELL_TYPE_MASK == CellType.WALL.value \
+            or current_cell & self.CELL_TYPE_MASK == CellType.VOID.value:
             return False
 
         # Check if router is already placed
@@ -293,7 +295,8 @@ class Building(GenericBuilding):
         if not routers:
             return
 
-        def reconstruct_path(pred: Dict[Tuple[int, int], Tuple[int, int] | None], p: Tuple[int, int] | None) -> Set[Tuple[int, int]]:
+        def reconstruct_path(pred: Dict[Tuple[int, int], Tuple[int, int] | None],
+                             p: Tuple[int, int] | None) -> Set[Tuple[int, int]]:
             res = set()
             while p:
                 res.add(p)
@@ -423,18 +426,21 @@ class Building(GenericBuilding):
         clear_edges(stripped_other)
 
         temp_rect = stripped_self[lower_row:upper_row, lower_col:upper_col].copy()
-        stripped_self[lower_row:upper_row, lower_col:upper_col] = stripped_other[lower_row:upper_row, lower_col:upper_col]
+        stripped_self[lower_row:upper_row, lower_col:upper_col] = \
+            stripped_other[lower_row:upper_row, lower_col:upper_col]
         stripped_other[lower_row:upper_row, lower_col:upper_col] = temp_rect
 
         assert self.problem is not None
         assert other.problem is not None
 
-        child1 = Building(stripped_self, self.__router_range, self.__backbone_root, self.__new_router_probability, self.problem)
+        child1 = Building(stripped_self, self.__router_range, self.__backbone_root,
+                          self.__new_router_probability, self.problem)
         child1.reconnect_routers()
         if not self.problem.check_budget(child1):
             return None
 
-        child2 = Building(stripped_other, other.__router_range, other.__backbone_root, other.__new_router_probability, other.problem)
+        child2 = Building(stripped_other, other.__router_range, other.__backbone_root,
+                          other.__new_router_probability, other.problem)
         child2.reconnect_routers()
         if not other.problem.check_budget(child2):
             return None
@@ -462,7 +468,8 @@ class Building(GenericBuilding):
 
     @override
     def get_coverage(self) -> int:
-        return np.count_nonzero(self.__cells & (self.CELL_TYPE_MASK | self.COVERED_BIT) == CellType.TARGET.value | self.COVERED_BIT)
+        return np.count_nonzero(self.__cells & (self.CELL_TYPE_MASK | self.COVERED_BIT)
+                                == CellType.TARGET.value | self.COVERED_BIT)
 
     @property
     def score(self) -> int:

@@ -1,6 +1,7 @@
 import math
 from collections import deque
 from typing import Deque, Iterator, Tuple, override
+from src.model.building import Building
 from src.model.problem import RouterProblem
 from src.algorithm.algorithm import Algorithm
 
@@ -14,7 +15,7 @@ class TabuSearch(Algorithm):
     def __init__(self, problem: RouterProblem, tabu_tenure: int | None = None,
                  neighborhood_len: int = 10, max_iterations: int | None = None) -> None:
         if tabu_tenure is None:
-            tabu_tenure = int(math.sqrt(problem.building.get_num_targets()) / problem.__router_range)
+            tabu_tenure = int(math.sqrt(problem.building.get_num_targets()) / problem.router_range)
 
         self.__problem = problem
         self.__tabu: TabuTable = deque(maxlen=tabu_tenure)
@@ -25,7 +26,9 @@ class TabuSearch(Algorithm):
 
     @override
     def run(self) -> Iterator[None]:
-        for _ in range(self.__max_iterations) if self.__max_iterations is not None else iter(int, 1):
+        round_iter = range(self.__max_iterations) \
+            if self.__max_iterations is not None else iter(int, 1)
+        for _ in round_iter:
             best_pos = None
             best_neighbor = None
             best_score = -1
@@ -49,10 +52,10 @@ class TabuSearch(Algorithm):
                 neighbor_count += 1
                 if neighbor_count >= self.__neighborhood_len:
                     break
-                else:
-                    yield
+                yield
 
-            if best_neighbor is None or best_pos is None:  # Tabu tenure too long, whole neighborhood is tabu
+            if best_neighbor is None or best_pos is None:
+                # Tabu tenure too long, whole neighborhood is tabu
                 self.__tabu.popleft()
                 yield
                 continue
@@ -68,3 +71,7 @@ class TabuSearch(Algorithm):
                 self.__tabu.popleft()
 
             yield
+
+    @property
+    def best_solution(self) -> Building:
+        return self.__best_solution
