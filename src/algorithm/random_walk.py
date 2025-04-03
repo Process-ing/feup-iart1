@@ -20,5 +20,5 @@ class RandomWalk(Algorithm):
                     yield "No neighbor found"
                     continue
                 self.__problem.building = neighbor
-                yield f"{"Placed" if operator.place else "Removed"} router at ({operator.row}, {operator.col})"
+                yield f"{'Placed' if operator.place else 'Removed'} router at ({operator.row}, {operator.col})"
                 break

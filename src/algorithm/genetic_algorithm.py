@@ -40,7 +40,7 @@ class GeneticAlgorithm(Algorithm):
                 current_score = neighbor_score
                 found_neighbor = True
 
-            yield f"{"Placed" if operator.place else "Removed"} router at ({operator.row}, {operator.col})"
+            yield f"{'Placed' if operator.place else 'Removed'} router at ({operator.row}, {operator.col})"
             if not found_neighbor:
                 break
 
