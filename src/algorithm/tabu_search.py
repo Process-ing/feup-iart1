@@ -65,7 +65,6 @@ class TabuSearch(Algorithm):
             elif self.__tabu:
                 self.__tabu.popleft()
 
-            yield f"{"Placed" if best_operator.place else "Removed"} router at ({best_operator.row}, {best_operator.col})"
-
+            yield f"{'Placed' if best_operator.place else 'Removed'} router at ({best_operator.row}, {best_operator.col})"
     def done(self) -> bool:
         return self.__done
