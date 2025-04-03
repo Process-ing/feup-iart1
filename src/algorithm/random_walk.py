@@ -1,5 +1,5 @@
 from typing import Iterator, override
-from src.algorithm import Algorithm
+from src.algorithm.algorithm import Algorithm
 from src.model import RouterProblem
 
 class RandomWalk(Algorithm):

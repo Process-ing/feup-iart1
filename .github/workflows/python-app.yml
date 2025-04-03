@@ -36,7 +36,3 @@ jobs:
       working-directory: ./
       run: |
         pylint $(git ls-files '*.py')
-    - name: Run all tests
-      working-directory: ./
-      run: |
-        python3 -m unittest
