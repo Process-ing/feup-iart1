@@ -1,9 +1,16 @@
-from typing import Iterator, override
+from dataclasses import dataclass
+from typing import Iterator, Union, override
 import math
 import random
 
 from src.model.problem import RouterProblem
 from src.algorithm.algorithm import Algorithm
+
+@dataclass
+class SimulatedAnnealingConfig:
+    max_iterations: Union[int, None]
+    init_temperature: float
+    cooling_schedule: float
 
 class SimulatedAnnealing(Algorithm):
     '''
@@ -13,17 +20,17 @@ class SimulatedAnnealing(Algorithm):
       - Else only accept with a certain probability (based on a temperature and cooling schedule)
     Always decrease the temperature (based on cooling schedule)
     '''
-    def __init__(self, problem: RouterProblem, temperature: float = 100.0,
-                 cooling_schedule: float = 0.99, max_iterations: int | None = None) -> None:
+    def __init__(self, problem: RouterProblem, config: SimulatedAnnealingConfig) -> None:
         self.__problem = problem
-        self.__max_iterations = max_iterations
-        self.__temperature = temperature
-        self.__cooling_schedule = cooling_schedule
+        self.__config = config
 
     @override
     def run(self) -> Iterator[str]:
-        round_iter = range(self.__max_iterations) \
-            if self.__max_iterations is not None else iter(int, 1)
+        max_iterations = self.__config.max_iterations
+        temperature = self.__config.init_temperature
+        cooling_schedule = self.__config.cooling_schedule
+
+        round_iter = range(max_iterations) if max_iterations is not None else iter(int, 1)
         for _ in round_iter:
             current_score = self.__problem.building.score
 
@@ -40,9 +47,8 @@ class SimulatedAnnealing(Algorithm):
                     action = 'Placed' if operator.place else 'Removed'
                     yield f'{action} router at ({operator.row}, {operator.col})'
                     break
-                probability = math.exp(
-                    float(neighbor_score - current_score) / self.__temperature
-                )
+
+                probability = math.exp(float(neighbor_score - current_score) / temperature)
                 if random.random() < probability:
                     self.__problem.building = neighbor
                     action = 'Placed' if operator.place else 'Removed'
@@ -51,4 +57,4 @@ class SimulatedAnnealing(Algorithm):
                     break
                 yield 'Rejected worse neighbor'
 
-            self.__temperature *= self.__cooling_schedule
+            temperature *= cooling_schedule

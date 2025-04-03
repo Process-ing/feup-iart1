@@ -103,11 +103,11 @@ class Controller:
                 ))
 
             elif algorithm_name == 'simulated-annealing':
-                temperature = 100000 if len(tokens) < 3 else int(tokens[2])
-                cooling_schedule = 0.99 if len(tokens) < 4 else float(tokens[3])
-                max_iterations = 200 if len(tokens) < 5 else int(tokens[4])
-                algorithm = SimulatedAnnealing(problem, temperature=temperature,
-                    cooling_schedule=cooling_schedule, max_iterations=max_iterations)
+                algorithm = SimulatedAnnealing(problem, SimulatedAnnealingConfig(
+                    init_temperature=1000.0 if len(tokens) < 3 else float(tokens[2]),
+                    cooling_schedule=0.99 if len(tokens) < 4 else float(tokens[3]),
+                    max_iterations=None if len(tokens) < 5 else int(tokens[4])
+                ))
 
             elif algorithm_name == 'tabu':
                 tabu_tenure = None if len(tokens) < 3 else int(tokens[2])
