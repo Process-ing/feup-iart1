@@ -44,4 +44,3 @@ class ChartButton(ButtonViewer[None, Callable[[], None]]):
     @override
     def on_click(self, toggle_graph: Callable[[], None]) -> None:
         toggle_graph()
-        # TODO(Process-ing): Show score chart

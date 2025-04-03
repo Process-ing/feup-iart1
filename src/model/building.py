@@ -191,7 +191,6 @@ class Building(GenericBuilding):
 
         self.__cells[row_start:row_start + row_len, col_start:col_start + col_len] |= neighborhood
 
-    # TODO(Process-ing): Remove this
     def place_router(self, row: int, column: int) -> bool:
 
         current_cell = self.__cells[row, column]
@@ -472,6 +471,10 @@ class Building(GenericBuilding):
     def get_coverage(self) -> int:
         return np.count_nonzero(self.__cells & (self.CELL_TYPE_MASK | self.COVERED_BIT)
                                 == CellType.TARGET.value | self.COVERED_BIT)
+
+    def get_num_uncovered_targets(self) -> int:
+        return np.count_nonzero(self.__cells & (self.CELL_TYPE_MASK | self.COVERED_BIT)
+                                == CellType.TARGET.value)
 
     @property
     def score(self) -> int:
