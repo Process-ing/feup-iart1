@@ -1,8 +1,6 @@
 from copy import deepcopy
 from enum import Enum
-from typing import Optional, Tuple, override
-import random
-from collections import deque
+from typing import Optional
 
 from src.algorithm import Algorithm, RandomWalk, RandomDescent, SimulatedAnnealing, TabuSearch, GeneticAlgorithm
 from src.view.score_visualizer import ScoreVisualizer

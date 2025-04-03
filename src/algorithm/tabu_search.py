@@ -14,12 +14,12 @@ class TabuSearch(Algorithm):
     def __init__(self, problem: RouterProblem, tabu_tenure: int | None = None,
                  neighborhood_len: int = 10, max_iterations: int | None = None) -> None:
         if tabu_tenure is None:
-            tabu_tenure = int(math.sqrt(problem.building.get_num_targets()) / problem.router_range)
+            tabu_tenure = int(math.sqrt(problem.building.get_num_targets()) / problem.__router_range)
 
         self.__problem = problem
         self.__tabu: TabuTable = deque(maxlen=tabu_tenure)
         self.__best_solution = problem.building
-        self.__best_score = problem.get_score(problem.building)
+        self.__best_score = problem.building.score
         self.__neighborhood_len = neighborhood_len
         self.__max_iterations = max_iterations
 
@@ -41,11 +41,10 @@ class TabuSearch(Algorithm):
                     yield
                     continue
 
-                score = self.__problem.get_score(neighbor)
-                if score > best_score:
+                if neighbor.score > best_score:
                     best_pos = (operator.row, operator.col)
                     best_neighbor = neighbor
-                    best_score = score
+                    best_score = neighbor.score
 
                 neighbor_count += 1
                 if neighbor_count >= self.__neighborhood_len:

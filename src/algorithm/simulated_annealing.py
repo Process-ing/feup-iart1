@@ -22,7 +22,7 @@ class SimulatedAnnealing(Algorithm):
     @override
     def run(self) -> Iterator[None]:
         for _ in range(self.__max_iterations) if self.__max_iterations is not None else iter(int, 1):
-            current_score = self.__problem.get_score(self.__problem.building)
+            current_score = self.__problem.building.score
 
             for operator in self.__problem.building.get_neighborhood():
                 neighbor = operator.apply(self.__problem.building)
@@ -30,7 +30,7 @@ class SimulatedAnnealing(Algorithm):
                     yield
                     continue
 
-                neighbor_score = self.__problem.get_score(neighbor)
+                neighbor_score = neighbor.score
 
                 if neighbor_score > current_score:
                     self.__problem.building = neighbor

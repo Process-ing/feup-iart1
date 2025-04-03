@@ -1,10 +1,12 @@
 from enum import Enum
-from typing import Callable, Deque, Dict, Iterator, Set, Tuple, Union, cast, List
+from typing import Callable, Deque, Dict, Iterator, Set, Tuple, Union, cast, List, override
 from collections import deque
 from copy import deepcopy
 import numpy as np
 import random
 
+from src.model.generic_building import GenericBuilding
+from src.model.generic_problem import GenericRouterProblem
 from src.model.disjoint_set import DisjointSet
 from src.model.error import ProblemLoadError
 
@@ -14,28 +16,28 @@ type Pos = Tuple[int, int]
 type SteinerTreeQueue = Deque[Tuple[Pos, Pos, Pos | None, Pos | None]]
 
 class Operator:
-    def __init__(self, place: bool, row: int, col: int, check_budget: CheckBudgetCallback) -> None:
+    def __init__(self, place: bool, row: int, col: int) -> None:
         self.place = place
         self.row = row
         self.col = col
-        self.check_budget = check_budget
 
     def apply(self, building: 'Building') -> Union['Building', None]:
-        new_building = deepcopy(building)
+        new_building = building.copy()
 
         if self.place:
             success = new_building.place_router(self.row, self.col)
         else:
             success = new_building.remove_router(self.row, self.col)
 
-        return new_building if success and self.check_budget(new_building) else None
+        assert building.problem is not None
+        return new_building if success and building.problem.check_budget(new_building) else None
 
 class CellType(Enum):
     VOID = 0
     TARGET = 1
     WALL = 2
 
-class Building:
+class Building(GenericBuilding):
     BACKBONE_BIT = np.uint8(1 << 7)  # Marks a cell connected to the backbone
     COVERED_BIT = np.uint8(1 << 6)  # Marks a cell covered by a router
     ROUTER_BIT = np.uint8(1 << 5)  # Marks a cell as a router
@@ -48,16 +50,21 @@ class Building:
     }
 
     def __init__(self, cells: CellArray, router_range: int, backbone: tuple[int, int],
-                 check_budget: CheckBudgetCallback, new_router_probability: float) -> None:
+                 new_router_probability: float, problem: Union[GenericRouterProblem, None]) -> None:
         self.__cells: CellArray = cells
         self.__router_range = router_range
         self.__backbone_root = backbone
-        self.__check_budget = check_budget
         self.__new_router_probability = new_router_probability
+        self.problem = problem
+        self.__score: Union[int, None] = None
+
+    def copy(self) -> 'Building':
+        return Building(deepcopy(self.__cells), self.__router_range, self.__backbone_root,
+                   self.__new_router_probability, self.problem)
 
     @classmethod
     def from_text(cls, shape: Tuple[int, int], backbone: tuple[int, int],
-                  text: str, router_range: int, check_budget: CheckBudgetCallback) -> 'Building':
+                  text: str, router_range: int, problem: Union[GenericRouterProblem, None]) -> 'Building':
         rows, columns = shape
         if rows < 1 or columns < 1:
             raise ProblemLoadError(f'Invalid building size {rows}x{columns}')
@@ -80,7 +87,7 @@ class Building:
 
         cells[backbone] |= cls.BACKBONE_BIT
 
-        return cls(cells, router_range, backbone, check_budget, 1 - 1 / router_range**2)
+        return cls(cells, router_range, backbone, 1 - 1 / router_range**2, problem)
 
     @property
     def rows(self) -> int:
@@ -360,17 +367,17 @@ class Building:
 
             if (rand_num < self.__new_router_probability and targets) or not routers:
                 row, col = targets.pop()
-                yield Operator(True, row, col, self.__check_budget)
+                yield Operator(True, row, col)
             else:
                 row, col = routers.pop()
-                yield Operator(False, row, col, self.__check_budget)
+                yield Operator(False, row, col)
 
     def get_placement_neighborhood(self) -> Iterator[Operator]:
         targets = self.get_target_cells()
         random.shuffle(targets)
 
         for row, col in targets:
-            yield Operator(True, row, col, self.__check_budget)
+            yield Operator(True, row, col)
 
     def crossover(self, other: 'Building') -> Tuple['Building', 'Building'] | None:
         max_row, max_col = self.rows, self.columns
@@ -419,14 +426,17 @@ class Building:
         stripped_self[lower_row:upper_row, lower_col:upper_col] = stripped_other[lower_row:upper_row, lower_col:upper_col]
         stripped_other[lower_row:upper_row, lower_col:upper_col] = temp_rect
 
-        child1 = Building(stripped_self, self.__router_range, self.__backbone_root, self.__check_budget, self.__new_router_probability)
+        assert self.problem is not None
+        assert other.problem is not None
+
+        child1 = Building(stripped_self, self.__router_range, self.__backbone_root, self.__new_router_probability, self.problem)
         child1.reconnect_routers()
-        if not self.__check_budget(child1):
+        if not self.problem.check_budget(child1):
             return None
 
-        child2 = Building(stripped_other, other.__router_range, other.__backbone_root, other.__check_budget, other.__new_router_probability)
+        child2 = Building(stripped_other, other.__router_range, other.__backbone_root, other.__new_router_probability, other.problem)
         child2.reconnect_routers()
-        if not other.__check_budget(child2):
+        if not other.problem.check_budget(child2):
             return None
 
         for router in child1.get_routers():
@@ -442,11 +452,21 @@ class Building:
     def get_num_targets(self) -> int:
         return np.count_nonzero(self.__cells & self.CELL_TYPE_MASK == CellType.TARGET.value)
 
+    @override
     def get_num_routers(self) -> int:
         return np.count_nonzero(self.__cells & self.ROUTER_BIT)
 
+    @override
     def get_num_connected_cells(self) -> int:
         return np.count_nonzero(self.__cells & self.BACKBONE_BIT) - 1
 
+    @override
     def get_coverage(self) -> int:
         return np.count_nonzero(self.__cells & (self.CELL_TYPE_MASK | self.COVERED_BIT) == CellType.TARGET.value | self.COVERED_BIT)
+
+    @property
+    def score(self) -> int:
+        if self.__score is None:
+            assert self.problem is not None
+            self.__score = self.problem.get_score(self)
+        return self.__score

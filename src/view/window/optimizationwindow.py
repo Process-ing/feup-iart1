@@ -15,7 +15,7 @@ class OptimizationWindow(PygameWindow):
         super().__init__(max_framerate)
 
         self.__problem = problem
-        self.__score = problem.get_score(problem.building)
+        self.__score = problem.building.score
         self.__algorithm = algorithm
         self.__visualizer = visualizer
         self.__run = algorithm.run()
@@ -43,7 +43,7 @@ class OptimizationWindow(PygameWindow):
                 break
 
             self.__continue_event.wait()
-            self.__score = self.__problem.get_score(self.__problem.building)
+            self.__score = self.__problem.building.score
             pass
 
     def on_init(self, screen: pygame.Surface) -> None:

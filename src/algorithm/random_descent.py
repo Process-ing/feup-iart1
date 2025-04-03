@@ -17,7 +17,7 @@ class RandomDescent(Algorithm):
     def run(self) -> Iterator[None]:
         for _ in range(self.__max_iterations):
             found_neighbor = False
-            current_score = self.__problem.get_score(self.__problem.building)
+            current_score = self.__problem.building.score
 
             for operator in self.__problem.building.get_neighborhood():
                 neighbor = operator.apply(self.__problem.building)
@@ -25,7 +25,7 @@ class RandomDescent(Algorithm):
                     yield
                     continue
 
-                if self.__problem.get_score(neighbor) > current_score:
+                if neighbor.score > current_score:
                     self.__problem.building = neighbor
                     found_neighbor = True
                     break

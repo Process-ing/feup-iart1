@@ -1,27 +1,26 @@
-from copy import deepcopy
 import random
 from typing import Iterator, List, override
-from src.model import Building, Operator
+from src.model import Building
 from src.model import RouterProblem
 from src.algorithm.algorithm import Algorithm
-from src.algorithm.random_descent import RandomDescent
-
 
 class GeneticAlgorithm(Algorithm):
     """
     Genetic Algorithm
     """
-    def __init__(self, problem: RouterProblem, population_size: int = 10, initial_routers: int | None = None, max_generations: int = 1000000) -> None:
+    def __init__(self, problem: RouterProblem, population_size: int = 10,
+                 initial_routers: int | None = None, max_generations: int = 1000) -> None:
         self.__problem = problem
         self.__population_size = population_size
         self.__max_generations = max_generations
 
         if initial_routers is None:
-            self.__initial_routers = self.__problem.budget // (self.__problem.router_price + self.__problem.backbone_price)
+            self.__initial_routers = self.__problem.__budget \
+                // (self.__problem.__router_price + self.__problem.__backbone_price)
 
     def placement_descent(self) -> Iterator[None]:
         found_neighbor = False
-        current_score = self.__problem.get_score(self.__problem.building)
+        current_score = self.__problem.building.score
 
         for _ in range(self.__initial_routers):
             operator = next(self.__problem.building.get_placement_neighborhood(), None)
@@ -34,7 +33,7 @@ class GeneticAlgorithm(Algorithm):
                 yield
                 continue
 
-            neighbor_score = self.__problem.get_score(neighbor)
+            neighbor_score = neighbor.score
             if neighbor_score > current_score:
                 self.__problem.building = neighbor
                 current_score = neighbor_score
@@ -45,10 +44,10 @@ class GeneticAlgorithm(Algorithm):
                 break
 
     def sort_population(self, population: list[Building]) -> None:
-        population.sort(key=lambda individual: self.__problem.get_score(individual))
+        population.sort(key=lambda individual: individual.score)
 
     def get_best_individual(self, population: list[Building]) -> Building:
-        return max(population, key=lambda individual: self.__problem.get_score(individual))
+        return max(population, key=lambda individual: individual.score)
 
     @override
     def run(self) -> Iterator[None]:
@@ -62,7 +61,7 @@ class GeneticAlgorithm(Algorithm):
             yield from self.placement_descent()
 
             population.append(self.__problem.building)
-            score = self.__problem.get_score(self.__problem.building)
+            score = self.__problem.building.score
             if score > best_score:
                 best_score = score
                 best_neighbor = self.__problem.building
@@ -72,8 +71,8 @@ class GeneticAlgorithm(Algorithm):
 
         for _ in range(self.__max_generations):
             # Evaluate fitness of the population
-            min_score = min(self.__problem.get_score(individual) for individual in population)
-            fitness_scores = [self.__problem.get_score(individual) - min_score + 1 for individual in population]
+            min_score = min(individual.score for individual in population)
+            fitness_scores = [individual.score - min_score + 1 for individual in population]
 
             # Perform crossover to create offspring
             offspring: list[Building] = []
@@ -124,7 +123,7 @@ class GeneticAlgorithm(Algorithm):
             # Replace the worst individuals in the population
             i = 0
             for j in range(len(filtered_offspring) - 1, -1, -1):
-                if self.__problem.get_score(filtered_offspring[j]) < self.__problem.get_score(population[i]):
+                if filtered_offspring[j].score < population[i].score:
                     break
 
                 population[i] = filtered_offspring[j]
@@ -133,10 +132,10 @@ class GeneticAlgorithm(Algorithm):
 
             best_individual = self.get_best_individual([population[0], population[-1]])
             # Best individual is either the first or last in the population
-            best_gen_score = self.__problem.get_score(best_individual)
+            best_gen_score = best_individual.score
 
             if best_gen_score > best_score:
-                best_score = self.__problem.get_score(population[0])
+                best_score = population[0].score
                 self.__problem.building = population[0]
 
             yield

@@ -1,19 +1,34 @@
-from typing import Callable, cast
+from typing import Callable, cast, override
 import numpy as np
-from src.model.building import Building, CellType, CheckBudgetCallback
+from src.model.generic_building import GenericBuilding
+from src.model.generic_problem import GenericRouterProblem
+from src.model.building import Building, CellType
 
 type BudgetInfo = tuple[int, int, int]
 
-class RouterProblem:
-    def __init__(self, building: Building, router_range: int, budget_info: BudgetInfo,
-                 start_backbone : tuple[int, int], check_budget: CheckBudgetCallback) -> None:
+class RouterProblem(GenericRouterProblem):
+    def __init__(self, building: Building, router_range: int, budget_info: BudgetInfo) -> None:
         self.__building = building
-        self.router_range = router_range
-        self.backbone_price = budget_info[0]
-        self.router_price = budget_info[1]
-        self.budget = budget_info[2]
-        self.start_backbone = start_backbone
-        self.check_budget = check_budget
+        self.__router_range = router_range
+        self.__backbone_price = budget_info[0]
+        self.__router_price = budget_info[1]
+        self.__budget = budget_info[2]
+
+    @property
+    def router_range(self) -> int:
+        return self.__router_range
+
+    @property
+    def backbone_price(self) -> int:
+        return self.__backbone_price
+
+    @property
+    def router_price(self) -> int:
+        return self.__router_price
+
+    @property
+    def budget(self) -> int:
+        return self.__budget
 
     @classmethod
     def from_text(cls, text: str) -> 'RouterProblem':
@@ -25,11 +40,12 @@ class RouterProblem:
         rows, columns, router_range = initial_section[0:3]
         budget_info = cast(BudgetInfo, tuple(initial_section[3:6]))
         backbone = cast(tuple[int, int], tuple(initial_section[6:8]))
-        check_budget = cls.__gen_check_budget(budget_info[1], budget_info[0], budget_info[2])
 
-        building = Building.from_text((rows, columns), backbone, building_section, router_range, check_budget)
+        building = Building.from_text((rows, columns), backbone, building_section, router_range, None)
+        problem = cls(building, router_range, budget_info)
+        building.problem = problem
 
-        return cls(building, router_range, budget_info, backbone, check_budget)
+        return problem
 
     @property
     def building(self) -> Building:
@@ -39,7 +55,15 @@ class RouterProblem:
     def building(self, building: Building) -> None:
         self.__building = building
 
-    def get_score(self, building: Building) -> int:
+    @override
+    def check_budget(self, building: GenericBuilding) -> bool:
+        num_routers = building.get_num_routers()
+        num_connected_cells = building.get_num_connected_cells()
+
+        return num_routers * self.__router_price + num_connected_cells * self.backbone_price <= self.budget
+
+    @override
+    def get_score(self, building: GenericBuilding) -> int:
         num_routers = building.get_num_routers()
         num_connected_cells = building.get_num_connected_cells()
         coverage = building.get_coverage()
@@ -49,15 +73,6 @@ class RouterProblem:
                 (num_routers * self.router_price) - \
                 (num_connected_cells * self.backbone_price))
 
-    @staticmethod
-    def __gen_check_budget(router_price: int, backbone_price: int, budget: int) -> CheckBudgetCallback:
-        def check_budget(building: Building) -> bool:
-            num_routers = building.get_num_routers()
-            num_connected_cells = building.get_num_connected_cells()
-
-            return num_routers * router_price + num_connected_cells * backbone_price <= budget
-
-        return check_budget
 
     def dump_to_file(self, filename: str) -> None:
         building_map = self.__building.as_nparray()
@@ -73,5 +88,3 @@ class RouterProblem:
             file.write(f'{len(router_cells)}\n')
             for (row, col) in router_cells:
                 file.write(f'{row} {col}\n')
-
-
