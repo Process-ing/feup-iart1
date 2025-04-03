@@ -5,10 +5,10 @@ from src.model import RouterProblem
 
 
 class RandomDescent(Algorithm):
-    """
+    '''
     Random Descent Algorithm
     Picks a random neighbor to explore, if it improves the score
-    """
+    '''
     def __init__(self, problem: RouterProblem, max_iterations: int = 2000000000000000) -> None:
         self.__problem = problem
         self.__max_iterations = max_iterations
@@ -22,15 +22,16 @@ class RandomDescent(Algorithm):
             for operator in self.__problem.building.get_neighborhood():
                 neighbor = operator.apply(self.__problem.building)
                 if not neighbor:
-                    yield "No neighbor found"
+                    yield 'No neighbor found'
                     continue
 
                 if neighbor.score > current_score:
                     self.__problem.building = neighbor
                     found_neighbor = True
-                    yield f"{'Placed' if operator.place else 'Removed'} router at ({operator.row}, {operator.col})"
-                    break   
-                yield "Neighbor not improving score"
+                    yield f"{'Placed' if operator.place else 'Removed'} router at " \
+                    f"({operator.row}, {operator.col})"
+                    break
+                yield 'Neighbor not improving score'
 
             if not found_neighbor:
                 break

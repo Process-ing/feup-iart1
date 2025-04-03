@@ -5,9 +5,9 @@ from src.model import RouterProblem
 from src.algorithm.algorithm import Algorithm
 
 class GeneticAlgorithm(Algorithm):
-    """
+    '''
     Genetic Algorithm
-    """
+    '''
     def __init__(self, problem: RouterProblem, population_size: int = 10,
                  initial_routers: int | None = None, max_generations: int = 1000) -> None:
         self.__problem = problem
@@ -25,12 +25,12 @@ class GeneticAlgorithm(Algorithm):
         for _ in range(self.__initial_routers):
             operator = next(self.__problem.building.get_placement_neighborhood(), None)
             if not operator:
-                yield "No neighbor found"
+                yield 'No neighbor found'
                 continue
 
             neighbor = operator.apply(self.__problem.building)
             if not neighbor:
-                yield "No neighbor found"
+                yield 'No neighbor found'
                 continue
 
             neighbor_score = neighbor.score
@@ -39,7 +39,9 @@ class GeneticAlgorithm(Algorithm):
                 current_score = neighbor_score
                 found_neighbor = True
 
-            yield f"{'Placed' if operator.place else 'Removed'} router at ({operator.row}, {operator.col})"
+            yield f"{'Placed' if operator.place else 'Removed'} router at " \
+                f"({operator.row}, {operator.col})"
+
             if not found_neighbor:
                 break
 
@@ -58,11 +60,11 @@ class GeneticAlgorithm(Algorithm):
 
             children = parent1.crossover(parent2)
             if children is None:
-                yield "Crossover failed"
+                yield 'Crossover failed'
                 continue
 
             offspring.extend(children)
-            yield f"Crossover successful, offspring size: {len(offspring)}"
+            yield f'Crossover successful, offspring size: {len(offspring)}'
 
     def mutate(self, offspring: List[Building]) -> Iterator[str]:
         for i, child in enumerate(offspring):
@@ -71,9 +73,9 @@ class GeneticAlgorithm(Algorithm):
                     neighbor = operator.apply(child)
                     if neighbor is not None:
                         child = neighbor
-                        yield "Mutation successful"
+                        yield 'Mutation successful'
                         break
-                    yield "Mutation failed"
+                    yield 'Mutation failed'
 
             offspring[i] = child
 
@@ -127,7 +129,7 @@ class GeneticAlgorithm(Algorithm):
 
                 population[i] = filtered_offspring[j]
                 i += 1
-                yield "Individual replaced"
+                yield 'Individual replaced'
 
             best_individual = self.get_best_individual([population[0], population[-1]])
             # Best individual is either the first or last in the population
@@ -137,4 +139,4 @@ class GeneticAlgorithm(Algorithm):
                 best_score = population[0].score
                 self.__problem.building = population[0]
 
-            yield "Best individual found"
+            yield 'Best individual found'

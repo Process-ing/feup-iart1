@@ -6,13 +6,13 @@ from src.model.problem import RouterProblem
 from src.algorithm.algorithm import Algorithm
 
 class SimulatedAnnealing(Algorithm):
-    """
+    '''
     Simulated Annealing Algorithm
     Picks a random neighbor to explore
       - If the neighbor is better, choose it
       - Else only accept with a certain probability (based on a temperature and cooling schedule)
     Always decrease the temperature (based on cooling schedule)
-    """
+    '''
     def __init__(self, problem: RouterProblem, temperature: float = 100.0,
                  cooling_schedule: float = 0.99, max_iterations: int | None = None) -> None:
         self.__problem = problem
@@ -30,30 +30,33 @@ class SimulatedAnnealing(Algorithm):
             for operator in self.__problem.building.get_neighborhood():
                 neighbor = operator.apply(self.__problem.building)
                 if not neighbor:
-                    yield "No neighbor found"
+                    yield 'No neighbor found'
                     continue
 
                 neighbor_score = neighbor.score
 
                 if neighbor_score > current_score:
                     self.__problem.building = neighbor
-                    yield f"{'Placed' if operator.place else 'Removed'} router at ({operator.row}, {operator.col})"
+                    action = 'Placed' if operator.place else 'Removed'
+                    yield f'{action} router at ({operator.row}, {operator.col})'
                     break
-                else:
-                    probability = math.exp(float(neighbor_score - current_score) / self.__temperature)
-                    if random.random() < probability:
-                        self.__problem.building = neighbor
-                        yield f"{"Worse: Placed" if operator.place else "Removed"} router at ({operator.row}, {operator.col})"
-                        break
-                    else:
-                        yield "Rejected worse neighbor"
+                probability = math.exp(
+                    float(neighbor_score - current_score) / self.__temperature
+                )
+                if random.random() < probability:
+                    self.__problem.building = neighbor
+                    action = 'Placed' if operator.place else 'Removed'
+                    position = f'({operator.row}, {operator.col})'
+                    yield f'{action} router at {position}'
+                    break
+                yield 'Rejected worse neighbor'
 
                 probability = math.exp(float(neighbor_score - current_score)
                                         / self.__temperature)
                 if random.random() < probability:
                     self.__problem.building = neighbor
-                    yield ""
+                    yield ''
                     break
-                yield ""
+                yield ''
 
             self.__temperature *= self.__cooling_schedule

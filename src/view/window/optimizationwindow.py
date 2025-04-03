@@ -19,7 +19,7 @@ class OptimizationWindow(PygameWindow):
         self.__score = problem.building.score
         self.__num_covered_cells = problem.building.get_coverage()
         self.__num_routers = problem.building.get_num_routers()
-        self.__information_message = ""
+        self.__information_message = ''
         self.__algorithm = algorithm
         self.__visualizer = visualizer
         self.__font: pygame.font.Font | None = None
@@ -74,18 +74,33 @@ class OptimizationWindow(PygameWindow):
             (message_width + 14, message_height + 9), (0, message_height + 9)
         ])
         screen_width, screen_height = screen.get_size()
-        screen.blit(message_screen, (screen_width - message_width - 20, screen_height - message_height - 10))
-        screen.blit(message_text, (screen_width - message_width - 10, screen_height - message_height - 5))
+        screen.blit(message_screen, (screen_width - message_width - 20,
+                                     screen_height - message_height - 10))
+        screen.blit(message_text, (screen_width - message_width - 10,
+                                   screen_height - message_height - 5))
 
     def __draw_info(self, screen: pygame.Surface) -> None:
         assert self.__font is not None
 
-        score_text = self.__font.render(f'Score: {self.__score}', True, (255, 255, 255))
-        routers_text = self.__font.render(f'Routers: {self.__num_routers}', True, (255, 255, 255))
-        covered_text = self.__font.render(f'Covered: {self.__num_covered_cells}', True, (255, 255, 255))
+        score_text = self.__font.render(f'Score: {self.__score}',
+                                          True, (255, 255, 255))
+        routers_text = self.__font.render(f'Routers: {self.__num_routers}',
+                                          True, (255, 255, 255))
+        covered_text = self.__font.render(f'Covered: {self.__num_covered_cells}',
+                                          True, (255, 255, 255))
 
-        text_width = max(score_text.get_width(), routers_text.get_width(), covered_text.get_width())
-        text_height = score_text.get_height() + routers_text.get_height() + covered_text.get_height() + 20
+        text_width = max(
+            score_text.get_width(),
+            routers_text.get_width(),
+            covered_text.get_width()
+        )
+
+        text_height = (
+            score_text.get_height() +
+            routers_text.get_height() +
+            covered_text.get_height() +
+            20
+        )
         info_width = text_width + 20
         info_height = text_height + 10
 
@@ -99,7 +114,13 @@ class OptimizationWindow(PygameWindow):
 
         screen.blit(score_text, (10, 10))
         screen.blit(routers_text, (10, 10 + score_text.get_height() + 5))
-        screen.blit(covered_text, (10, 10 + score_text.get_height() + routers_text.get_height() + 10))
+        screen.blit(
+            covered_text,
+            (
+                10,
+                10 + score_text.get_height() + routers_text.get_height() + 10
+            )
+        )
 
 
     def __draw_buttons(self, screen: pygame.Surface) -> None:

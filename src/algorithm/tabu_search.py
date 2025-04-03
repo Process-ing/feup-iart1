@@ -8,10 +8,10 @@ from src.algorithm.algorithm import Algorithm
 type TabuTable = Deque[Tuple[int, int]]
 
 class TabuSearch(Algorithm):
-    """
+    '''
     Tabu Search Algorithm
     Keeps track of visited solutions to avoid cycles and local optima.
-    """
+    '''
     def __init__(self, problem: RouterProblem, tabu_tenure: int | None = None,
                  neighborhood_len: int = 10, max_iterations: int | None = None) -> None:
         if tabu_tenure is None:
@@ -37,12 +37,12 @@ class TabuSearch(Algorithm):
 
             for operator in self.__problem.building.get_neighborhood():
                 if (operator.row, operator.col) in self.__tabu:
-                    yield "Neighbor is tabu"
+                    yield 'Neighbor is tabu'
                     continue
 
                 neighbor = operator.apply(self.__problem.building)
                 if not neighbor:
-                    yield "No neighbor found"
+                    yield 'No neighbor found'
                     continue
 
                 if neighbor.score > best_score:
@@ -58,7 +58,7 @@ class TabuSearch(Algorithm):
             if best_neighbor is None or best_pos is None:
                 # Tabu tenure too long, whole neighborhood is tabu
                 self.__tabu.popleft()
-                yield "Tabu tenure too long"
+                yield 'Tabu tenure too long'
                 continue
 
             self.__problem.building = best_neighbor
@@ -72,10 +72,12 @@ class TabuSearch(Algorithm):
                 self.__tabu.popleft()
 
             if best_operator is None:
-                yield "No operator found"
+                yield 'No operator found'
                 continue
 
-            yield f"{'Placed' if best_operator.place else 'Removed'} router at ({best_operator.row}, {best_operator.col})"
+            action = 'Placed' if best_operator.place else 'Removed'
+            row, col = best_operator.row, best_operator.col
+            yield f'{action} router at ({row}, {col})'
 
     @property
     def best_solution(self) -> Building:
