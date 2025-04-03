@@ -99,7 +99,7 @@ class Controller:
             elif algorithm_name == 'random-descent':
                 algorithm = RandomDescent(problem, RandomDescentConfig(
                     max_iterations=None if len(tokens) < 3 else int(tokens[2]),
-                    max_neighborhood=None if len(tokens) < 4 else int(tokens[3]),
+                    max_neighborhood=5 if len(tokens) < 4 else int(tokens[3]),
                 ))
 
             elif algorithm_name == 'simulated-annealing':
@@ -110,11 +110,11 @@ class Controller:
                 ))
 
             elif algorithm_name == 'tabu':
-                tabu_tenure = None if len(tokens) < 3 else int(tokens[2])
-                neighborhood_len = 10 if len(tokens) < 4 else int(tokens[3])
-                max_iterations = None if len(tokens) < 5 else int(tokens[4])
-                algorithm = TabuSearch(problem, tabu_tenure=tabu_tenure,
-                    neighborhood_len=neighborhood_len, max_iterations=max_iterations)
+                algorithm = TabuSearch(problem, TabuSearchConfig(
+                    max_neighborhood=10 if len(tokens) < 3 else int(tokens[2]),
+                    tabu_tenure=TabuSearch.get_automatic_tenure(problem) if len(tokens) < 4 else int(tokens[3]),
+                    max_iterations=None if len(tokens) < 5 else int(tokens[4])
+                ))
 
             elif algorithm_name == 'genetic':
                 population_size = 10 if len(tokens) < 3 else int(tokens[2])
