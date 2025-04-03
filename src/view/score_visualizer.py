@@ -1,5 +1,8 @@
 from typing import List
 import matplotlib.pyplot as plt
+from matplotlib.figure import Figure
+from matplotlib.axes import Axes
+from matplotlib.lines import Line2D
 import matplotlib
 
 matplotlib.use("TkAgg")
@@ -11,13 +14,10 @@ class ScoreVisualizer:
         self.__max_scores: List[float] = []
         self.__enabled = False
 
-        self.__fig, self.__ax = plt.subplots()
-        self.__line = self.__ax.plot([], [], "r-", label="Score")[0]
-        self.__max_line = self.__ax.plot([], [], "b--", label="Max Score")[0]
-        self.__ax.legend()
-        manager = self.__fig.canvas.manager
-        assert manager is not None
-        manager.set_window_title("Score Graph")
+        self.__fig: Figure
+        self.__ax: Axes
+        self.__line: Line2D
+        self.__max_line: Line2D
 
     def update_scores(self, new_score: float) -> None:
         if self.__scores and new_score == self.__scores[-1]:
@@ -48,6 +48,13 @@ class ScoreVisualizer:
             self.__enabled = False
         else:
             self.__enabled = True
+            self.__fig, self.__ax = plt.subplots()
+            self.__line = self.__ax.plot([], [], "r-", label="Score")[0]
+            self.__max_line = self.__ax.plot([], [], "b--", label="Max Score")[0]
+            self.__ax.legend()
+            manager = self.__fig.canvas.manager
+            assert manager is not None
+            manager.set_window_title("Score Graph")
             self.update_plot()
             self.show()
 
