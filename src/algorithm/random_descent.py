@@ -28,9 +28,9 @@ class RandomDescent(Algorithm):
                 if self.__problem.get_score(neighbor) > current_score:
                     self.__problem.building = neighbor
                     found_neighbor = True
-                    break
-                yield "Neighbor not improving score" # FIXME
+                    yield f"{"Placed" if operator.place else "Removed"} router at ({operator.row}, {operator.col})"
+                    break   
+                yield "Neighbor not improving score"
 
-            yield "Entire neighborhood explored"
             if not found_neighbor:
                 break

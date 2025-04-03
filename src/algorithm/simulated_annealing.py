@@ -32,15 +32,15 @@ class SimulatedAnnealing(Algorithm):
 
                 if neighbor_score > current_score:
                     self.__problem.building = neighbor
-                    yield "Improved score"
+                    yield f"{"Placed" if operator.place else "Removed"} router at ({operator.row}, {operator.col})"
                     break
                 else:
                     probability = math.exp(float(neighbor_score - current_score) / self.__temperature)
                     if random.random() < probability:
                         self.__problem.building = neighbor
-                        yield "Accepted worse neighbor"
+                        yield f"{"Worse: Placed" if operator.place else "Removed"} router at ({operator.row}, {operator.col})"
                         break
                     else:
-                        yield "Rejected worse neighbor" # FIXME
+                        yield "Rejected worse neighbor"
 
             self.__temperature *= self.__cooling_schedule

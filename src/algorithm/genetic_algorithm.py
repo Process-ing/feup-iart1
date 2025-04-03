@@ -40,7 +40,7 @@ class GeneticAlgorithm(Algorithm):
                 current_score = neighbor_score
                 found_neighbor = True
 
-            yield "Neighbor found" # FIXME
+            yield f"{"Placed" if operator.place else "Removed"} router at ({operator.row}, {operator.col})"
             if not found_neighbor:
                 break
 
@@ -85,7 +85,7 @@ class GeneticAlgorithm(Algorithm):
                     continue
 
                 offspring.extend(children)
-                yield "Crossover successful" # FIXME
+                yield f"Crossover successful, offspring size: {len(offspring)}"
 
             for i, child in enumerate(offspring):
                 if random.random() < 0.5:
@@ -93,7 +93,7 @@ class GeneticAlgorithm(Algorithm):
                         neighbor = operator.apply(child)
                         if neighbor is not None:
                             child = neighbor
-                            yield "Mutation successful" # FIXME
+                            yield "Mutation successful"
                             break
                         yield "Mutation failed"
 
@@ -128,7 +128,7 @@ class GeneticAlgorithm(Algorithm):
 
                 population[i] = filtered_offspring[j]
                 i += 1
-                yield "Individual replaced" # FIXME
+                yield "Individual replaced"
 
             best_individual = self.get_best_individual([population[0], population[-1]])
             # Best individual is either the first or last in the population
@@ -138,4 +138,4 @@ class GeneticAlgorithm(Algorithm):
                 best_score = self.__problem.get_score(population[0])
                 self.__problem.building = population[0]
 
-            yield "Best individual found" # FIXME
+            yield "Best individual found"
