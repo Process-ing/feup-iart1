@@ -25,7 +25,7 @@ class TabuSearch(Algorithm):
         self.__max_iterations = max_iterations
 
     @override
-    def run(self) -> Iterator[None]:
+    def run(self) -> Iterator[str]:
         round_iter = range(self.__max_iterations) \
             if self.__max_iterations is not None else iter(int, 1)
         for _ in round_iter:
@@ -71,10 +71,12 @@ class TabuSearch(Algorithm):
             elif self.__tabu:
                 self.__tabu.popleft()
 
+            if best_operator is None:
+                yield "No operator found"
+                continue
+
             yield f"{'Placed' if best_operator.place else 'Removed'} router at ({best_operator.row}, {best_operator.col})"
-    def done(self) -> bool:
-        return self.__done
-        
+
     @property
     def best_solution(self) -> Building:
         return self.__best_solution

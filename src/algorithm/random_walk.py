@@ -12,7 +12,7 @@ class RandomWalk(Algorithm):
         self.__max_iterations = max_iterations
 
     @override
-    def run(self) -> Iterator[None]:
+    def run(self) -> Iterator[str]:
         for _ in range(self.__max_iterations) if self.__max_iterations else iter(int, 1):
             for operator in self.__problem.building.get_neighborhood():
                 neighbor = operator.apply(self.__problem.building)

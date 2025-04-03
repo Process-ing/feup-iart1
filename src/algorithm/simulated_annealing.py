@@ -21,7 +21,7 @@ class SimulatedAnnealing(Algorithm):
         self.__cooling_schedule = cooling_schedule
 
     @override
-    def run(self) -> Iterator[None]:
+    def run(self) -> Iterator[str]:
         round_iter = range(self.__max_iterations) \
             if self.__max_iterations is not None else iter(int, 1)
         for _ in round_iter:
@@ -52,8 +52,8 @@ class SimulatedAnnealing(Algorithm):
                                         / self.__temperature)
                 if random.random() < probability:
                     self.__problem.building = neighbor
-                    yield
+                    yield ""
                     break
-                yield
+                yield ""
 
             self.__temperature *= self.__cooling_schedule

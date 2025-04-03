@@ -18,7 +18,7 @@ class GeneticAlgorithm(Algorithm):
             self.__initial_routers = self.__problem.budget \
                 // (self.__problem.router_price + self.__problem.backbone_price)
 
-    def placement_descent(self) -> Iterator[None]:
+    def placement_descent(self) -> Iterator[str]:
         found_neighbor = False
         current_score = self.__problem.building.score
 
@@ -49,7 +49,7 @@ class GeneticAlgorithm(Algorithm):
     def get_best_individual(self, population: list[Building]) -> Building:
         return max(population, key=lambda individual: individual.score)
 
-    def crossover(self, population: List[Building], offspring: List[Building]) -> Iterator[None]:
+    def crossover(self, population: List[Building], offspring: List[Building]) -> Iterator[str]:
         min_score = min(individual.score for individual in population)
         fitness_scores = [individual.score - min_score + 1 for individual in population]
 
@@ -58,27 +58,27 @@ class GeneticAlgorithm(Algorithm):
 
             children = parent1.crossover(parent2)
             if children is None:
-                yield
+                yield "Crossover failed"
                 continue
 
             offspring.extend(children)
-            yield
+            yield f"Crossover successful, offspring size: {len(offspring)}"
 
-    def mutate(self, offspring: List[Building]) -> Iterator[None]:
+    def mutate(self, offspring: List[Building]) -> Iterator[str]:
         for i, child in enumerate(offspring):
             if random.random() < 0.5:
                 for operator in child.get_neighborhood():
                     neighbor = operator.apply(child)
                     if neighbor is not None:
                         child = neighbor
-                        yield
+                        yield "Mutation successful"
                         break
-                    yield
+                    yield "Mutation failed"
 
             offspring[i] = child
 
     @override
-    def run(self) -> Iterator[None]:
+    def run(self) -> Iterator[str]:
         original_building = self.__problem.building
         population = []
         best_score = -1
@@ -101,34 +101,6 @@ class GeneticAlgorithm(Algorithm):
             offspring: List[Building] = []
             yield from self.crossover(population, offspring)
             yield from self.mutate(population)
-
-            # Perform crossover to create offspring
-            offspring: list[Building] = []
-            while len(offspring) < self.__population_size:
-                parent1, parent2 = random.choices(population, weights=fitness_scores, k=2)
-
-                children = parent1.crossover(parent2)
-                if children is None:
-                    yield "Crossover failed"
-                    continue
-
-                offspring.extend(children)
-                yield f"Crossover successful, offspring size: {len(offspring)}"
-
-            for i, child in enumerate(offspring):
-                if random.random() < 0.5:
-                    for operator in child.get_neighborhood():
-                        neighbor = operator.apply(child)
-                        if neighbor is not None:
-                            child = neighbor
-                            yield "Mutation successful"
-                            break
-                        yield "Mutation failed"
-
-                offspring[i] = child
-
-            self.sort_population(population)
-            self.sort_population(offspring)
 
             # Check similarity of individuals
             filtered_offspring: List[Building] = []

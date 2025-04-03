@@ -14,7 +14,7 @@ class RandomDescent(Algorithm):
         self.__max_iterations = max_iterations
 
     @override
-    def run(self) -> Iterator[None]:
+    def run(self) -> Iterator[str]:
         for _ in range(self.__max_iterations):
             found_neighbor = False
             current_score = self.__problem.building.score
