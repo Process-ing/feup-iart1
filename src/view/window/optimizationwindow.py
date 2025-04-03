@@ -17,6 +17,7 @@ class OptimizationWindow(PygameWindow):
         self.__score = problem.get_score(problem.building)
         self.__num_covered_cells = problem.building.get_coverage()
         self.__num_routers = problem.building.get_num_routers()
+        self.__information_message = ""
         self.__algorithm = algorithm
         self.__visualizer = visualizer
         self.__run = algorithm.run()
@@ -41,31 +42,41 @@ class OptimizationWindow(PygameWindow):
         self.__chart_button = ChartButton(width - (48 + 8), 8)
         self.__font = pygame.font.Font('BigBlueTerm437NerdFont-Regular.ttf', 20)
 
+    def __draw_info_message(self, screen: pygame.Surface) -> None:
+        assert self.__font is not None
+
+        message_text = self.__font.render(self.__information_message, True, (255, 255, 255))
+        message_width = message_text.get_width()
+        message_height = message_text.get_height()
+        message_screen = pygame.Surface((message_width + 20, message_height + 10), pygame.SRCALPHA)
+        pygame.draw.polygon(message_screen, (0, 0, 0, 128), [
+            (0, 0), (message_width + 19, 0), (message_width + 19, message_height + 9),
+            (message_width + 14, message_height + 9), (0, message_height + 9)
+        ])
+        screen_width, screen_height = screen.get_size()
+        screen.blit(message_screen, (screen_width - message_width - 20, screen_height - message_height - 10))
+        screen.blit(message_text, (screen_width - message_width - 10, screen_height - message_height - 5))
+
     def __draw_info(self, screen: pygame.Surface) -> None:
         assert self.__font is not None
 
-        # Render the text to calculate dimensions
         score_text = self.__font.render(f'Score: {self.__score}', True, (255, 255, 255))
         routers_text = self.__font.render(f'Routers: {self.__num_routers}', True, (255, 255, 255))
         covered_text = self.__font.render(f'Covered: {self.__num_covered_cells}', True, (255, 255, 255))
 
-        # Calculate the width and height of the info screen
         text_width = max(score_text.get_width(), routers_text.get_width(), covered_text.get_width())
         text_height = score_text.get_height() + routers_text.get_height() + covered_text.get_height() + 20
         info_width = text_width + 20
         info_height = text_height + 10
 
-        # Create the info screen surface
         info_screen = pygame.Surface((info_width, info_height), pygame.SRCALPHA)
         pygame.draw.polygon(info_screen, (0, 0, 0, 128), [
             (0, 0), (info_width - 1, 0), (info_width - 1, info_height - 4),
             (info_width - 4, info_height - 1), (0, info_height - 1)
         ])
 
-        # Blit the info screen onto the main screen
         screen.blit(info_screen, (0, 0))
 
-        # Blit the text onto the main screen
         screen.blit(score_text, (10, 10))
         screen.blit(routers_text, (10, 10 + score_text.get_height() + 5))
         screen.blit(covered_text, (10, 10 + score_text.get_height() + routers_text.get_height() + 10))
@@ -104,6 +115,7 @@ class OptimizationWindow(PygameWindow):
         screen.blit(scaled_problem, (0, 0))
 
         self.__draw_info(screen)
+        self.__draw_info_message(screen)
         self.__draw_buttons(screen)
 
     def on_update(self, events: List[pygame.event.Event], screen: pygame.Surface) -> None:
@@ -122,7 +134,7 @@ class OptimizationWindow(PygameWindow):
         if self.__paused:
             return
 
-        next(self.__run, None)
+        self.__information_message = next(self.__run, None)
         self.__score = self.__problem.get_score(self.__problem.building)
         self.__num_covered_cells = self.__problem.building.get_coverage()
         self.__num_routers = self.__problem.building.get_num_routers()
