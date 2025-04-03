@@ -1,5 +1,5 @@
 from enum import Enum
-from typing import Callable, Iterator, Tuple, cast, List
+from typing import Callable, Deque, Dict, Iterator, Set, Tuple, Union, cast, List
 from collections import deque
 from copy import deepcopy
 import numpy as np
@@ -9,8 +9,9 @@ from src.model.disjoint_set import DisjointSet
 from src.model.error import ProblemLoadError
 
 type CellArray = np.ndarray[tuple[int, ...], np.dtype[np.uint8]]
-
 type CheckBudgetCallback = Callable[['Building'], bool]
+type Pos = Tuple[int, int]
+type SteinerTreeQueue = Deque[Tuple[Pos, Pos, Pos | None, Pos | None]]
 
 class Operator:
     def __init__(self, place: bool, row: int, col: int, check_budget: CheckBudgetCallback) -> None:
@@ -19,7 +20,7 @@ class Operator:
         self.col = col
         self.check_budget = check_budget
 
-    def apply(self, building: 'Building') -> 'Building':
+    def apply(self, building: 'Building') -> Union['Building', None]:
         new_building = deepcopy(building)
 
         if self.place:
@@ -28,7 +29,6 @@ class Operator:
             success = new_building.remove_router(self.row, self.col)
 
         return new_building if success and self.check_budget(new_building) else None
-
 
 class CellType(Enum):
     VOID = 0
@@ -207,7 +207,7 @@ class Building:
         queue = deque([(row, column)])
         visited = np.zeros((self.rows, self.columns), dtype=bool)
         visited[(row, column)] = True
-        parent = {}
+        parent: Dict[Tuple[int, int], Tuple[int, int]] = {}
 
         directions = [(-1, 0), (1, 0), (0, -1), (0, 1), (-1, -1), (-1, 1), (1, -1), (1, 1)]
 
@@ -259,7 +259,7 @@ class Building:
 
         max_row, max_col = self.rows, self.columns
         directions = [(-1, 0), (1, 0), (0, -1), (0, 1), (-1, -1), (-1, 1), (1, -1), (1, 1)]
-        queue = deque()
+        queue: Deque[Tuple[int, int]] = deque()
         queue.append((row, column))
 
         while queue:
@@ -286,20 +286,20 @@ class Building:
         if not routers:
             return
 
-        def reconstruct_path(pred, p: tuple[int, int]) -> set[tuple[int, int]]:
+        def reconstruct_path(pred: Dict[Tuple[int, int], Tuple[int, int] | None], p: Tuple[int, int] | None) -> Set[Tuple[int, int]]:
             res = set()
             while p:
                 res.add(p)
                 p = pred.get(p, None)
             return res
 
-        def steiner_tree(grid, terminals: list[tuple[int, int]]) -> set[tuple[int, int]]:
+        def steiner_tree(grid: CellArray, terminals: list[tuple[int, int]]) -> set[tuple[int, int]]:
             rows, cols = len(grid), len(grid[0])
             directions = [(1, 0), (-1, 0), (0, 1), (0, -1), (1, 1), (-1, -1), (1, -1), (-1, 1)]
 
             terminal_indices = {t: i for i, t in enumerate(terminals)}
             dsu = DisjointSet(len(terminals))
-            queue = deque()
+            queue: SteinerTreeQueue = deque()
             source = {}
             pred = {}
             res = set(terminals)
@@ -380,9 +380,9 @@ class Building:
         lower_col = random.randint(0, max_col - 2)
         upper_col = random.randint(lower_col + 1, max_col - 1)
 
-        def clear_edges(grid):
+        def clear_edges(grid: CellArray) -> None:
             directions = [(-1, 0), (1, 0), (0, -1), (0, 1), (-1, -1), (-1, 1), (1, -1), (1, 1)]
-            queue = deque()
+            queue: Deque[Tuple[int, int]] = deque()
 
             for r in range(lower_row, upper_row):
                 if (grid[r, lower_col] & self.BACKBONE_BIT) != 0:

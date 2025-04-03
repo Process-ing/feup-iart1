@@ -1,6 +1,6 @@
 from copy import deepcopy
 import random
-from typing import Iterator, override
+from typing import Iterator, List, override
 from src.model import Building, Operator
 from src.model import RouterProblem
 from src.algorithm.algorithm import Algorithm
@@ -54,7 +54,7 @@ class GeneticAlgorithm(Algorithm):
     def run(self) -> Iterator[None]:
         original_building = self.__problem.building
         population = []
-        best_score = float('-inf')
+        best_score = -1
         best_neighbor = None
 
         for _ in range(self.__population_size):
@@ -67,6 +67,7 @@ class GeneticAlgorithm(Algorithm):
                 best_score = score
                 best_neighbor = self.__problem.building
 
+        assert best_neighbor is not None  # Can only happen if population size is 0
         self.__problem.building = best_neighbor
 
         for _ in range(self.__max_generations):
@@ -104,7 +105,7 @@ class GeneticAlgorithm(Algorithm):
 
 
             # Check similarity of individuals
-            filtered_offspring = []
+            filtered_offspring: List[Building] = []
             for i in range(len(offspring)):
                 not_similar = True
                 for j in range(len(population)):

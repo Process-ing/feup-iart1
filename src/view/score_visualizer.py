@@ -1,3 +1,4 @@
+from typing import List
 import matplotlib.pyplot as plt
 import matplotlib
 
@@ -5,12 +6,20 @@ matplotlib.use("TkAgg")
 
 
 class ScoreVisualizer:
-    def __init__(self):
-        self.__scores = []
-        self.__max_scores = []
+    def __init__(self) -> None:
+        self.__scores: List[float] = []
+        self.__max_scores: List[float] = []
         self.__enabled = False
 
-    def update_scores(self, new_score):
+        self.__fig, self.__ax = plt.subplots()
+        self.__line = self.__ax.plot([], [], "r-", label="Score")[0]
+        self.__max_line = self.__ax.plot([], [], "b--", label="Max Score")[0]
+        self.__ax.legend()
+        manager = self.__fig.canvas.manager
+        assert manager is not None
+        manager.set_window_title("Score Graph")
+
+    def update_scores(self, new_score: float) -> None:
         if self.__scores and new_score == self.__scores[-1]:
             return
 
@@ -22,34 +31,30 @@ class ScoreVisualizer:
         self.__scores.append(new_score)
         self.update_plot()
 
-    def update_plot(self):
+    def update_plot(self) -> None:
         if not self.__enabled:
             return
-        self.line.set_data(range(len(self.__scores)), self.__scores)
-        self.max_line.set_data(range(len(self.__max_scores)), self.__max_scores)
-        self.ax.relim()
-        self.ax.autoscale_view()
-        self.fig.canvas.draw()
-        self.fig.canvas.flush_events()
 
-    def toggle_show_graph(self):
+        self.__line.set_data(range(len(self.__scores)), self.__scores)
+        self.__max_line.set_data(range(len(self.__max_scores)), self.__max_scores)
+        self.__ax.relim()
+        self.__ax.autoscale_view()
+        self.__fig.canvas.draw()
+        self.__fig.canvas.flush_events()
+
+    def toggle_show_graph(self) -> None:
         if self.__enabled:
-            plt.close(self.fig)
+            plt.close(self.__fig)
             self.__enabled = False
         else:
             self.__enabled = True
-            self.fig, self.ax = plt.subplots()
-            (self.line,) = self.ax.plot([], [], "r-", label="Score")
-            (self.max_line,) = self.ax.plot([], [], "b--", label="Max Score")
-            self.ax.legend()
-            self.fig.canvas.manager.set_window_title("Score Graph")
             self.update_plot()
             self.show()
 
-    def show(self):
+    def show(self) -> None:
         plt.ion()
         plt.show()
 
-    def cleanup(self):
+    def cleanup(self) -> None:
         if self.__enabled:
-            plt.close(self.fig)
+            plt.close(self.__fig)

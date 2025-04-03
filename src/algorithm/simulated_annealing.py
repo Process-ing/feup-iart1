@@ -1,4 +1,5 @@
-from typing import override
+from typing import Iterator, override
+from src.model.problem import RouterProblem
 from src.algorithm.algorithm import Algorithm
 import math
 import random
@@ -11,14 +12,15 @@ class SimulatedAnnealing(Algorithm):
       - Else only accept with a certain probability (based on a temperature and cooling schedule)
     Always decrease the temperature (based on cooling schedule)
     """
-    def __init__(self, problem, temperature = 100000, cooling_schedule = 0.99, max_iterations: int | None = None) -> None:
+    def __init__(self, problem: RouterProblem, temperature: float = 100.0,
+                 cooling_schedule: float = 0.99, max_iterations: int | None = None) -> None:
         self.__problem = problem
         self.__max_iterations = max_iterations
         self.__temperature = temperature
         self.__cooling_schedule = cooling_schedule
 
     @override
-    def run(self):
+    def run(self) -> Iterator[None]:
         for _ in range(self.__max_iterations) if self.__max_iterations is not None else iter(int, 1):
             current_score = self.__problem.get_score(self.__problem.building)
 

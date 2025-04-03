@@ -1,4 +1,4 @@
-from typing import cast
+from typing import Callable, cast
 import numpy as np
 from src.model.building import Building, CellType, CheckBudgetCallback
 
@@ -6,7 +6,7 @@ type BudgetInfo = tuple[int, int, int]
 
 class RouterProblem:
     def __init__(self, building: Building, router_range: int, budget_info: BudgetInfo,
-                 start_backbone : tuple[int, int], check_budget: CheckBudgetCallback = None) -> None:
+                 start_backbone : tuple[int, int], check_budget: CheckBudgetCallback) -> None:
         self.__building = building
         self.router_range = router_range
         self.backbone_price = budget_info[0]
@@ -50,7 +50,7 @@ class RouterProblem:
                 (num_connected_cells * self.backbone_price))
 
     @staticmethod
-    def __gen_check_budget(router_price: int, backbone_price: int, budget: int) -> int:
+    def __gen_check_budget(router_price: int, backbone_price: int, budget: int) -> CheckBudgetCallback:
         def check_budget(building: Building) -> bool:
             num_routers = building.get_num_routers()
             num_connected_cells = building.get_num_connected_cells()

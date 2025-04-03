@@ -87,6 +87,7 @@ class Controller:
             problem = deepcopy(self.__problem)
 
             algorithm_name = None if len(tokens) < 2 else tokens[1]
+            algorithm: Algorithm
             if algorithm_name == "random-walk":
                 max_iterations = 200 if len(tokens) < 3 else int(tokens[2])
                 algorithm = RandomWalk(problem, max_iterations=max_iterations)

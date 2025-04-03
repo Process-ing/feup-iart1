@@ -122,8 +122,7 @@ class OptimizationWindow(PygameWindow):
         self.__display(screen)
         pygame.display.flip()
 
-        if self.__continue_event.is_set():
-            self.__visualizer.update_scores(self.__score)
+        self.__visualizer.update_scores(self.__score)
 
     def toggle_pause(self) -> None:
         if self.__continue_event.is_set():
