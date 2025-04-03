@@ -8,6 +8,7 @@ from src.algorithm import Algorithm, RandomWalk, RandomDescent, SimulatedAnneali
 from src.view.score_visualizer import ScoreVisualizer
 from src.model import RouterProblem
 from src.view import Cli
+from src.view.solve_usage import print_solve_usage
 from src.view.window import OptimizationWindow, ProblemWindow
 
 class CommandResult(Enum):
@@ -85,21 +86,29 @@ class Controller:
 
             problem = deepcopy(self.__problem)
 
-            algorithm_name = tokens[1]
+            algorithm_name = None if len(tokens) < 2 else tokens[1]
             if algorithm_name == "random-walk":
-                algorithm = RandomWalk(problem, max_iterations=200)
+                max_iterations = 200 if len(tokens) < 3 else int(tokens[2])
+                algorithm = RandomWalk(problem, max_iterations=max_iterations)
             elif algorithm_name == "random-descent":
                 algorithm = RandomDescent(problem)
             elif algorithm_name == "simulated-annealing":
-                algorithm = SimulatedAnnealing(problem, max_iterations=200)
+                temperature = 100000 if len(tokens) < 3 else int(tokens[2])
+                cooling_schedule = 0.99 if len(tokens) < 4 else float(tokens[3])
+                max_iterations = 200 if len(tokens) < 5 else int(tokens[4])
+                algorithm = SimulatedAnnealing(problem, temperature=temperature, cooling_schedule=cooling_schedule, max_iterations=max_iterations)
             elif algorithm_name == "tabu":
-                algorithm = TabuSearch(problem)
+                tabu_tenure = None if len(tokens) < 3 else int(tokens[2])
+                neighborhood_len = 10 if len(tokens) < 4 else int(tokens[3])
+                max_iterations = None if len(tokens) < 5 else int(tokens[4])
+                algorithm = TabuSearch(problem, tabu_tenure=tabu_tenure, neighborhood_len=neighborhood_len, max_iterations=max_iterations)
             elif algorithm_name == "genetic":
-                algorithm = GeneticAlgorithm(problem, max_generations=200)
+                population_size = 10 if len(tokens) < 3 else int(tokens[2])
+                max_generations = 1000 if len(tokens) < 4 else int(tokens[3])
+                algorithm = GeneticAlgorithm(problem, population_size=population_size, max_generations=max_generations)
             else:
-                # TODO(Process-ing): Print usage
-                raise SystemError()
-
+                print_solve_usage()
+                return CommandResult.FAILURE
 
             visualizer = ScoreVisualizer()
             visualizer.show()
