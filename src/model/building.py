@@ -105,8 +105,7 @@ class Building(GenericBuilding):
         return list(zip(*np.where(self.__cells & self.ROUTER_BIT)))
 
     def get_target_cells(self) -> List[tuple[int, int]]:
-        return list(zip(*np.where(self.__cells
-                & (self.CELL_TYPE_MASK | self.COVERED_BIT) == CellType.TARGET.value)))
+        return list(zip(*np.where(self.__cells & self.CELL_TYPE_MASK == CellType.TARGET.value)))
 
     def __str__(self) -> str:
         return '\n'.join(''.join(map(chr, row)) for row in self.__cells)
