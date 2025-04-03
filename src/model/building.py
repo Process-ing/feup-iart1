@@ -2,8 +2,8 @@ from enum import Enum
 from typing import Callable, Deque, Dict, Iterator, Set, Tuple, Union, cast, List, override
 from collections import deque
 from copy import deepcopy
-import numpy as np
 import random
+import numpy as np
 
 from src.model.generic_building import GenericBuilding
 from src.model.generic_problem import GenericRouterProblem
@@ -14,6 +14,7 @@ type CellArray = np.ndarray[tuple[int, ...], np.dtype[np.uint8]]
 type CheckBudgetCallback = Callable[['Building'], bool]
 type Pos = Tuple[int, int]
 type SteinerTreeQueue = Deque[Tuple[Pos, Pos, Pos | None, Pos | None]]
+type BuildingPayload = Tuple[Tuple[int, int], Tuple[int, int], ]
 
 class Operator:
     def __init__(self, place: bool, row: int, col: int) -> None:
@@ -49,22 +50,21 @@ class Building(GenericBuilding):
         ord('#'): CellType.WALL,
     }
 
-    def __init__(self, cells: CellArray, router_range: int, backbone: tuple[int, int],
+    def __init__(self, cells: CellArray, backbone: tuple[int, int],
                  new_router_probability: float, problem: Union[GenericRouterProblem, None]) -> None:
         self.__cells: CellArray = cells
-        self.__router_range = router_range
         self.__backbone_root = backbone
         self.__new_router_probability = new_router_probability
         self.problem = problem
         self.__score: Union[int, None] = None
 
     def copy(self) -> 'Building':
-        return Building(deepcopy(self.__cells), self.__router_range, self.__backbone_root,
+        return Building(deepcopy(self.__cells), self.__backbone_root,
                    self.__new_router_probability, self.problem)
 
     @classmethod
-    def from_text(cls, shape: Tuple[int, int], backbone: tuple[int, int], text: str,
-                  router_range: int, problem: Union[GenericRouterProblem, None]) -> 'Building':
+    def from_text(cls, shape: Tuple[int, int], backbone: tuple[int, int],
+                  text: str, problem: Union[GenericRouterProblem, None]) -> 'Building':
         rows, columns = shape
         if rows < 1 or columns < 1:
             raise ProblemLoadError(f'Invalid building size {rows}x{columns}')
@@ -87,7 +87,7 @@ class Building(GenericBuilding):
 
         cells[backbone] |= cls.BACKBONE_BIT
 
-        return cls(cells, router_range, backbone, 1 - 1 / router_range**2, problem)
+        return cls(cells, backbone, 0.9, problem)
 
     @property
     def rows(self) -> int:
@@ -101,11 +101,7 @@ class Building(GenericBuilding):
     def shape(self) -> tuple[int, int]:
         return cast(tuple[int, int], self.__cells.shape)
 
-    @property
-    def router_range(self) -> int:
-        return self.__router_range
-
-    def  get_routers(self) -> List[tuple[int, int]]:
+    def get_routers(self) -> List[tuple[int, int]]:
         return list(zip(*np.where(self.__cells & self.ROUTER_BIT)))
 
     def get_target_cells(self) -> List[tuple[int, int]]:
@@ -146,7 +142,8 @@ class Building(GenericBuilding):
         return routers, backbones
 
     def cover_neighbors(self, row: int, col: int) -> None:
-        rrange = self.__router_range
+        assert self.problem is not None
+        rrange = self.problem.router_range
 
         row_start = max(0, row - rrange)
         row_len = min(self.__cells.shape[0] - row_start, 2 * rrange + 1)
@@ -244,17 +241,20 @@ class Building(GenericBuilding):
         return True
 
     def update_neighbor_coverage(self, row: int, column: int) -> None:
-        cell_row_start = max(0, row - self.__router_range)
-        cell_row_end = min(self.__cells.shape[0], row + self.__router_range + 1)
-        cell_col_start = max(0, column - self.__router_range)
-        cell_col_end = min(self.__cells.shape[1], column + self.__router_range + 1)
+        assert self.problem is not None
+        router_range = self.problem.router_range
+
+        cell_row_start = max(0, row - router_range)
+        cell_row_end = min(self.__cells.shape[0], row + router_range + 1)
+        cell_col_start = max(0, column - router_range)
+        cell_col_end = min(self.__cells.shape[1], column + router_range + 1)
 
         self.__cells[cell_row_start:cell_row_end, cell_col_start:cell_col_end] &= ~self.COVERED_BIT
 
-        router_row_start = max(0, row - 2 * self.__router_range)
-        router_row_end = min(self.__cells.shape[0], row + 2 * self.__router_range + 1)
-        router_col_start = max(0, column - 2 * self.__router_range)
-        router_col_end = min(self.__cells.shape[1], column + 2 * self.__router_range + 1)
+        router_row_start = max(0, row - 2 * router_range)
+        router_row_end = min(self.__cells.shape[0], row + 2 * router_range + 1)
+        router_col_start = max(0, column - 2 * router_range)
+        router_col_end = min(self.__cells.shape[1], column + 2 * router_range + 1)
 
         for rrow in range(router_row_start, router_row_end):
             for rcol in range(router_col_start, router_col_end):
@@ -422,7 +422,9 @@ class Building(GenericBuilding):
 
         stripped_self = self.__cells & ~self.COVERED_BIT
         clear_edges(stripped_self)
-        stripped_other = other.__cells & ~other.COVERED_BIT
+
+        # pylint: disable=protected-access
+        stripped_other = other.__cells & ~self.COVERED_BIT
         clear_edges(stripped_other)
 
         temp_rect = stripped_self[lower_row:upper_row, lower_col:upper_col].copy()
@@ -431,18 +433,18 @@ class Building(GenericBuilding):
         stripped_other[lower_row:upper_row, lower_col:upper_col] = temp_rect
 
         assert self.problem is not None
-        assert other.problem is not None
 
-        child1 = Building(stripped_self, self.__router_range, self.__backbone_root,
+        child1 = Building(stripped_self, self.__backbone_root,
                           self.__new_router_probability, self.problem)
         child1.reconnect_routers()
         if not self.problem.check_budget(child1):
             return None
 
-        child2 = Building(stripped_other, other.__router_range, other.__backbone_root,
-                          other.__new_router_probability, other.problem)
+        # pylint: disable=protected-access
+        child2 = Building(stripped_other, self.__backbone_root,
+                          self.__new_router_probability, self.problem)
         child2.reconnect_routers()
-        if not other.problem.check_budget(child2):
+        if not self.problem.check_budget(child2):
             return None
 
         for router in child1.get_routers():
@@ -453,6 +455,7 @@ class Building(GenericBuilding):
         return child1, child2
 
     def is_similar(self, other: 'Building', max_similarity: float) -> bool:
+        # pylint: disable=protected-access
         return np.count_nonzero(self.__cells != other.__cells) <= max_similarity * self.__cells.size
 
     def get_num_targets(self) -> int:

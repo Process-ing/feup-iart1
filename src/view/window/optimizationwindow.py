@@ -1,12 +1,13 @@
-from typing import List, override
+from typing import List, Union, override
+from threading import Thread, Event, get_ident
 import pygame
+
 from src.algorithm import Algorithm
 from src.model import RouterProblem
 from src.view.viewer import BuildingViewer, PauseButton
 from src.view.window.pygamewindow import PygameWindow
 from src.view.viewer import ChartButton
 from src.view.score_visualizer import ScoreVisualizer
-from threading import Thread, Event, get_ident
 
 class OptimizationWindow(PygameWindow):
     def __init__(self, problem: RouterProblem, algorithm: Algorithm, visualizer: ScoreVisualizer,
@@ -18,12 +19,12 @@ class OptimizationWindow(PygameWindow):
         self.__score = problem.building.score
         self.__algorithm = algorithm
         self.__visualizer = visualizer
-        self.__run = algorithm.run()
         self.__font: pygame.font.Font | None = None
         self.__building_viewer = BuildingViewer()
         self.__pause_button: PauseButton | None = None
         self.__chart_button: ChartButton | None = None
 
+        self.__execution_thread: Union[Thread, None] = None
         self.__continue_event = Event()
         self.__continue_event.set()
         self.__stop_execution = False
@@ -44,7 +45,6 @@ class OptimizationWindow(PygameWindow):
 
             self.__continue_event.wait()
             self.__score = self.__problem.building.score
-            pass
 
     def on_init(self, screen: pygame.Surface) -> None:
         width = self.get_window_size()[0]
@@ -101,7 +101,8 @@ class OptimizationWindow(PygameWindow):
         screen.blit(pause_button_screen, self.__pause_button.top_left_corner)
 
     def __display(self, screen: pygame.Surface) -> None:
-        if self.__continue_event.is_set():  # Optimization thread might send an update before fully pausing
+        # Optimization thread might send an update before fully pausing
+        if self.__continue_event.is_set():
             problem_screen = self.__building_viewer.render(self.__problem.building)
             scaled_problem = pygame.transform.scale(problem_screen, screen.get_size())
             screen.blit(scaled_problem, (0, 0))
@@ -137,6 +138,8 @@ class OptimizationWindow(PygameWindow):
         self.__continue_event.clear()
 
     def cleanup(self) -> None:
+        assert self.__execution_thread is not None
+
         self.__stop_execution = True
         self.__continue_event.set()
 

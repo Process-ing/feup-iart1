@@ -1,8 +1,8 @@
-from typing import Callable, cast, override
+from typing import cast, override
 import numpy as np
 from src.model.generic_building import GenericBuilding
 from src.model.generic_problem import GenericRouterProblem
-from src.model.building import Building, CellType
+from src.model.building import Building
 
 type BudgetInfo = tuple[int, int, int]
 
@@ -15,6 +15,7 @@ class RouterProblem(GenericRouterProblem):
         self.__budget = budget_info[2]
 
     @property
+    @override
     def router_range(self) -> int:
         return self.__router_range
 
@@ -41,7 +42,7 @@ class RouterProblem(GenericRouterProblem):
         budget_info = cast(BudgetInfo, tuple(initial_section[3:6]))
         backbone = cast(tuple[int, int], tuple(initial_section[6:8]))
 
-        building = Building.from_text((rows, columns), backbone, building_section, router_range, None)
+        building = Building.from_text((rows, columns), backbone, building_section, None)
         problem = cls(building, router_range, budget_info)
         building.problem = problem
 
@@ -60,7 +61,8 @@ class RouterProblem(GenericRouterProblem):
         num_routers = building.get_num_routers()
         num_connected_cells = building.get_num_connected_cells()
 
-        return num_routers * self.__router_price + num_connected_cells * self.backbone_price <= self.budget
+        return num_routers * self.__router_price + num_connected_cells \
+            * self.backbone_price <= self.budget
 
     @override
     def get_score(self, building: GenericBuilding) -> int:

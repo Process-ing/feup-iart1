@@ -8,7 +8,7 @@ class GenericBuilding:
 
     @abstractmethod
     def get_num_connected_cells(self) -> int:
-         pass
+        pass
 
     @abstractmethod
     def get_coverage(self) -> int:
