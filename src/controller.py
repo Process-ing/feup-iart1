@@ -2,6 +2,7 @@ from copy import deepcopy
 from enum import Enum
 from typing import Optional, Union
 
+# pylint: disable=wildcard-import
 from src.algorithm import *
 from src.view.score_visualizer import ScoreVisualizer
 from src.model import RouterProblem
@@ -90,17 +91,16 @@ class Controller:
             max_iterations: Union[int, None]
             algorithm: Algorithm
 
-
             if algorithm_name == 'random-walk':
-                max_iterations = 200 if len(tokens) < 3 else int(tokens[2])
-                algorithm = RandomWalk(problem, max_iterations=max_iterations)
+                algorithm = RandomWalk(problem, RandomWalkConfig(
+                    max_iterations=None if len(tokens) < 3 else int(tokens[2])
+                ))
 
             elif algorithm_name == 'random-descent':
-                config = RandomDescentConfig(
-                    max_iterations=None,
-                    max_neighborhood=5
-                )
-                algorithm = RandomDescent(problem, config)
+                algorithm = RandomDescent(problem, RandomDescentConfig(
+                    max_iterations=None if len(tokens) < 3 else int(tokens[2]),
+                    max_neighborhood=None if len(tokens) < 4 else int(tokens[3]),
+                ))
 
             elif algorithm_name == 'simulated-annealing':
                 temperature = 100000 if len(tokens) < 3 else int(tokens[2])
@@ -121,7 +121,7 @@ class Controller:
                 max_generations = 1000 if len(tokens) < 4 else int(tokens[3])
                 algorithm = GeneticAlgorithm(problem, population_size=population_size,
                     max_generations=max_generations)
-                
+
             else:
                 print_solve_usage()
                 return CommandResult.FAILURE
