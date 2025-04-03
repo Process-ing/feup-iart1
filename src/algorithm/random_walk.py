@@ -17,8 +17,8 @@ class RandomWalk(Algorithm):
             for operator in self.__problem.building.get_neighborhood():
                 neighbor = operator.apply(self.__problem.building)
                 if not neighbor:
-                    yield
+                    yield "No neighbor found"
                     continue
                 self.__problem.building = neighbor
                 break
-            yield
+            yield "Entire neighborhood explored"

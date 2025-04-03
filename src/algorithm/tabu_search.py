@@ -30,12 +30,12 @@ class TabuSearch(Algorithm):
 
             for operator in self.__problem.building.get_neighborhood():
                 if (operator.row, operator.col) in self.__tabu:
-                    yield
+                    yield "Neighbor is tabu" # FIXME
                     continue
 
                 neighbor = operator.apply(self.__problem.building)
                 if not neighbor:
-                    yield
+                    yield "No neighbor found" 
                     continue
 
                 score = self.__problem.get_score(neighbor)
@@ -48,11 +48,11 @@ class TabuSearch(Algorithm):
                 if neighbor_count >= self.__neighborhood_len:
                     break
                 else:
-                    yield
+                    yield "Neighborhood limit reached"
 
             if best_neighbor is None:  # Tabu tenure too long, whole neighborhood is tabu
                 self.__tabu.popleft()
-                yield
+                yield "Tabu tenure too long"
                 continue
 
             self.__problem.building = best_neighbor
@@ -65,7 +65,7 @@ class TabuSearch(Algorithm):
             elif self.__tabu:
                 self.__tabu.popleft()
 
-            yield
+            yield "Better neighbor found" # FIXME
 
     def done(self) -> bool:
         return self.__done

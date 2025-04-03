@@ -26,12 +26,12 @@ class GeneticAlgorithm(Algorithm):
         for _ in range(self.__initial_routers):
             operator = next(self.__problem.building.get_placement_neighborhood(), None)
             if not operator:
-                yield
+                yield "No neighbor found"
                 continue
 
             neighbor = operator.apply(self.__problem.building)
             if not neighbor:
-                yield
+                yield "No neighbor found"
                 continue
 
             neighbor_score = self.__problem.get_score(neighbor)
@@ -40,7 +40,7 @@ class GeneticAlgorithm(Algorithm):
                 current_score = neighbor_score
                 found_neighbor = True
 
-            yield
+            yield "Neighbor found" # FIXME
             if not found_neighbor:
                 break
 
@@ -81,11 +81,11 @@ class GeneticAlgorithm(Algorithm):
 
                 children = parent1.crossover(parent2)
                 if children is None:
-                    yield
+                    yield "Crossover failed"
                     continue
 
                 offspring.extend(children)
-                yield
+                yield "Crossover successful" # FIXME
 
             for i, child in enumerate(offspring):
                 if random.random() < 0.5:
@@ -93,9 +93,9 @@ class GeneticAlgorithm(Algorithm):
                         neighbor = operator.apply(child)
                         if neighbor is not None:
                             child = neighbor
-                            yield
+                            yield "Mutation successful" # FIXME
                             break
-                        yield
+                        yield "Mutation failed"
 
                 offspring[i] = child
 
@@ -128,7 +128,7 @@ class GeneticAlgorithm(Algorithm):
 
                 population[i] = filtered_offspring[j]
                 i += 1
-                yield
+                yield "Individual replaced" # FIXME
 
             best_individual = self.get_best_individual([population[0], population[-1]])
             # Best individual is either the first or last in the population
@@ -138,4 +138,4 @@ class GeneticAlgorithm(Algorithm):
                 best_score = self.__problem.get_score(population[0])
                 self.__problem.building = population[0]
 
-            yield
+            yield "Best individual found" # FIXME

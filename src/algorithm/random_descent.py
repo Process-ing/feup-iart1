@@ -22,15 +22,15 @@ class RandomDescent(Algorithm):
             for operator in self.__problem.building.get_neighborhood():
                 neighbor = operator.apply(self.__problem.building)
                 if not neighbor:
-                    yield
+                    yield "No neighbor found"
                     continue
 
                 if self.__problem.get_score(neighbor) > current_score:
                     self.__problem.building = neighbor
                     found_neighbor = True
                     break
-                yield
+                yield "Neighbor not improving score" # FIXME
 
-            yield
+            yield "Entire neighborhood explored"
             if not found_neighbor:
                 break

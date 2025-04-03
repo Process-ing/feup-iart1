@@ -25,22 +25,22 @@ class SimulatedAnnealing(Algorithm):
             for operator in self.__problem.building.get_neighborhood():
                 neighbor = operator.apply(self.__problem.building)
                 if not neighbor:
-                    yield
+                    yield "No neighbor found"
                     continue
 
                 neighbor_score = self.__problem.get_score(neighbor)
 
                 if neighbor_score > current_score:
                     self.__problem.building = neighbor
-                    yield
+                    yield "Improved score"
                     break
                 else:
                     probability = math.exp(float(neighbor_score - current_score) / self.__temperature)
                     if random.random() < probability:
                         self.__problem.building = neighbor
-                        yield
+                        yield "Accepted worse neighbor"
                         break
                     else:
-                        yield
+                        yield "Rejected worse neighbor" # FIXME
 
             self.__temperature *= self.__cooling_schedule
