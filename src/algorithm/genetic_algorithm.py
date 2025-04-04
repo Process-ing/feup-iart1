@@ -14,6 +14,24 @@ class GeneticAlgorithmConfig:
     max_generations: Optional[int]
     max_neighborhood: Optional[int]
 
+    @classmethod
+    def from_flags(cls, flags: dict[str, str],
+                   default_init_routers: int) -> Optional['GeneticAlgorithmConfig']:
+        try:
+            population_size = int(flags['population-size']) if 'population-size' in flags else 10
+            init_routers = int(flags['init-routers']) \
+                if 'init-routers' in flags else default_init_routers
+            mutation_prob = float(flags['mutation-prob']) if 'mutation-prob' in flags else 0.5
+            max_similarity = float(flags['max-similarity']) if 'max-similarity' in flags else 0.001
+            max_generations = int(flags['max-generations']) if 'max-generations' in flags else None
+            max_neighborhood = int(flags['max-neighborhood']) \
+                if 'max-neighborhood' in flags else 5
+        except ValueError:
+            return None
+
+        return cls(population_size, init_routers, mutation_prob,
+                   max_similarity, max_generations, max_neighborhood)
+
 class GeneticAlgorithm(Algorithm):
     '''
     Genetic Algorithm

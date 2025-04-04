@@ -13,6 +13,20 @@ class TabuSearchConfig:
     max_iterations: Optional[int]
     max_neighborhood: Optional[int]
 
+    @classmethod
+    def from_flags(cls, flags: dict[str, str],
+                   default_tabu_tenure: int) -> Optional['TabuSearchConfig']:
+        try:
+            tabu_tenure = int(flags['tabu-tenure']) \
+                if 'tabu-tenure' in flags else default_tabu_tenure
+            max_iterations = int(flags['max-iterations']) if 'max-iterations' in flags else None
+            max_neighborhood = int(flags['max-neighborhood']) \
+                if 'max-neighborhood' in flags else 10
+        except ValueError:
+            return None
+
+        return cls(tabu_tenure, max_iterations, max_neighborhood)
+
 class TabuSearch(Algorithm):
     '''
     Tabu Search Algorithm

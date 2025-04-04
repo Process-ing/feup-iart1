@@ -12,6 +12,19 @@ class SimulatedAnnealingConfig:
     init_temperature: float
     cooling_schedule: float
 
+    @classmethod
+    def from_flags(cls, flags: dict[str, str]) -> Optional['SimulatedAnnealingConfig']:
+        try:
+            max_iterations = int(flags['max-iterations']) if 'max-iterations' in flags else None
+            init_temperature = float(flags['init-temperature']) \
+                if 'init-temperature' in flags else 1000.0
+            cooling_schedule = float(flags['cooling-schedule']) \
+                if 'cooling-schedule' in flags else 0.99
+        except ValueError:
+            return None
+
+        return cls(max_iterations, init_temperature, cooling_schedule)
+
 class SimulatedAnnealing(Algorithm):
     '''
     Simulated Annealing Algorithm

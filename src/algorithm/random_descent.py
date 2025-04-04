@@ -1,5 +1,5 @@
 from dataclasses import dataclass
-from typing import Iterator, Optional, override
+from typing import Dict, Iterator, Optional, override
 
 from src.algorithm.algorithm import Algorithm
 from src.model import RouterProblem
@@ -8,6 +8,17 @@ from src.model import RouterProblem
 class RandomDescentConfig:
     max_neighborhood: Optional[int]
     max_iterations: Optional[int]
+
+    @classmethod
+    def from_flags(cls, flags: Dict[str, str]) -> Optional['RandomDescentConfig']:
+        try:
+            max_neighborhood = int(flags['max-neighborhood']) \
+                if 'max-neighborhood' in flags else 5
+            max_iterations = int(flags['max-iterations']) if 'max-iterations' in flags else None
+        except ValueError:
+            return None
+
+        return cls(max_neighborhood=max_neighborhood, max_iterations=max_iterations)
 
 class RandomDescent(Algorithm):
     '''

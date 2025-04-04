@@ -1,6 +1,6 @@
 from copy import deepcopy
 from enum import Enum
-from typing import List, Optional
+from typing import Dict, List, Optional
 
 # pylint: disable=wildcard-import
 from src.algorithm import *
@@ -51,8 +51,6 @@ class Controller:
         self.__cli.print_success(f'Problem loaded from \'{filename}\'')
         return CommandResult.SUCCESS
 
-    # Pylint ignore inserted, because this functions behaves as a switch-case
-    # pylint: disable=too-many-branches
     def process_command(self, tokens: List[str]) -> CommandResult:
         command = tokens[0]
         if command in ['exit', 'quit']:
@@ -87,47 +85,8 @@ class Controller:
 
             problem = deepcopy(self.__problem)
 
-            algorithm_name = None if len(tokens) < 2 else tokens[1]
-            algorithm: Algorithm
-
-            if algorithm_name == 'random-walk':
-                algorithm = RandomWalk(problem, RandomWalkConfig(
-                    max_iterations=None if len(tokens) < 3 else int(tokens[2])
-                ))
-
-            elif algorithm_name == 'random-descent':
-                algorithm = RandomDescent(problem, RandomDescentConfig(
-                    max_iterations=None if len(tokens) < 3 else int(tokens[2]),
-                    max_neighborhood=5 if len(tokens) < 4 else int(tokens[3]),
-                ))
-
-            elif algorithm_name == 'simulated-annealing':
-                algorithm = SimulatedAnnealing(problem, SimulatedAnnealingConfig(
-                    init_temperature=1000.0 if len(tokens) < 3 else float(tokens[2]),
-                    cooling_schedule=0.99 if len(tokens) < 4 else float(tokens[3]),
-                    max_iterations=None if len(tokens) < 5 else int(tokens[4])
-                ))
-
-            elif algorithm_name == 'tabu':
-                algorithm = TabuSearch(problem, TabuSearchConfig(
-                    max_neighborhood=10 if len(tokens) < 3 else int(tokens[2]),
-                    tabu_tenure=TabuSearch.get_default_tenure(problem)
-                        if len(tokens) < 4 else int(tokens[3]),
-                    max_iterations=None if len(tokens) < 5 else int(tokens[4])
-                ))
-
-            elif algorithm_name == 'genetic':
-                algorithm = GeneticAlgorithm(problem, GeneticAlgorithmConfig(
-                    population_size=10 if len(tokens) < 3 else int(tokens[2]),
-                    init_routers=GeneticAlgorithm.get_default_init_routers(problem)
-                        if len(tokens) < 4 else int(tokens[3]),
-                    max_generations=1000 if len(tokens) < 5 else int(tokens[4]),
-                    max_similarity=0.001,
-                    mutation_prob=0.8,
-                    max_neighborhood=3
-                ))
-
-            else:
+            algorithm = self.receive_algorithm(problem, tokens)
+            if not algorithm:
                 print_solve_usage()
                 return CommandResult.FAILURE
 
@@ -143,3 +102,85 @@ class Controller:
 
         self.__cli.print_error(f'Unknown command \'{command}\'')
         return CommandResult.FAILURE
+
+    @staticmethod
+    def receive_algorithm(problem: RouterProblem, tokens: List[str]) -> Optional[Algorithm]:
+        algorithm_name = None if len(tokens) < 2 else tokens[1]
+        algorithm: Algorithm
+
+        flags = Controller.parse_algorithm_flags(tokens[2:])
+        if flags is None:
+            return None
+
+        if algorithm_name == 'random-walk':
+            config = RandomWalkConfig.from_flags(flags)
+            if not config:
+                return None
+
+            algorithm = RandomWalk(problem, config)
+
+        elif algorithm_name == 'random-descent':
+            config = RandomDescentConfig.from_flags(flags)
+            if not config:
+                return None
+
+            algorithm = RandomDescent(problem, config)
+
+        elif algorithm_name == 'simulated-annealing':
+            config = SimulatedAnnealingConfig.from_flags(flags)
+            if not config:
+                return None
+
+            algorithm = SimulatedAnnealing(problem, config)
+
+        elif algorithm_name == 'tabu':
+            default_tabu_tenure = TabuSearch.get_default_tenure(problem)
+            config = TabuSearchConfig.from_flags(flags, default_tabu_tenure)
+            if not config:
+                return None
+
+            algorithm = TabuSearch(problem, config)
+
+        elif algorithm_name == 'genetic':
+            default_init_routers = GeneticAlgorithm.get_default_init_routers(problem)
+            config = GeneticAlgorithmConfig.from_flags(flags, default_init_routers)
+            if not config:
+                return None
+
+            algorithm = GeneticAlgorithm(problem, config)
+
+        else:
+            return None
+
+        return algorithm
+
+    @staticmethod
+    def parse_algorithm_flags(tokens: List[str]) -> Optional[Dict[str, str]]:
+        '''
+        Parse flags from tokens. Flags are expected to start with '--'.
+        They can be specified in either of two formats:
+            --flag=value    (an inline value)
+            --flag value    (the value is the next token)
+        Returns a dictionary mapping flag names to their string values.
+        If a flag is provided without a value, it is set as "True".
+        '''
+        flags = {}
+        i = 0
+        while i < len(tokens):
+            token = tokens[i]
+            if token.startswith('--'):
+                if '=' in token:
+                    flag, value = token[2:].split('=', 1)
+                    flags[flag] = value
+                else:
+                    flag = token[2:]
+                    # Check if a value follows and it isn't another flag:
+                    if i + 1 < len(tokens) and not tokens[i + 1].startswith('--'):
+                        flags[flag] = tokens[i + 1]
+                        i += 1
+                    else:
+                        flags[flag] = 'True'
+            else:
+                return None
+            i += 1
+        return flags

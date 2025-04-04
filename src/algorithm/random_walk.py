@@ -1,11 +1,20 @@
 from dataclasses import dataclass
-from typing import Iterator, Optional, override
+from typing import Dict, Iterator, Optional, override
 from src.algorithm.algorithm import Algorithm
 from src.model import RouterProblem
 
 @dataclass
 class RandomWalkConfig:
     max_iterations: Optional[int]
+
+    @classmethod
+    def from_flags(cls, flags: Dict[str, str]) -> Optional['RandomWalkConfig']:
+        try:
+            max_iterations = int(flags['max-iterations']) if 'max-iterations' in flags else None
+        except ValueError:
+            return None
+
+        return cls(max_iterations)
 
 class RandomWalk(Algorithm):
     '''
