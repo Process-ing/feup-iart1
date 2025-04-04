@@ -1,6 +1,7 @@
 from dataclasses import dataclass
 import random
 from typing import Iterator, List, Optional, override
+from src.algorithm.random_descent import RandomDescent, RandomDescentConfig
 from src.model import Building
 from src.model import RouterProblem
 from src.algorithm.algorithm import Algorithm
@@ -13,6 +14,7 @@ class GeneticAlgorithmConfig:
     max_similarity: float
     max_generations: Optional[int]
     max_neighborhood: Optional[int]
+    mimetic: bool
 
     @classmethod
     def from_flags(cls, flags: dict[str, str],
@@ -26,6 +28,7 @@ class GeneticAlgorithmConfig:
             max_generations = int(flags['max-generations']) if 'max-generations' in flags else None
             max_neighborhood = int(flags['max-neighborhood']) \
                 if 'max-neighborhood' in flags else 5
+            mimetic = bool(flags['mimetic']) if 'mimetic' in flags else False
         except ValueError:
             return None
 
@@ -116,6 +119,7 @@ class GeneticAlgorithm(Algorithm):
         max_generations = self.__config.max_generations
         population_size = self.__config.population_size
         max_similarity = self.__config.max_similarity
+        mimetic = self.__config.mimetic
 
         original_building = self.__problem.building
         population = []
@@ -165,7 +169,7 @@ class GeneticAlgorithm(Algorithm):
             # Replace the worst individuals in the population
             i = 0
             for j in range(len(filtered_offspring) - 1, -1, -1):
-                if filtered_offspring[j].score < population[i].score:
+                if filtered_offspring[j].score <= population[i].score:
                     break
 
                 population[i] = filtered_offspring[j]
@@ -181,6 +185,19 @@ class GeneticAlgorithm(Algorithm):
                 self.__problem.building = population[0]
 
             yield 'Best individual found'
+
+        if not mimetic:
+            return
+
+        # Mimetic phase
+        yield 'Mimetic phase started'
+
+        random_descent = RandomDescent(self.__problem, RandomDescentConfig(
+            max_neighborhood=self.__config.max_neighborhood,
+            max_iterations=None
+        ))
+
+        yield from random_descent.run()
 
     @staticmethod
     def get_default_init_routers(problem: RouterProblem) -> int:
