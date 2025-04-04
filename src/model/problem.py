@@ -9,6 +9,7 @@ type BudgetInfo = Tuple[int, int, int]
 class RouterProblem(GenericRouterProblem):
     def __init__(self, building: Building, router_range: int, budget_info: BudgetInfo) -> None:
         self.__building = building
+        self.__best_building = building
         self.__router_range = router_range
         self.__backbone_price = budget_info[0]
         self.__router_price = budget_info[1]
@@ -55,6 +56,12 @@ class RouterProblem(GenericRouterProblem):
     @building.setter
     def building(self, building: Building) -> None:
         self.__building = building
+        if building.score > self.__best_building.score:
+            self.__best_building = building
+
+    @property
+    def best_building(self) -> Building:
+        return self.__best_building
 
     @override
     def check_budget(self, building: GenericBuilding) -> bool:
@@ -77,7 +84,7 @@ class RouterProblem(GenericRouterProblem):
 
 
     def dump_to_file(self, filename: str) -> None:
-        building_map = self.__building.as_nparray()
+        building_map = self.__best_building.as_nparray()
         backbone_cells = [(i, j) for (i, j), cell in np.ndenumerate(building_map) \
             if cell & Building.BACKBONE_BIT]
         router_cells = [(i, j) for (i, j), cell in np.ndenumerate(building_map) \

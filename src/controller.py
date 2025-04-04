@@ -131,9 +131,8 @@ class Controller:
                 print_solve_usage()
                 return CommandResult.FAILURE
 
-            visualizer = ScoreVisualizer()
-            visualizer.show()
-            opt_win = OptimizationWindow(problem, algorithm, visualizer)
+            score_visualizer = ScoreVisualizer()
+            opt_win = OptimizationWindow(problem, algorithm, score_visualizer)
             opt_win.launch()
             opt_win.cleanup()
 

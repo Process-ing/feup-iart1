@@ -10,8 +10,8 @@ from src.view.viewer import ChartButton
 from src.view.score_visualizer import ScoreVisualizer
 
 class OptimizationWindow(PygameWindow):
-    def __init__(self, problem: RouterProblem, algorithm: Algorithm, visualizer: ScoreVisualizer,
-        max_framerate: float = 60) -> None:
+    def __init__(self, problem: RouterProblem, algorithm: Algorithm,
+                 score_visualizer: ScoreVisualizer, max_framerate: float = 60) -> None:
 
         super().__init__(max_framerate)
 
@@ -21,7 +21,7 @@ class OptimizationWindow(PygameWindow):
         self.__num_routers = problem.building.get_num_routers()
         self.__information_message = ''
         self.__algorithm = algorithm
-        self.__visualizer = visualizer
+        self.__score_visualizer = score_visualizer
         self.__font: Optional[pygame.font.Font] = None
         self.__building_viewer = BuildingViewer()
         self.__pause_button: Optional[PauseButton] = None
@@ -181,7 +181,7 @@ class OptimizationWindow(PygameWindow):
             self.__continue_event.set()
 
     def toggle_show_graf(self) -> None:
-        self.__visualizer.toggle_show_graph()
+        self.__score_visualizer.toggle_show_graph()
 
     def pause(self) -> None:
         self.__continue_event.clear()
@@ -192,6 +192,6 @@ class OptimizationWindow(PygameWindow):
         self.__stop_execution = True
         self.__continue_event.set()
 
-        self.__visualizer.cleanup()
+        self.__score_visualizer.cleanup()
         if self.__execution_thread.ident != get_ident():
             self.__execution_thread.join()

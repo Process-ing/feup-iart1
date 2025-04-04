@@ -21,8 +21,6 @@ class TabuSearch(Algorithm):
     '''
     def __init__(self, problem: RouterProblem, config: TabuSearchConfig) -> None:
         self.__problem = problem
-        self.__best_solution = problem.building
-        self.__best_score = problem.building.score
         self.__config = config
 
     def is_tabu(self, tabu_list: TabuList, pos: Tuple[int, int]) -> bool:
@@ -75,13 +73,6 @@ class TabuSearch(Algorithm):
             self.__problem.building = best_neighbor
             tabu_list.append(best_operator.pos)
 
-            if best_score and best_score > self.__best_score:
-                self.__best_solution = best_neighbor
-                self.__best_score = best_score
-
-            elif tabu_list:
-                tabu_list.popleft()
-
             if best_operator is None:
                 yield 'No operator found'
                 continue
@@ -89,10 +80,6 @@ class TabuSearch(Algorithm):
             action = 'Placed' if best_operator.place else 'Removed'
             row, col = best_operator.row, best_operator.col
             yield f'{action} router at ({row}, {col})'
-
-    @property
-    def best_solution(self) -> Building:
-        return self.__best_solution
 
     @staticmethod
     def get_default_tenure(problem: RouterProblem) -> int:
