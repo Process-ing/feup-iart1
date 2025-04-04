@@ -5,9 +5,9 @@ from src.model import RouterProblem
 from src.algorithm.algorithm import Algorithm
 
 class GeneticAlgorithm(Algorithm):
-    """
+    '''
     Genetic Algorithm
-    """
+    '''
     def __init__(self, problem: RouterProblem, population_size: int = 10,
                  initial_routers: int | None = None, max_generations: int = 1000) -> None:
         self.__problem = problem
@@ -18,19 +18,19 @@ class GeneticAlgorithm(Algorithm):
             self.__initial_routers = self.__problem.budget \
                 // (self.__problem.router_price + self.__problem.backbone_price)
 
-    def placement_descent(self) -> Iterator[None]:
+    def placement_descent(self) -> Iterator[str]:
         found_neighbor = False
         current_score = self.__problem.building.score
 
         for _ in range(self.__initial_routers):
             operator = next(self.__problem.building.get_placement_neighborhood(), None)
             if not operator:
-                yield
+                yield 'No neighbor found'
                 continue
 
             neighbor = operator.apply(self.__problem.building)
             if not neighbor:
-                yield
+                yield 'No neighbor found'
                 continue
 
             neighbor_score = neighbor.score
@@ -39,7 +39,9 @@ class GeneticAlgorithm(Algorithm):
                 current_score = neighbor_score
                 found_neighbor = True
 
-            yield
+            yield f"{'Placed' if operator.place else 'Removed'} router at " \
+                f"({operator.row}, {operator.col})"
+
             if not found_neighbor:
                 break
 
@@ -49,7 +51,7 @@ class GeneticAlgorithm(Algorithm):
     def get_best_individual(self, population: list[Building]) -> Building:
         return max(population, key=lambda individual: individual.score)
 
-    def crossover(self, population: List[Building], offspring: List[Building]) -> Iterator[None]:
+    def crossover(self, population: List[Building], offspring: List[Building]) -> Iterator[str]:
         min_score = min(individual.score for individual in population)
         fitness_scores = [individual.score - min_score + 1 for individual in population]
 
@@ -58,27 +60,27 @@ class GeneticAlgorithm(Algorithm):
 
             children = parent1.crossover(parent2)
             if children is None:
-                yield
+                yield 'Crossover failed'
                 continue
 
             offspring.extend(children)
-            yield
+            yield f'Crossover successful, offspring size: {len(offspring)}'
 
-    def mutate(self, offspring: List[Building]) -> Iterator[None]:
+    def mutate(self, offspring: List[Building]) -> Iterator[str]:
         for i, child in enumerate(offspring):
             if random.random() < 0.5:
                 for operator in child.get_neighborhood():
                     neighbor = operator.apply(child)
                     if neighbor is not None:
                         child = neighbor
-                        yield
+                        yield 'Mutation successful'
                         break
-                    yield
+                    yield 'Mutation failed'
 
             offspring[i] = child
 
     @override
-    def run(self) -> Iterator[None]:
+    def run(self) -> Iterator[str]:
         original_building = self.__problem.building
         population = []
         best_score = -1
@@ -101,9 +103,6 @@ class GeneticAlgorithm(Algorithm):
             offspring: List[Building] = []
             yield from self.crossover(population, offspring)
             yield from self.mutate(population)
-
-            self.sort_population(population)
-            self.sort_population(offspring)
 
             # Check similarity of individuals
             filtered_offspring: List[Building] = []
@@ -130,7 +129,7 @@ class GeneticAlgorithm(Algorithm):
 
                 population[i] = filtered_offspring[j]
                 i += 1
-                yield
+                yield 'Individual replaced'
 
             best_individual = self.get_best_individual([population[0], population[-1]])
             # Best individual is either the first or last in the population
@@ -140,4 +139,4 @@ class GeneticAlgorithm(Algorithm):
                 best_score = population[0].score
                 self.__problem.building = population[0]
 
-            yield
+            yield 'Best individual found'
