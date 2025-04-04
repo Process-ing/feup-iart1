@@ -1,48 +1,59 @@
+from dataclasses import dataclass
 import random
-from typing import Iterator, List, override
+from typing import Iterator, List, Union, override
 from src.model import Building
 from src.model import RouterProblem
 from src.algorithm.algorithm import Algorithm
+
+@dataclass
+class GeneticAlgorithmConfig:
+    population_size: int
+    init_routers: int
+    max_similarity: float
+    max_generations: Union[int, None]
+    max_neighborhood: Union[int, None]
 
 class GeneticAlgorithm(Algorithm):
     '''
     Genetic Algorithm
     '''
-    def __init__(self, problem: RouterProblem, population_size: int = 10,
-                 initial_routers: int | None = None, max_generations: int = 1000) -> None:
+    def __init__(self, problem: RouterProblem, config: GeneticAlgorithmConfig) -> None:
         self.__problem = problem
-        self.__population_size = population_size
-        self.__max_generations = max_generations
-
-        if initial_routers is None:
-            self.__initial_routers = self.__problem.budget \
-                // (self.__problem.router_price + self.__problem.backbone_price)
+        self.__config = config
 
     def placement_descent(self) -> Iterator[str]:
-        found_neighbor = False
-        current_score = self.__problem.building.score
+        init_routers = self.__config.init_routers
+        max_neighborhood = self.__config.max_neighborhood
 
-        for _ in range(self.__initial_routers):
-            operator = next(self.__problem.building.get_placement_neighborhood(), None)
-            if not operator:
-                yield 'No neighbor found'
-                continue
+        for _ in range(init_routers):
+            if self.__problem.building.get_num_uncovered_targets() == 0:
+                break
 
-            neighbor = operator.apply(self.__problem.building)
-            if not neighbor:
-                yield 'No neighbor found'
-                continue
+            best_score = -1
+            best_neighbor = None
+            current_score = self.__problem.building.score
 
-            neighbor_score = neighbor.score
-            if neighbor_score > current_score:
-                self.__problem.building = neighbor
-                current_score = neighbor_score
-                found_neighbor = True
+            num_neighbors = 0
+            for operator in self.__problem.building.get_placement_neighborhood():
+                neighbor = operator.apply(self.__problem.building)
+                if not neighbor:
+                    yield 'No neighbor found'
+                    continue
 
-            yield f"{'Placed' if operator.place else 'Removed'} router at " \
-                f"({operator.row}, {operator.col})"
+                if neighbor.score > current_score:
+                    if neighbor.score > best_score:
+                        best_score = neighbor.score
+                        best_neighbor = neighbor
 
-            if not found_neighbor:
+                    num_neighbors += 1
+                    if num_neighbors == max_neighborhood:
+                        yield f"{'Placed' if operator.place else 'Removed'} router at " \
+                            f"({operator.row}, {operator.col})"
+                        break
+
+            if best_neighbor is not None:
+                self.__problem.building = best_neighbor
+            else:
                 break
 
     def sort_population(self, population: list[Building]) -> None:
@@ -55,7 +66,7 @@ class GeneticAlgorithm(Algorithm):
         min_score = min(individual.score for individual in population)
         fitness_scores = [individual.score - min_score + 1 for individual in population]
 
-        while len(offspring) < self.__population_size:
+        while len(offspring) < len(population):
             parent1, parent2 = random.choices(population, weights=fitness_scores, k=2)
 
             children = parent1.crossover(parent2)
@@ -81,12 +92,16 @@ class GeneticAlgorithm(Algorithm):
 
     @override
     def run(self) -> Iterator[str]:
+        max_generations = self.__config.max_generations
+        population_size = self.__config.population_size
+        max_similarity = self.__config.max_similarity
+
         original_building = self.__problem.building
         population = []
         best_score = -1
         best_neighbor = None
 
-        for _ in range(self.__population_size):
+        for _ in range(population_size):
             self.__problem.building = original_building
             yield from self.placement_descent()
 
@@ -99,7 +114,9 @@ class GeneticAlgorithm(Algorithm):
         assert best_neighbor is not None  # Can only happen if population size is 0
         self.__problem.building = best_neighbor
 
-        for _ in range(self.__max_generations):
+        generation_iter = range(max_generations) if max_generations is not None else iter(int, 1)
+
+        for _ in generation_iter:
             offspring: List[Building] = []
             yield from self.crossover(population, offspring)
             yield from self.mutate(population)
@@ -109,12 +126,12 @@ class GeneticAlgorithm(Algorithm):
             for i, child in enumerate(offspring):
                 not_similar = True
                 for j, individual in enumerate(population):
-                    if child.is_similar(individual, max_similarity=0.001):
+                    if child.is_similar(individual, max_similarity):
                         not_similar = False
                         break
 
                 for j, other_child in enumerate(filtered_offspring):
-                    if child.is_similar(other_child, max_similarity=0.001):
+                    if child.is_similar(other_child, max_similarity):
                         not_similar = False
                         break
 
@@ -140,3 +157,9 @@ class GeneticAlgorithm(Algorithm):
                 self.__problem.building = population[0]
 
             yield 'Best individual found'
+
+    @staticmethod
+    def get_default_init_routers(problem: RouterProblem) -> int:
+        """Returns the maximum possible number of routers, according to the budget"""
+        return problem.budget // (problem.router_price + problem.backbone_price)
+

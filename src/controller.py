@@ -112,15 +112,18 @@ class Controller:
             elif algorithm_name == 'tabu':
                 algorithm = TabuSearch(problem, TabuSearchConfig(
                     max_neighborhood=10 if len(tokens) < 3 else int(tokens[2]),
-                    tabu_tenure=TabuSearch.get_automatic_tenure(problem) if len(tokens) < 4 else int(tokens[3]),
+                    tabu_tenure=TabuSearch.get_default_tenure(problem) if len(tokens) < 4 else int(tokens[3]),
                     max_iterations=None if len(tokens) < 5 else int(tokens[4])
                 ))
 
             elif algorithm_name == 'genetic':
-                population_size = 10 if len(tokens) < 3 else int(tokens[2])
-                max_generations = 1000 if len(tokens) < 4 else int(tokens[3])
-                algorithm = GeneticAlgorithm(problem, population_size=population_size,
-                    max_generations=max_generations)
+                algorithm = GeneticAlgorithm(problem, GeneticAlgorithmConfig(
+                    population_size=10 if len(tokens) < 3 else int(tokens[2]),
+                    init_routers=GeneticAlgorithm.get_default_init_routers(problem) if len(tokens) < 4 else int(tokens[3]),
+                    max_generations=1000 if len(tokens) < 5 else int(tokens[4]),
+                    max_similarity=0.001,
+                    max_neighborhood=3
+                ))
 
             else:
                 print_solve_usage()

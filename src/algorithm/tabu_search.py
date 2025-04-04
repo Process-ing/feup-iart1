@@ -89,7 +89,7 @@ class TabuSearch(Algorithm):
         return self.__best_solution
 
     @staticmethod
-    def get_automatic_tenure(problem: RouterProblem) -> int:
+    def get_default_tenure(problem: RouterProblem) -> int:
         targets = problem.building.get_num_targets()
         router_range = problem.router_range
 
