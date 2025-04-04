@@ -1,4 +1,4 @@
-from typing import List, Union, override
+from typing import List, Tuple, Union, override
 from threading import Thread, Event, get_ident
 import pygame
 
@@ -33,7 +33,7 @@ class OptimizationWindow(PygameWindow):
         self.__stop_execution = False
 
     @override
-    def get_window_size(self) -> tuple[int, int]:
+    def get_window_size(self) -> Tuple[int, int]:
         building = self.__problem.building
         return self.__building_viewer.get_preferred_size(building)
 

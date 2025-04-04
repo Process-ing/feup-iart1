@@ -1,6 +1,6 @@
 from copy import deepcopy
 from enum import Enum
-from typing import Optional, Union
+from typing import Optional
 
 # pylint: disable=wildcard-import
 from src.algorithm import *
@@ -88,7 +88,6 @@ class Controller:
             problem = deepcopy(self.__problem)
 
             algorithm_name = None if len(tokens) < 2 else tokens[1]
-            max_iterations: Union[int, None]
             algorithm: Algorithm
 
             if algorithm_name == 'random-walk':
@@ -112,16 +111,19 @@ class Controller:
             elif algorithm_name == 'tabu':
                 algorithm = TabuSearch(problem, TabuSearchConfig(
                     max_neighborhood=10 if len(tokens) < 3 else int(tokens[2]),
-                    tabu_tenure=TabuSearch.get_default_tenure(problem) if len(tokens) < 4 else int(tokens[3]),
+                    tabu_tenure=TabuSearch.get_default_tenure(problem)
+                        if len(tokens) < 4 else int(tokens[3]),
                     max_iterations=None if len(tokens) < 5 else int(tokens[4])
                 ))
 
             elif algorithm_name == 'genetic':
                 algorithm = GeneticAlgorithm(problem, GeneticAlgorithmConfig(
                     population_size=10 if len(tokens) < 3 else int(tokens[2]),
-                    init_routers=GeneticAlgorithm.get_default_init_routers(problem) if len(tokens) < 4 else int(tokens[3]),
+                    init_routers=GeneticAlgorithm.get_default_init_routers(problem)
+                        if len(tokens) < 4 else int(tokens[3]),
                     max_generations=1000 if len(tokens) < 5 else int(tokens[4]),
                     max_similarity=0.001,
+                    mutation_prob=0.8,
                     max_neighborhood=3
                 ))
 

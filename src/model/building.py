@@ -10,7 +10,7 @@ from src.model.generic_problem import GenericRouterProblem
 from src.model.disjoint_set import DisjointSet
 from src.model.error import ProblemLoadError
 
-type CellArray = np.ndarray[tuple[int, ...], np.dtype[np.uint8]]
+type CellArray = np.ndarray[Tuple[int, ...], np.dtype[np.uint8]]
 type CheckBudgetCallback = Callable[['Building'], bool]
 type Pos = Tuple[int, int]
 type SteinerTreeQueue = Deque[Tuple[Pos, Pos, Pos | None, Pos | None]]
@@ -33,6 +33,10 @@ class Operator:
         assert building.problem is not None
         return new_building if success and building.problem.check_budget(new_building) else None
 
+    @property
+    def pos(self) -> Pos:
+        return (self.row, self.col)
+
 class CellType(Enum):
     VOID = 0
     TARGET = 1
@@ -50,8 +54,8 @@ class Building(GenericBuilding):
         ord('#'): CellType.WALL,
     }
 
-    def __init__(self, cells: CellArray, backbone: tuple[int, int],
-                 new_router_probability: float, problem: Union[GenericRouterProblem, None]) -> None:
+    def __init__(self, cells: CellArray, backbone: Pos, new_router_probability: float,
+                 problem: Union[GenericRouterProblem, None]) -> None:
         self.__cells: CellArray = cells
         self.__backbone_root = backbone
         self.__new_router_probability = new_router_probability
@@ -63,7 +67,7 @@ class Building(GenericBuilding):
                    self.__new_router_probability, self.problem)
 
     @classmethod
-    def from_text(cls, shape: Tuple[int, int], backbone: tuple[int, int],
+    def from_text(cls, shape: Tuple[int, int], backbone: Pos,
                   text: str, problem: Union[GenericRouterProblem, None]) -> 'Building':
         rows, columns = shape
         if rows < 1 or columns < 1:
@@ -87,7 +91,7 @@ class Building(GenericBuilding):
 
         cells[backbone] |= cls.BACKBONE_BIT
 
-        return cls(cells, backbone, 0.9, problem)
+        return cls(cells, backbone, 0.8, problem)
 
     @property
     def rows(self) -> int:
@@ -98,13 +102,13 @@ class Building(GenericBuilding):
         return self.__cells.shape[1]
 
     @property
-    def shape(self) -> tuple[int, int]:
-        return cast(tuple[int, int], self.__cells.shape)
+    def shape(self) -> Tuple[int, int]:
+        return cast(Tuple[int, int], self.__cells.shape)
 
-    def get_routers(self) -> List[tuple[int, int]]:
+    def get_routers(self) -> List[Tuple[int, int]]:
         return list(zip(*np.where(self.__cells & self.ROUTER_BIT)))
 
-    def get_target_cells(self) -> List[tuple[int, int]]:
+    def get_target_cells(self) -> List[Tuple[int, int]]:
         return list(zip(*np.where(self.__cells & self.CELL_TYPE_MASK == CellType.TARGET.value)))
 
     def __str__(self) -> str:
@@ -116,11 +120,11 @@ class Building(GenericBuilding):
     def as_nparray_transposed(self) -> CellArray:
         return self.__cells.transpose()
 
-    def iter(self) -> Iterator[tuple[int, int, int]]:
+    def iter(self) -> Iterator[Tuple[int, int, int]]:
         return ((row, column, int(cell)) for (row, column), cell in np.ndenumerate(self.__cells))
 
-    def get_connected_routers(self, root: tuple[int, int]) \
-        -> tuple[set[tuple[int, int]], set[tuple[int, int]]]:
+    def get_connected_routers(self, root: Pos) \
+        -> Tuple[Set[Pos], Set[Tuple[int, int]]]:
         routers = set()
         backbones = set()
         queue = deque([root])
@@ -301,7 +305,7 @@ class Building(GenericBuilding):
                 p = pred.get(p, None)
             return res
 
-        def steiner_tree(grid: CellArray, terminals: list[tuple[int, int]]) -> set[tuple[int, int]]:
+        def steiner_tree(grid: CellArray, terminals: list[Tuple[int, int]]) -> set[Tuple[int, int]]:
             rows, cols = len(grid), len(grid[0])
             directions = [(1, 0), (-1, 0), (0, 1), (0, -1), (1, 1), (-1, -1), (1, -1), (-1, 1)]
 

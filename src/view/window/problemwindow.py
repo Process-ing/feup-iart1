@@ -1,4 +1,4 @@
-from typing import List, override
+from typing import List, Tuple, override
 
 import pygame
 from src.model import RouterProblem
@@ -12,7 +12,7 @@ class ProblemWindow(PygameWindow):
         self.__building_viewer = BuildingViewer()
 
     @override
-    def get_window_size(self) -> tuple[int, int]:
+    def get_window_size(self) -> Tuple[int, int]:
         building = self.__problem.building
         return self.__building_viewer.get_preferred_size(building)
 

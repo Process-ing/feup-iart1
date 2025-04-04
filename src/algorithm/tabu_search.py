@@ -25,6 +25,13 @@ class TabuSearch(Algorithm):
         self.__best_score = problem.building.score
         self.__config = config
 
+    def is_tabu(self, tabu_list: TabuList, pos: Tuple[int, int]) -> bool:
+        tabu_range = (self.__problem.router_range + 1) // 2
+        row, col = pos
+
+        return any(abs(row - trow) <= tabu_range and abs(col - tcol) <= tabu_range
+                   for trow, tcol in tabu_list)
+
     @override
     def run(self) -> Iterator[str]:
         max_iterations = self.__config.max_iterations
@@ -35,14 +42,13 @@ class TabuSearch(Algorithm):
 
         round_iter = range(max_iterations) if max_iterations is not None else iter(int, 1)
         for _ in round_iter:
-            best_pos = None
             best_neighbor = None
             best_score = -1
-            neighbor_count = 0
             best_operator = None
+            neighbor_count = 0
 
             for operator in self.__problem.building.get_neighborhood():
-                if (operator.row, operator.col) in tabu_list:
+                if self.is_tabu(tabu_list, operator.pos):
                     yield 'Neighbor is tabu'
                     continue
 
@@ -57,17 +63,17 @@ class TabuSearch(Algorithm):
                     best_operator = operator
 
                 neighbor_count += 1
-                if neighbor_count >= max_neighborhood:
+                if max_neighborhood is not None and neighbor_count >= max_neighborhood:
                     break
 
-            if best_neighbor is None or best_pos is None:
+            if best_neighbor is None or best_operator is None:
                 # Tabu tenure too long, whole neighborhood is tabu
                 tabu_list.popleft()
                 yield 'Tabu tenure too long'
                 continue
 
             self.__problem.building = best_neighbor
-            tabu_list.append(best_pos)
+            tabu_list.append(best_operator.pos)
 
             if best_score and best_score > self.__best_score:
                 self.__best_solution = best_neighbor

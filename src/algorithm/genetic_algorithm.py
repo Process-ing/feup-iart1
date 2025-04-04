@@ -9,6 +9,7 @@ from src.algorithm.algorithm import Algorithm
 class GeneticAlgorithmConfig:
     population_size: int
     init_routers: int
+    mutation_prob: float
     max_similarity: float
     max_generations: Union[int, None]
     max_neighborhood: Union[int, None]
@@ -78,8 +79,10 @@ class GeneticAlgorithm(Algorithm):
             yield f'Crossover successful, offspring size: {len(offspring)}'
 
     def mutate(self, offspring: List[Building]) -> Iterator[str]:
+        mutation_prob = self.__config.mutation_prob
+
         for i, child in enumerate(offspring):
-            if random.random() < 0.5:
+            if random.random() < mutation_prob:
                 for operator in child.get_neighborhood():
                     neighbor = operator.apply(child)
                     if neighbor is not None:
@@ -162,4 +165,3 @@ class GeneticAlgorithm(Algorithm):
     def get_default_init_routers(problem: RouterProblem) -> int:
         """Returns the maximum possible number of routers, according to the budget"""
         return problem.budget // (problem.router_price + problem.backbone_price)
-

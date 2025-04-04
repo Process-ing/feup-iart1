@@ -1,10 +1,10 @@
-from typing import cast, override
+from typing import Tuple, cast, override
 import numpy as np
 from src.model.generic_building import GenericBuilding
 from src.model.generic_problem import GenericRouterProblem
 from src.model.building import Building
 
-type BudgetInfo = tuple[int, int, int]
+type BudgetInfo = Tuple[int, int, int]
 
 class RouterProblem(GenericRouterProblem):
     def __init__(self, building: Building, router_range: int, budget_info: BudgetInfo) -> None:
@@ -40,7 +40,7 @@ class RouterProblem(GenericRouterProblem):
 
         rows, columns, router_range = initial_section[0:3]
         budget_info = cast(BudgetInfo, tuple(initial_section[3:6]))
-        backbone = cast(tuple[int, int], tuple(initial_section[6:8]))
+        backbone = cast(Tuple[int, int], tuple(initial_section[6:8]))
 
         building = Building.from_text((rows, columns), backbone, building_section, None)
         problem = cls(building, router_range, budget_info)
