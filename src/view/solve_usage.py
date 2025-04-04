@@ -41,7 +41,6 @@ Options:
             --population-size <int>     Population size.
             --max-generations <int>     Maximum number of generations to run.
             --mutation-prob <float>     Mutation probability.
-            --max-similarity <float>    Maximum similarity between individuals in each generation.
             --max-neighborhood <int>    Maximum number of better neighbors to explore.
             --mimetic <bool>            Whether to use mimetic crossover.
 

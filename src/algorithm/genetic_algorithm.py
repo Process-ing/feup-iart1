@@ -11,7 +11,6 @@ class GeneticAlgorithmConfig:
     population_size: int
     init_routers: int
     mutation_prob: float
-    max_similarity: float
     max_generations: Optional[int]
     max_neighborhood: Optional[int]
     mimetic: bool
@@ -24,7 +23,6 @@ class GeneticAlgorithmConfig:
             init_routers = int(flags['init-routers']) \
                 if 'init-routers' in flags else default_init_routers
             mutation_prob = float(flags['mutation-prob']) if 'mutation-prob' in flags else 0.5
-            max_similarity = float(flags['max-similarity']) if 'max-similarity' in flags else 0.001
             max_generations = int(flags['max-generations']) if 'max-generations' in flags else None
             max_neighborhood = int(flags['max-neighborhood']) \
                 if 'max-neighborhood' in flags else 5
@@ -33,7 +31,7 @@ class GeneticAlgorithmConfig:
             return None
 
         return cls(population_size, init_routers, mutation_prob,
-                   max_similarity, max_generations, max_neighborhood)
+                   max_generations, max_neighborhood, mimetic)
 
 class GeneticAlgorithm(Algorithm):
     '''
@@ -118,7 +116,6 @@ class GeneticAlgorithm(Algorithm):
     def run(self) -> Iterator[str]:
         max_generations = self.__config.max_generations
         population_size = self.__config.population_size
-        max_similarity = self.__config.max_similarity
         mimetic = self.__config.mimetic
 
         original_building = self.__problem.building
@@ -154,12 +151,12 @@ class GeneticAlgorithm(Algorithm):
             for i, child in enumerate(offspring):
                 not_similar = True
                 for j, individual in enumerate(population):
-                    if child.is_similar(individual, max_similarity):
+                    if child.is_same(individual):
                         not_similar = False
                         break
 
                 for j, other_child in enumerate(filtered_offspring):
-                    if child.is_similar(other_child, max_similarity):
+                    if child.is_same(other_child):
                         not_similar = False
                         break
 

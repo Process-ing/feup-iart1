@@ -455,9 +455,9 @@ class Building(GenericBuilding):
 
         return child1, child2
 
-    def is_similar(self, other: 'Building', max_similarity: float) -> bool:
+    def is_same(self, other: 'Building') -> bool:
         # pylint: disable=protected-access
-        return np.count_nonzero(self.__cells != other.__cells) <= max_similarity * self.__cells.size
+        return np.array_equal(self.__cells, other.__cells)
 
     def get_num_targets(self) -> int:
         return np.count_nonzero(self.__cells & self.CELL_TYPE_MASK == CellType.TARGET.value)
