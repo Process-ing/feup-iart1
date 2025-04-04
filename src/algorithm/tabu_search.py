@@ -46,7 +46,6 @@ class TabuSearch(Algorithm):
 
             for operator in self.__problem.building.get_neighborhood():
                 if self.is_tabu(tabu_list, operator.pos):
-                    yield 'Neighbor is tabu'
                     continue
 
                 neighbor = operator.apply(self.__problem.building)
