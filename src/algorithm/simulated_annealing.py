@@ -51,12 +51,4 @@ class SimulatedAnnealing(Algorithm):
                     break
                 yield 'Rejected worse neighbor'
 
-                probability = math.exp(float(neighbor_score - current_score)
-                                        / self.__temperature)
-                if random.random() < probability:
-                    self.__problem.building = neighbor
-                    yield ''
-                    break
-                yield ''
-
             self.__temperature *= self.__cooling_schedule
