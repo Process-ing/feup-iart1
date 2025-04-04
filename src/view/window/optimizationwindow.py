@@ -161,7 +161,8 @@ class OptimizationWindow(PygameWindow):
             screen.blit(scaled_problem, (0, 0))
 
         self.__draw_info(screen)
-        self.__draw_info_message(screen)
+        if self.__continue_event.is_set():
+            self.__draw_info_message(screen)
         self.__draw_buttons(screen)
 
     def on_update(self, events: List[pygame.event.Event], screen: pygame.Surface) -> None:
