@@ -53,6 +53,9 @@ class OptimizationWindow(PygameWindow):
             self.__num_routers = self.__problem.building.get_num_routers()
             self.__score_visualizer.update_scores(self.__score)
 
+        self.__problem.building = self.__problem.best_building
+        self.__information_message = 'Done!'
+
     def on_init(self, screen: pygame.Surface) -> None:
         width = self.get_window_size()[0]
         self.__pause_button = PauseButton(width - (48 + 8) * 2, 8)

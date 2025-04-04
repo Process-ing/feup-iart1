@@ -124,6 +124,9 @@ class GeneticAlgorithm(Algorithm):
             yield from self.crossover(population, offspring)
             yield from self.mutate(population)
 
+            self.sort_population(population)
+            self.sort_population(offspring)
+
             # Check similarity of individuals
             filtered_offspring: List[Building] = []
             for i, child in enumerate(offspring):

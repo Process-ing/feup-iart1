@@ -39,7 +39,6 @@ class PygameWindow:
                 if event.type == pygame.QUIT:
                     running = False
 
-            print(f'\r{round(clock.get_fps(), 1)}', end='')  # TODO(Process-ing): Remove this
             self.on_update(events, screen)
             clock.tick(self._max_framerate)
 
