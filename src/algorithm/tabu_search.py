@@ -2,8 +2,7 @@ from dataclasses import dataclass
 from collections import deque
 import math
 from typing import Deque, Iterator, Optional, Tuple, override
-from src.model.building import Building
-from src.model.problem import RouterProblem
+from src.model import RouterProblem
 from src.algorithm.algorithm import Algorithm
 
 type TabuList = Deque[Tuple[int, int]]
