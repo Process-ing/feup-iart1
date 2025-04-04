@@ -1,13 +1,13 @@
 from dataclasses import dataclass
-from typing import Iterator, Union, override
+from typing import Iterator, Optional, override
 
 from src.algorithm.algorithm import Algorithm
 from src.model import RouterProblem
 
 @dataclass
 class RandomDescentConfig:
-    max_neighborhood: Union[int, None]
-    max_iterations: Union[int, None]
+    max_neighborhood: Optional[int]
+    max_iterations: Optional[int]
 
 class RandomDescent(Algorithm):
     '''

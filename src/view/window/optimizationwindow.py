@@ -1,4 +1,4 @@
-from typing import List, Tuple, Union, override
+from typing import List, Optional, Tuple, override
 from threading import Thread, Event, get_ident
 import pygame
 
@@ -22,12 +22,12 @@ class OptimizationWindow(PygameWindow):
         self.__information_message = ''
         self.__algorithm = algorithm
         self.__visualizer = visualizer
-        self.__font: pygame.font.Font | None = None
+        self.__font: Optional[pygame.font.Font] = None
         self.__building_viewer = BuildingViewer()
-        self.__pause_button: PauseButton | None = None
-        self.__chart_button: ChartButton | None = None
+        self.__pause_button: Optional[PauseButton] = None
+        self.__chart_button: Optional[ChartButton] = None
 
-        self.__execution_thread: Union[Thread, None] = None
+        self.__execution_thread: Optional[Thread] = None
         self.__continue_event = Event()
         self.__continue_event.set()
         self.__stop_execution = False

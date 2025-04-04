@@ -1,6 +1,6 @@
 from copy import deepcopy
 from enum import Enum
-from typing import Optional
+from typing import List, Optional
 
 # pylint: disable=wildcard-import
 from src.algorithm import *
@@ -53,7 +53,7 @@ class Controller:
 
     # Pylint ignore inserted, because this functions behaves as a switch-case
     # pylint: disable=too-many-branches
-    def process_command(self, tokens: list[str]) -> CommandResult:
+    def process_command(self, tokens: List[str]) -> CommandResult:
         command = tokens[0]
         if command in ['exit', 'quit']:
             return CommandResult.EXIT

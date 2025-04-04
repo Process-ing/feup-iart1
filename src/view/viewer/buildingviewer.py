@@ -1,4 +1,4 @@
-from typing import Tuple, override
+from typing import List, Tuple, override
 import pygame
 from src.model import Building, CellType
 from src.view.viewer.pygameviewer import PygameViewer
@@ -22,7 +22,7 @@ class BuildingViewer(PygameViewer[Building]):
         return screen
 
     @staticmethod
-    def __create_pallete() -> list[Tuple[int, int, int]]:
+    def __create_pallete() -> List[Tuple[int, int, int]]:
         palette = [(0, 0, 0)] * 256
 
         palette[CellType.VOID.value] = (0x36, 0x00, 0x43)

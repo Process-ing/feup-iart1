@@ -1,4 +1,5 @@
 import sys
+from typing import List
 from ..model import RouterProblem
 
 class Cli:
@@ -6,13 +7,13 @@ class Cli:
         pass
 
     @staticmethod
-    def __get_tokens(text: str) -> list[str]:
+    def __get_tokens(text: str) -> List[str]:
         return text.strip().split()
 
     def __print_prefix(self) -> None:
         print('[router-solver]# ', end='')
 
-    def read_input(self) -> list[str]:
+    def read_input(self) -> List[str]:
         self.__print_prefix()
 
         try:

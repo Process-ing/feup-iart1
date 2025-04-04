@@ -1,11 +1,11 @@
 from dataclasses import dataclass
-from typing import Iterator, override
+from typing import Iterator, Optional, override
 from src.algorithm.algorithm import Algorithm
 from src.model import RouterProblem
 
 @dataclass
 class RandomWalkConfig:
-    max_iterations: int | None
+    max_iterations: Optional[int]
 
 class RandomWalk(Algorithm):
     '''

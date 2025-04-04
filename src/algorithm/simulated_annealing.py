@@ -1,5 +1,5 @@
 from dataclasses import dataclass
-from typing import Iterator, Union, override
+from typing import Iterator, Optional, override
 import math
 import random
 
@@ -8,7 +8,7 @@ from src.algorithm.algorithm import Algorithm
 
 @dataclass
 class SimulatedAnnealingConfig:
-    max_iterations: Union[int, None]
+    max_iterations: Optional[int]
     init_temperature: float
     cooling_schedule: float
 

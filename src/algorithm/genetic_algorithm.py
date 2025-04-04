@@ -1,6 +1,6 @@
 from dataclasses import dataclass
 import random
-from typing import Iterator, List, Union, override
+from typing import Iterator, List, Optional, override
 from src.model import Building
 from src.model import RouterProblem
 from src.algorithm.algorithm import Algorithm
@@ -11,8 +11,8 @@ class GeneticAlgorithmConfig:
     init_routers: int
     mutation_prob: float
     max_similarity: float
-    max_generations: Union[int, None]
-    max_neighborhood: Union[int, None]
+    max_generations: Optional[int]
+    max_neighborhood: Optional[int]
 
 class GeneticAlgorithm(Algorithm):
     '''
@@ -57,10 +57,10 @@ class GeneticAlgorithm(Algorithm):
             else:
                 break
 
-    def sort_population(self, population: list[Building]) -> None:
+    def sort_population(self, population: List[Building]) -> None:
         population.sort(key=lambda individual: individual.score)
 
-    def get_best_individual(self, population: list[Building]) -> Building:
+    def get_best_individual(self, population: List[Building]) -> Building:
         return max(population, key=lambda individual: individual.score)
 
     def crossover(self, population: List[Building], offspring: List[Building]) -> Iterator[str]:

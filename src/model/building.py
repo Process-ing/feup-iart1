@@ -1,5 +1,5 @@
 from enum import Enum
-from typing import Callable, Deque, Dict, Iterator, Set, Tuple, Union, cast, List, override
+from typing import Callable, Deque, Dict, Iterator, Optional, Set, Tuple, cast, List, override
 from collections import deque
 from copy import deepcopy
 import random
@@ -13,8 +13,7 @@ from src.model.error import ProblemLoadError
 type CellArray = np.ndarray[Tuple[int, ...], np.dtype[np.uint8]]
 type CheckBudgetCallback = Callable[['Building'], bool]
 type Pos = Tuple[int, int]
-type SteinerTreeQueue = Deque[Tuple[Pos, Pos, Pos | None, Pos | None]]
-type BuildingPayload = Tuple[Tuple[int, int], Tuple[int, int], ]
+type SteinerTreeQueue = Deque[Tuple[Pos, Pos, Optional[Pos], Optional[Pos]]]
 
 class Operator:
     def __init__(self, place: bool, row: int, col: int) -> None:
@@ -22,7 +21,7 @@ class Operator:
         self.row = row
         self.col = col
 
-    def apply(self, building: 'Building') -> Union['Building', None]:
+    def apply(self, building: 'Building') -> Optional['Building']:
         new_building = building.copy()
 
         if self.place:
@@ -55,12 +54,12 @@ class Building(GenericBuilding):
     }
 
     def __init__(self, cells: CellArray, backbone: Pos, new_router_probability: float,
-                 problem: Union[GenericRouterProblem, None]) -> None:
+                 problem: Optional[GenericRouterProblem]) -> None:
         self.__cells: CellArray = cells
         self.__backbone_root = backbone
         self.__new_router_probability = new_router_probability
         self.problem = problem
-        self.__score: Union[int, None] = None
+        self.__score: Optional[int] = None
 
     def copy(self) -> 'Building':
         return Building(deepcopy(self.__cells), self.__backbone_root,
@@ -68,7 +67,7 @@ class Building(GenericBuilding):
 
     @classmethod
     def from_text(cls, shape: Tuple[int, int], backbone: Pos,
-                  text: str, problem: Union[GenericRouterProblem, None]) -> 'Building':
+                  text: str, problem: Optional[GenericRouterProblem]) -> 'Building':
         rows, columns = shape
         if rows < 1 or columns < 1:
             raise ProblemLoadError(f'Invalid building size {rows}x{columns}')
@@ -297,15 +296,15 @@ class Building(GenericBuilding):
         if not routers:
             return
 
-        def reconstruct_path(pred: Dict[Tuple[int, int], Tuple[int, int] | None],
-                             p: Tuple[int, int] | None) -> Set[Tuple[int, int]]:
+        def reconstruct_path(pred: Dict[Tuple[int, int], Optional[Tuple[int, int]]],
+                             p: Optional[Tuple[int, int]]) -> Set[Tuple[int, int]]:
             res = set()
             while p:
                 res.add(p)
                 p = pred.get(p, None)
             return res
 
-        def steiner_tree(grid: CellArray, terminals: list[Tuple[int, int]]) -> set[Tuple[int, int]]:
+        def steiner_tree(grid: CellArray, terminals: List[Tuple[int, int]]) -> Set[Tuple[int, int]]:
             rows, cols = len(grid), len(grid[0])
             directions = [(1, 0), (-1, 0), (0, 1), (0, -1), (1, 1), (-1, -1), (1, -1), (-1, 1)]
 
@@ -384,7 +383,7 @@ class Building(GenericBuilding):
         for row, col in targets:
             yield Operator(True, row, col)
 
-    def crossover(self, other: 'Building') -> Tuple['Building', 'Building'] | None:
+    def crossover(self, other: 'Building') -> Optional[Tuple['Building', 'Building']]:
         max_row, max_col = self.rows, self.columns
 
         lower_row = random.randint(0, max_row - 2)
