@@ -40,9 +40,10 @@ class Cli:
 
     def print_help(self) -> None:
         print('''Commands:
-    load <file>  Load a problem from a file.
-    show         Show the current problem.
-    solve        Solve the current problem.
-    exit         Exit the program.
-    quit         Exit the program.
-    help         Show this help.''')
+    load <file>             Load a problem from a file.
+    load-solution <file>    Load and show a solution from a file.
+    show                    Show the current problem.
+    solve                   Solve the current problem.
+    exit                    Exit the program.
+    quit                    Exit the program.
+    help                    Show this help.''')

@@ -5,7 +5,7 @@ from typing import Dict, List, Optional
 # pylint: disable=wildcard-import
 from src.algorithm import *
 from src.view.score_visualizer import ScoreVisualizer
-from src.model import RouterProblem
+from src.model import RouterProblem, Building
 from src.view import Cli
 from src.view.solve_usage import print_solve_usage
 from src.view.window import OptimizationWindow, ProblemWindow
@@ -51,6 +51,24 @@ class Controller:
         self.__cli.print_success(f'Problem loaded from \'{filename}\'')
         return CommandResult.SUCCESS
 
+    def load_solution(self, filename: str) -> CommandResult:
+        try:
+            with open(filename, 'r', encoding='utf-8') as file:
+                text = file.read()
+                assert self.__problem is not None
+                self.__problem.building.load_solution(text)
+
+        except FileNotFoundError:
+            self.__cli.print_error(f'File \'{filename}\' not found')
+            return CommandResult.FILE_ERROR
+
+        except IsADirectoryError:
+            self.__cli.print_error(f'\'{filename}\' is a directory')
+            return CommandResult.FILE_ERROR
+
+        self.__cli.print_success(f'Problem loaded from \'{filename}\'')
+        return CommandResult.SUCCESS
+
     def process_command(self, tokens: List[str]) -> CommandResult:
         command = tokens[0]
         if command in ['exit', 'quit']:
@@ -67,6 +85,25 @@ class Controller:
 
             filename = tokens[1]
             return self.load_problem(filename)
+
+        if command in ['load-solution']:
+            # Ensure the problem is loaded
+            if not self.__problem:
+                self.__cli.print_error("No problem loaded")
+                return CommandResult.FAILURE
+
+            # Load the solution
+            if len(tokens) != 2:
+                self.__cli.print_error('Usage: load-solution <file>')
+                return CommandResult.FAILURE
+
+            filename = tokens[1]
+            self.load_solution(filename)
+
+            problem_win = ProblemWindow(self.__problem)
+            problem_win.launch()
+
+
 
         if command in ['show']:
             if not self.__problem:
