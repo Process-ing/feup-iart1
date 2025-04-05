@@ -8,9 +8,9 @@ from src.view.viewer.pygameviewer import PygameViewer
 class ChartViewer(PygameViewer[None]):
     def __init__(self, width: int, height: int) -> None:
         super().__init__()
-        self.__scores = []
-        self.__max_scores = []
-        self.__times = []
+        self.__scores: List[float] = []
+        self.__max_scores: List[float] = []
+        self.__times: List[float] = []
         self.__start_time = 0.0
 
         self.__screen = pygame.Surface((width, height))
@@ -37,7 +37,7 @@ class ChartViewer(PygameViewer[None]):
         elapsed_time = time.perf_counter() - self.__start_time
         self.__times.append(elapsed_time)
 
-    def render(self, unused: None) -> pygame.Surface:
+    def render(self, _: None) -> pygame.Surface:
         if len(self.__scores) >= 2:
             self.__figure.line('Score', self.__times, self.__scores, color=(255, 0, 0))
             self.__figure.line('Max Score', self.__times, self.__max_scores, color=(0, 0, 255))

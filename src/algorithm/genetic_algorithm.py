@@ -123,14 +123,14 @@ class GeneticAlgorithm(Algorithm):
 
         # Check similarity of individuals
         filtered_offspring: List[Building] = []
-        for i, child in enumerate(offspring):
+        for child in offspring:
             not_similar = True
-            for j, individual in enumerate(population):
+            for individual in population:
                 if child.is_same(individual):
                     not_similar = False
                     break
 
-            for j, other_child in enumerate(filtered_offspring):
+            for other_child in filtered_offspring:
                 if child.is_same(other_child):
                     not_similar = False
                     break
