@@ -48,6 +48,9 @@ class GeneticAlgorithm(Algorithm):
         for _ in range(init_routers):
             if self.__problem.building.get_num_uncovered_targets() == 0:
                 break
+            if self.__problem.get_available_budget(self.__problem.building) \
+                <= self.__problem.router_price + self.__problem.backbone_price:
+                break
 
             best_score = -1
             best_neighbor = None
@@ -164,9 +167,11 @@ class GeneticAlgorithm(Algorithm):
         best_score = -1
         best_neighbor = None
 
+        yield 'Generating initial population'
         for _ in range(population_size):
             self.__problem.building = original_building
-            yield from self.placement_descent()
+            for _ in self.placement_descent():
+                yield None
 
             population.append(self.__problem.building)
             score = self.__problem.building.score
