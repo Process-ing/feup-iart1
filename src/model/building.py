@@ -92,6 +92,20 @@ class Building(GenericBuilding):
 
         return cls(cells, backbone, 0.8, problem)
 
+    def load_solution(self, text: str) -> None:
+        lines = text.split('\n')
+        num_backbones = int(lines[0])
+        for i in range(1, num_backbones + 1):
+            row, col = map(int, lines[i].split())
+            self.__cells[row, col] |= self.BACKBONE_BIT
+        num_routers = int(lines[num_backbones + 1])
+        router_cells = []
+        for i in range(num_backbones + 2, num_backbones + 2 + num_routers):
+            row, col = map(int, lines[i].split())
+            router_cells.append((row, col))
+            self.__cells[row, col] |= self.ROUTER_BIT
+            self.cover_neighbors(row, col)
+
     @property
     def rows(self) -> int:
         return self.__cells.shape[0]
@@ -103,6 +117,10 @@ class Building(GenericBuilding):
     @property
     def shape(self) -> Tuple[int, int]:
         return cast(Tuple[int, int], self.__cells.shape)
+
+    @property
+    def backbone(self) -> Pos:
+        return self.__backbone_root
 
     def get_routers(self) -> List[Tuple[int, int]]:
         return list(zip(*np.where(self.__cells & self.ROUTER_BIT)))
