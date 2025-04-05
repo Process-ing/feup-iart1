@@ -16,6 +16,9 @@ class TabuSearchConfig(AlgorithmConfig):
     @classmethod
     def from_flags(cls, flags: dict[str, str],
                    default_tabu_tenure: int) -> Optional['TabuSearchConfig']:
+        if any(key not in ['tabu-tenure', 'max-iterations', 'max-neighborhood'] for key in flags):
+            return None
+
         try:
             tabu_tenure = int(flags['tabu-tenure']) \
                 if 'tabu-tenure' in flags else default_tabu_tenure

@@ -11,6 +11,9 @@ class RandomDescentConfig(AlgorithmConfig):
 
     @classmethod
     def from_flags(cls, flags: Dict[str, str]) -> Optional['RandomDescentConfig']:
+        if any(key not in ['max-neighborhood', 'max-iterations'] for key in flags):
+            return None
+
         try:
             max_neighborhood = int(flags['max-neighborhood']) \
                 if 'max-neighborhood' in flags else 5

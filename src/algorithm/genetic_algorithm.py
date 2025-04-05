@@ -18,6 +18,10 @@ class GeneticAlgorithmConfig(AlgorithmConfig):
     @classmethod
     def from_flags(cls, flags: dict[str, str],
                    default_init_routers: int) -> Optional['GeneticAlgorithmConfig']:
+        if any(key not in ['population-size', 'init-routers', 'mutation-prob',
+                   'max-generations', 'max-neighborhood', 'mimetic'] for key in flags):
+            return None
+
         try:
             population_size = int(flags['population-size']) if 'population-size' in flags else 10
             init_routers = int(flags['init-routers']) \
@@ -48,6 +52,9 @@ class GeneticAlgorithm(Algorithm):
         for _ in range(init_routers):
             if self.__problem.building.get_num_uncovered_targets() == 0:
                 break
+            if self.__problem.get_available_budget(self.__problem.building) \
+                <= self.__problem.router_price + self.__problem.backbone_price:
+                break
 
             best_score = -1
             best_neighbor = None
@@ -77,8 +84,8 @@ class GeneticAlgorithm(Algorithm):
             else:
                 break
 
-    def sort_population(self, population: List[Building]) -> None:
-        population.sort(key=lambda individual: individual.score)
+    def sort_population(self, population: List[Building], reverse: bool = False) -> None:
+        population.sort(key=lambda individual: individual.score, reverse=reverse)
 
     def get_best_individual(self, population: List[Building]) -> Building:
         return max(population, key=lambda individual: individual.score)
@@ -116,16 +123,18 @@ class GeneticAlgorithm(Algorithm):
 
     def deletion(self, population: List[Building],
                  offspring: List[Building]) -> Iterator[Optional[str]]:
+        population_size = self.__config.population_size
+
         # Check similarity of individuals
         filtered_offspring: List[Building] = []
-        for i, child in enumerate(offspring):
+        for child in offspring:
             not_similar = True
-            for j, individual in enumerate(population):
+            for individual in population:
                 if child.is_same(individual):
                     not_similar = False
                     break
 
-            for j, other_child in enumerate(filtered_offspring):
+            for other_child in filtered_offspring:
                 if child.is_same(other_child):
                     not_similar = False
                     break
@@ -135,14 +144,9 @@ class GeneticAlgorithm(Algorithm):
             yield None
 
         # Replace the worst individuals in the population
-        i = 0
-        for j in range(len(filtered_offspring) - 1, -1, -1):
-            if filtered_offspring[j].score <= population[i].score:
-                break
-
-            population[i] = filtered_offspring[j]
-            i += 1
-            yield 'Individual replaced'
+        population.extend(filtered_offspring)
+        self.sort_population(population, reverse=True)
+        del population[population_size:]
 
     def mimetic_phase(self) -> Iterator[Optional[str]]:
         yield 'Mimetic phase started'
@@ -164,9 +168,11 @@ class GeneticAlgorithm(Algorithm):
         best_score = -1
         best_neighbor = None
 
+        yield 'Generating initial population'
         for _ in range(population_size):
             self.__problem.building = original_building
-            yield from self.placement_descent()
+            for _ in self.placement_descent():
+                yield None
 
             population.append(self.__problem.building)
             score = self.__problem.building.score
@@ -184,12 +190,9 @@ class GeneticAlgorithm(Algorithm):
             yield from self.crossover(population, offspring)
             yield from self.mutate(population)
 
-            self.sort_population(population)
-            self.sort_population(offspring)
-
             yield from self.deletion(population, offspring)
 
-            best_individual = self.get_best_individual([population[0], population[-1]])
+            best_individual = population[0]  # Population comes out sorted in decreasing order
             # Best individual is either the first or last in the population
             best_gen_score = best_individual.score
 

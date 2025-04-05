@@ -4,7 +4,6 @@ from typing import Dict, List, Optional
 
 # pylint: disable=wildcard-import
 from src.algorithm import *
-from src.view.score_visualizer import ScoreVisualizer
 from src.model import RouterProblem
 from src.view import Cli
 from src.view.solve_usage import print_solve_usage
@@ -90,8 +89,7 @@ class Controller:
                 print_solve_usage()
                 return CommandResult.FAILURE
 
-            score_visualizer = ScoreVisualizer()
-            opt_win = OptimizationWindow(problem, algorithm, score_visualizer)
+            opt_win = OptimizationWindow(problem, algorithm)
             opt_win.launch()
             opt_win.cleanup()
 

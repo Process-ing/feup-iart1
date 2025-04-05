@@ -9,6 +9,9 @@ class RandomWalkConfig(AlgorithmConfig):
 
     @classmethod
     def from_flags(cls, flags: Dict[str, str]) -> Optional['RandomWalkConfig']:
+        if any(key not in ['max-iterations'] for key in flags):
+            return None
+
         try:
             max_iterations = int(flags['max-iterations']) if 'max-iterations' in flags else None
         except ValueError:

@@ -82,6 +82,13 @@ class RouterProblem(GenericRouterProblem):
                 (num_routers * self.router_price) - \
                 (num_connected_cells * self.backbone_price))
 
+    def get_available_budget(self, building: GenericBuilding) -> int:
+        num_routers = building.get_num_routers()
+        num_connected_cells = building.get_num_connected_cells()
+
+        return self.budget - (num_routers * self.router_price) \
+            - (num_connected_cells * self.backbone_price)
+
 
     def dump_to_file(self, filename: str) -> None:
         building_map = self.__best_building.as_nparray()
