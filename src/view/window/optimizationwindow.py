@@ -1,5 +1,6 @@
 from typing import List, Optional, Tuple, override
 from threading import Thread, Event, get_ident
+import time
 import pygame
 
 from src.algorithm import Algorithm
@@ -19,6 +20,9 @@ class OptimizationWindow(PygameWindow):
         self.__score = problem.building.score
         self.__num_covered_cells = problem.building.get_coverage()
         self.__num_routers = problem.building.get_num_routers()
+        self.__max_score = problem.building.score
+        self.__start_time: float = 0
+        self.__end_time: float = 0
         self.__information_message = ''
         self.__algorithm = algorithm
         self.__score_visualizer = score_visualizer
@@ -41,7 +45,14 @@ class OptimizationWindow(PygameWindow):
     def get_window_caption(self) -> str:
         return 'Router Optimization'
 
+    def get_best_score(self) -> int:
+        return self.__max_score
+
+    def get_duration(self) -> float:
+        return self.__end_time - self.__start_time
+
     def __run_algorithm(self) -> None:
+        self.__start_time = time.perf_counter()
         for information_message in self.__algorithm.run():
             if self.__stop_execution:
                 break
@@ -49,6 +60,9 @@ class OptimizationWindow(PygameWindow):
             self.__information_message = information_message
             self.__continue_event.wait()
             self.__score = self.__problem.building.score
+            if self.__score > self.__max_score:
+                self.__end_time = time.perf_counter()
+                self.__max_score = self.__score
             self.__num_covered_cells = self.__problem.building.get_coverage()
             self.__num_routers = self.__problem.building.get_num_routers()
             self.__score_visualizer.update_scores(self.__score)
@@ -199,3 +213,8 @@ class OptimizationWindow(PygameWindow):
         self.__score_visualizer.cleanup()
         if self.__execution_thread.ident != get_ident():
             self.__execution_thread.join()
+
+    def dump_to_file(self, filename: str) -> None:
+        with open(filename, 'w', encoding='utf-8') as file:
+            file.write(f'{self.__max_score}\n')
+            file.write(f'{self.__end_time - self.__start_time}\n')

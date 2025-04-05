@@ -95,6 +95,9 @@ class Controller:
             opt_win.launch()
             opt_win.cleanup()
 
+            print(f"Best score: {opt_win.get_best_score()} ({opt_win.get_duration()} s)")
+            opt_win.dump_to_file('results.txt')
+            print('Score saved to results.txt')
             problem.dump_to_file('solution.txt')
             print('Output saved to solution.txt')
 
