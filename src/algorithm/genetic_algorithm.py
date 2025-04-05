@@ -57,7 +57,7 @@ class GeneticAlgorithm(Algorithm):
             for operator in self.__problem.building.get_placement_neighborhood():
                 neighbor = operator.apply(self.__problem.building)
                 if not neighbor:
-                    yield
+                    yield None
                     continue
 
                 if neighbor.score > current_score:
@@ -70,7 +70,7 @@ class GeneticAlgorithm(Algorithm):
                         yield f"{'Placed' if operator.place else 'Removed'} router at " \
                             f"({operator.row}, {operator.col})"
                         break
-                yield
+                yield None
 
             if best_neighbor is not None:
                 self.__problem.building = best_neighbor
@@ -83,7 +83,8 @@ class GeneticAlgorithm(Algorithm):
     def get_best_individual(self, population: List[Building]) -> Building:
         return max(population, key=lambda individual: individual.score)
 
-    def crossover(self, population: List[Building], offspring: List[Building]) -> Iterator[Optional[str]]:
+    def crossover(self, population: List[Building],
+                  offspring: List[Building]) -> Iterator[Optional[str]]:
         min_score = min(individual.score for individual in population)
         fitness_scores = [individual.score - min_score + 1 for individual in population]
 
@@ -109,11 +110,12 @@ class GeneticAlgorithm(Algorithm):
                         child = neighbor
                         yield 'Mutated child'
                         break
-                    yield
+                    yield None
 
             offspring[i] = child
 
-    def deletion(self, population: List[Building], offspring: List[Building]) -> Iterator[Optional[str]]:
+    def deletion(self, population: List[Building],
+                 offspring: List[Building]) -> Iterator[Optional[str]]:
         # Check similarity of individuals
         filtered_offspring: List[Building] = []
         for i, child in enumerate(offspring):
@@ -130,7 +132,7 @@ class GeneticAlgorithm(Algorithm):
 
             if not_similar:
                 filtered_offspring.append(child)
-            yield
+            yield None
 
         # Replace the worst individuals in the population
         i = 0

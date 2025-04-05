@@ -64,7 +64,7 @@ class TabuSearch(Algorithm):
 
                 neighbor = operator.apply(self.__problem.building)
                 if not neighbor:
-                    yield
+                    yield None
                     continue
 
                 if neighbor.score > best_score:
@@ -76,7 +76,7 @@ class TabuSearch(Algorithm):
                 if max_neighborhood is not None and neighbor_count >= max_neighborhood:
                     break
 
-                yield
+                yield None
 
             if best_neighbor is None or best_operator is None:
                 # Tabu tenure too long, whole neighborhood is tabu

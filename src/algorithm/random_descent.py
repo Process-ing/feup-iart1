@@ -30,7 +30,7 @@ class RandomDescent(Algorithm):
         self.__config = config
 
     @override
-    def run(self) -> Iterator[str]:
+    def run(self) -> Iterator[Optional[str]]:
         max_neighborhood = self.__config.max_neighborhood
         max_iterations = self.__config.max_iterations
 
@@ -45,7 +45,7 @@ class RandomDescent(Algorithm):
             for operator in self.__problem.building.get_neighborhood():
                 neighbor = operator.apply(self.__problem.building)
                 if not neighbor:
-                    yield
+                    yield None
                     continue
 
                 if neighbor.score > current_score:
@@ -59,7 +59,7 @@ class RandomDescent(Algorithm):
                     if neighbor_count == max_neighborhood:
                         break
 
-                yield
+                yield None
 
             if best_neighbor is not None:
                 self.__problem.building = best_neighbor

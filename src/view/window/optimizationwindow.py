@@ -62,8 +62,7 @@ class OptimizationWindow(PygameWindow):
             if information_message is not None:
                 self.__information_message = information_message
             self.__score = self.__problem.building.score
-            if self.__score > self.__max_score:
-                self.__max_score = self.__score
+            self.__max_score = max(self.__max_score, self.__score)
             self.__num_covered_cells = self.__problem.building.get_coverage()
             self.__num_routers = self.__problem.building.get_num_routers()
             self.__score_visualizer.update_scores(self.__score)

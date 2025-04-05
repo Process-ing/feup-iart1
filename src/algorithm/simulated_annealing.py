@@ -50,7 +50,7 @@ class SimulatedAnnealing(Algorithm):
             for operator in self.__problem.building.get_neighborhood():
                 neighbor = operator.apply(self.__problem.building)
                 if not neighbor:
-                    yield
+                    yield None
                     continue
 
                 neighbor_score = neighbor.score
@@ -68,6 +68,6 @@ class SimulatedAnnealing(Algorithm):
                     position = f'({operator.row}, {operator.col})'
                     yield f'{action} router at {position}'
                     break
-                yield
+                yield None
 
             temperature *= cooling_schedule
