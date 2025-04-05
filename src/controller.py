@@ -69,7 +69,7 @@ class Controller:
         self.__cli.print_success(f'Problem loaded from \'{filename}\'')
         return CommandResult.SUCCESS
 
-    def process_command(self, tokens: List[str]) -> CommandResult:
+    def process_command(self, tokens: List[str]) -> CommandResult: # pylint: disable=too-many-branches
         command = tokens[0]
         if command in ['exit', 'quit']:
             return CommandResult.EXIT
@@ -106,8 +106,6 @@ class Controller:
             problem_win = ProblemWindow(self.__problem)
             problem_win.launch()
             return CommandResult.SUCCESS
-
-
 
         if command in ['show']:
             if not self.__problem:
