@@ -1,5 +1,5 @@
 from abc import abstractmethod
-from typing import List
+from typing import List, Tuple
 
 import pygame
 
@@ -8,7 +8,7 @@ class PygameWindow:
         self._max_framerate = max_framerate
 
     @abstractmethod
-    def get_window_size(self) -> tuple[int, int]:
+    def get_window_size(self) -> Tuple[int, int]:
         pass
 
     @abstractmethod
@@ -39,7 +39,6 @@ class PygameWindow:
                 if event.type == pygame.QUIT:
                     running = False
 
-            print(f'\r{round(clock.get_fps(), 1)}', end='')  # TODO(Process-ing): Remove this
             self.on_update(events, screen)
             clock.tick(self._max_framerate)
 

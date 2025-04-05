@@ -1,4 +1,4 @@
-from typing import override
+from typing import List, Tuple, override
 import pygame
 from src.model import Building, CellType
 from src.view.viewer.pygameviewer import PygameViewer
@@ -6,7 +6,7 @@ from src.view.viewer.pygameviewer import PygameViewer
 
 class BuildingViewer(PygameViewer[Building]):
     def __init__(self) -> None:
-        self.__palette = self.__create_pallete()
+        self.__palette = self.__create_palette()
 
     @override
     def render(self, entity: Building) -> pygame.Surface:
@@ -22,7 +22,7 @@ class BuildingViewer(PygameViewer[Building]):
         return screen
 
     @staticmethod
-    def __create_pallete() -> list[tuple[int, int, int]]:
+    def __create_palette() -> List[Tuple[int, int, int]]:
         palette = [(0, 0, 0)] * 256
 
         palette[CellType.VOID.value] = (0x36, 0x00, 0x43)
@@ -49,7 +49,7 @@ class BuildingViewer(PygameViewer[Building]):
 
         return palette
 
-    def get_preferred_size(self, building: Building) -> tuple[int, int]:
+    def get_preferred_size(self, building: Building) -> Tuple[int, int]:
         problem_height, problem_width = building.shape
         cell_size = max(min(
             pygame.display.Info().current_w // problem_width,

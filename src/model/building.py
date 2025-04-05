@@ -1,5 +1,5 @@
 from enum import Enum
-from typing import Callable, Deque, Dict, Iterator, Set, Tuple, Union, cast, List, override
+from typing import Callable, Deque, Dict, Iterator, Optional, Set, Tuple, cast, List, override
 from collections import deque
 from copy import deepcopy
 import random
@@ -10,11 +10,10 @@ from src.model.generic_problem import GenericRouterProblem
 from src.model.disjoint_set import DisjointSet
 from src.model.error import ProblemLoadError
 
-type CellArray = np.ndarray[tuple[int, ...], np.dtype[np.uint8]]
+type CellArray = np.ndarray[Tuple[int, ...], np.dtype[np.uint8]]
 type CheckBudgetCallback = Callable[['Building'], bool]
 type Pos = Tuple[int, int]
-type SteinerTreeQueue = Deque[Tuple[Pos, Pos, Pos | None, Pos | None]]
-type BuildingPayload = Tuple[Tuple[int, int], Tuple[int, int], ]
+type SteinerTreeQueue = Deque[Tuple[Pos, Pos, Optional[Pos], Optional[Pos]]]
 
 class Operator:
     def __init__(self, place: bool, row: int, col: int) -> None:
@@ -22,7 +21,7 @@ class Operator:
         self.row = row
         self.col = col
 
-    def apply(self, building: 'Building') -> Union['Building', None]:
+    def apply(self, building: 'Building') -> Optional['Building']:
         new_building = building.copy()
 
         if self.place:
@@ -32,6 +31,10 @@ class Operator:
 
         assert building.problem is not None
         return new_building if success and building.problem.check_budget(new_building) else None
+
+    @property
+    def pos(self) -> Pos:
+        return (self.row, self.col)
 
 class CellType(Enum):
     VOID = 0
@@ -50,21 +53,21 @@ class Building(GenericBuilding):
         ord('#'): CellType.WALL,
     }
 
-    def __init__(self, cells: CellArray, backbone: tuple[int, int],
-                 new_router_probability: float, problem: Union[GenericRouterProblem, None]) -> None:
+    def __init__(self, cells: CellArray, backbone: Pos, new_router_probability: float,
+                 problem: Optional[GenericRouterProblem]) -> None:
         self.__cells: CellArray = cells
         self.__backbone_root = backbone
         self.__new_router_probability = new_router_probability
         self.problem = problem
-        self.__score: Union[int, None] = None
+        self.__score: Optional[int] = None
 
     def copy(self) -> 'Building':
         return Building(deepcopy(self.__cells), self.__backbone_root,
                    self.__new_router_probability, self.problem)
 
     @classmethod
-    def from_text(cls, shape: Tuple[int, int], backbone: tuple[int, int],
-                  text: str, problem: Union[GenericRouterProblem, None]) -> 'Building':
+    def from_text(cls, shape: Tuple[int, int], backbone: Pos,
+                  text: str, problem: Optional[GenericRouterProblem]) -> 'Building':
         rows, columns = shape
         if rows < 1 or columns < 1:
             raise ProblemLoadError(f'Invalid building size {rows}x{columns}')
@@ -87,7 +90,7 @@ class Building(GenericBuilding):
 
         cells[backbone] |= cls.BACKBONE_BIT
 
-        return cls(cells, backbone, 0.9, problem)
+        return cls(cells, backbone, 0.8, problem)
 
     @property
     def rows(self) -> int:
@@ -98,15 +101,14 @@ class Building(GenericBuilding):
         return self.__cells.shape[1]
 
     @property
-    def shape(self) -> tuple[int, int]:
-        return cast(tuple[int, int], self.__cells.shape)
+    def shape(self) -> Tuple[int, int]:
+        return cast(Tuple[int, int], self.__cells.shape)
 
-    def get_routers(self) -> List[tuple[int, int]]:
+    def get_routers(self) -> List[Tuple[int, int]]:
         return list(zip(*np.where(self.__cells & self.ROUTER_BIT)))
 
-    def get_target_cells(self) -> List[tuple[int, int]]:
-        return list(zip(*np.where(self.__cells
-                & (self.CELL_TYPE_MASK | self.COVERED_BIT) == CellType.TARGET.value)))
+    def get_target_cells(self) -> List[Tuple[int, int]]:
+        return list(zip(*np.where(self.__cells & self.CELL_TYPE_MASK == CellType.TARGET.value)))
 
     def __str__(self) -> str:
         return '\n'.join(''.join(map(chr, row)) for row in self.__cells)
@@ -117,11 +119,11 @@ class Building(GenericBuilding):
     def as_nparray_transposed(self) -> CellArray:
         return self.__cells.transpose()
 
-    def iter(self) -> Iterator[tuple[int, int, int]]:
+    def iter(self) -> Iterator[Tuple[int, int, int]]:
         return ((row, column, int(cell)) for (row, column), cell in np.ndenumerate(self.__cells))
 
-    def get_connected_routers(self, root: tuple[int, int]) \
-        -> tuple[set[tuple[int, int]], set[tuple[int, int]]]:
+    def get_connected_routers(self, root: Pos) \
+        -> Tuple[Set[Pos], Set[Tuple[int, int]]]:
         routers = set()
         backbones = set()
         queue = deque([root])
@@ -192,7 +194,6 @@ class Building(GenericBuilding):
 
         self.__cells[row_start:row_start + row_len, col_start:col_start + col_len] |= neighborhood
 
-    # TODO(Process-ing): Remove this
     def place_router(self, row: int, column: int) -> bool:
 
         current_cell = self.__cells[row, column]
@@ -295,15 +296,15 @@ class Building(GenericBuilding):
         if not routers:
             return
 
-        def reconstruct_path(pred: Dict[Tuple[int, int], Tuple[int, int] | None],
-                             p: Tuple[int, int] | None) -> Set[Tuple[int, int]]:
+        def reconstruct_path(pred: Dict[Tuple[int, int], Optional[Tuple[int, int]]],
+                             p: Optional[Tuple[int, int]]) -> Set[Tuple[int, int]]:
             res = set()
             while p:
                 res.add(p)
                 p = pred.get(p, None)
             return res
 
-        def steiner_tree(grid: CellArray, terminals: list[tuple[int, int]]) -> set[tuple[int, int]]:
+        def steiner_tree(grid: CellArray, terminals: List[Tuple[int, int]]) -> Set[Tuple[int, int]]:
             rows, cols = len(grid), len(grid[0])
             directions = [(1, 0), (-1, 0), (0, 1), (0, -1), (1, 1), (-1, -1), (1, -1), (-1, 1)]
 
@@ -382,7 +383,7 @@ class Building(GenericBuilding):
         for row, col in targets:
             yield Operator(True, row, col)
 
-    def crossover(self, other: 'Building') -> Tuple['Building', 'Building'] | None:
+    def crossover(self, other: 'Building') -> Optional[Tuple['Building', 'Building']]:
         max_row, max_col = self.rows, self.columns
 
         lower_row = random.randint(0, max_row - 2)
@@ -454,9 +455,9 @@ class Building(GenericBuilding):
 
         return child1, child2
 
-    def is_similar(self, other: 'Building', max_similarity: float) -> bool:
+    def is_same(self, other: 'Building') -> bool:
         # pylint: disable=protected-access
-        return np.count_nonzero(self.__cells != other.__cells) <= max_similarity * self.__cells.size
+        return np.array_equal(self.__cells, other.__cells)
 
     def get_num_targets(self) -> int:
         return np.count_nonzero(self.__cells & self.CELL_TYPE_MASK == CellType.TARGET.value)
@@ -473,6 +474,10 @@ class Building(GenericBuilding):
     def get_coverage(self) -> int:
         return np.count_nonzero(self.__cells & (self.CELL_TYPE_MASK | self.COVERED_BIT)
                                 == CellType.TARGET.value | self.COVERED_BIT)
+
+    def get_num_uncovered_targets(self) -> int:
+        return np.count_nonzero(self.__cells & (self.CELL_TYPE_MASK | self.COVERED_BIT)
+                                == CellType.TARGET.value)
 
     @property
     def score(self) -> int:

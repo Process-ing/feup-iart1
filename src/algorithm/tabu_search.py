@@ -1,75 +1,91 @@
-import math
+from dataclasses import dataclass
 from collections import deque
-from typing import Deque, Iterator, Tuple, override
-from src.model.building import Building
-from src.model.problem import RouterProblem
-from src.algorithm.algorithm import Algorithm
+import math
+from typing import Deque, Iterator, Optional, Tuple, override
+from src.model import RouterProblem
+from src.algorithm.algorithm import Algorithm, AlgorithmConfig
 
-type TabuTable = Deque[Tuple[int, int]]
+type TabuList = Deque[Tuple[int, int]]
+
+@dataclass
+class TabuSearchConfig(AlgorithmConfig):
+    tabu_tenure: int
+    max_iterations: Optional[int]
+    max_neighborhood: Optional[int]
+
+    @classmethod
+    def from_flags(cls, flags: dict[str, str],
+                   default_tabu_tenure: int) -> Optional['TabuSearchConfig']:
+        try:
+            tabu_tenure = int(flags['tabu-tenure']) \
+                if 'tabu-tenure' in flags else default_tabu_tenure
+            max_iterations = int(flags['max-iterations']) if 'max-iterations' in flags else None
+            max_neighborhood = int(flags['max-neighborhood']) \
+                if 'max-neighborhood' in flags else 10
+        except ValueError:
+            return None
+
+        return cls(tabu_tenure, max_iterations, max_neighborhood)
 
 class TabuSearch(Algorithm):
     '''
     Tabu Search Algorithm
     Keeps track of visited solutions to avoid cycles and local optima.
     '''
-    def __init__(self, problem: RouterProblem, tabu_tenure: int | None = None,
-                 neighborhood_len: int = 10, max_iterations: int | None = None) -> None:
-        if tabu_tenure is None:
-            tabu_tenure = int(math.sqrt(problem.building.get_num_targets()) / problem.router_range)
-
+    def __init__(self, problem: RouterProblem, config: TabuSearchConfig) -> None:
         self.__problem = problem
-        self.__tabu: TabuTable = deque(maxlen=tabu_tenure)
-        self.__best_solution = problem.building
-        self.__best_score = problem.building.score
-        self.__neighborhood_len = neighborhood_len
-        self.__max_iterations = max_iterations
+        self.__config = config
+
+    def is_tabu(self, tabu_list: TabuList, pos: Tuple[int, int]) -> bool:
+        tabu_range = (self.__problem.router_range + 1) // 2
+        row, col = pos
+
+        return any(abs(row - trow) <= tabu_range and abs(col - tcol) <= tabu_range
+                   for trow, tcol in tabu_list)
 
     @override
-    def run(self) -> Iterator[str]:
-        round_iter = range(self.__max_iterations) \
-            if self.__max_iterations is not None else iter(int, 1)
+    def run(self) -> Iterator[Optional[str]]:
+        max_iterations = self.__config.max_iterations
+        max_neighborhood = self.__config.max_neighborhood
+        tabu_tenure = self.__config.tabu_tenure
+
+        tabu_list: TabuList = deque(maxlen=tabu_tenure)
+
+        round_iter = range(max_iterations) if max_iterations is not None else iter(int, 1)
         for _ in round_iter:
-            best_pos = None
             best_neighbor = None
             best_score = -1
-            neighbor_count = 0
             best_operator = None
+            neighbor_count = 0
 
             for operator in self.__problem.building.get_neighborhood():
-                if (operator.row, operator.col) in self.__tabu:
-                    yield 'Neighbor is tabu'
+                if self.is_tabu(tabu_list, operator.pos):
                     continue
 
                 neighbor = operator.apply(self.__problem.building)
                 if not neighbor:
-                    yield 'No neighbor found'
+                    yield None
                     continue
 
                 if neighbor.score > best_score:
-                    best_pos = (operator.row, operator.col)
                     best_neighbor = neighbor
                     best_score = neighbor.score
                     best_operator = operator
 
                 neighbor_count += 1
-                if neighbor_count >= self.__neighborhood_len:
+                if max_neighborhood is not None and neighbor_count >= max_neighborhood:
                     break
 
-            if best_neighbor is None or best_pos is None:
+                yield None
+
+            if best_neighbor is None or best_operator is None:
                 # Tabu tenure too long, whole neighborhood is tabu
-                self.__tabu.popleft()
+                tabu_list.popleft()
                 yield 'Tabu tenure too long'
                 continue
 
             self.__problem.building = best_neighbor
-            self.__tabu.append(best_pos)
-
-            if best_score and best_score > self.__best_score:
-                self.__best_solution = best_neighbor
-                self.__best_score = best_score
-
-            elif self.__tabu:
-                self.__tabu.popleft()
+            tabu_list.append(best_operator.pos)
 
             if best_operator is None:
                 yield 'No operator found'
@@ -79,6 +95,9 @@ class TabuSearch(Algorithm):
             row, col = best_operator.row, best_operator.col
             yield f'{action} router at ({row}, {col})'
 
-    @property
-    def best_solution(self) -> Building:
-        return self.__best_solution
+    @staticmethod
+    def get_default_tenure(problem: RouterProblem) -> int:
+        targets = problem.building.get_num_targets()
+        router_range = problem.router_range
+
+        return int(math.sqrt(targets) / router_range * 2)

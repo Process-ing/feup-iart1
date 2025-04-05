@@ -1,9 +1,9 @@
 from copy import deepcopy
 from enum import Enum
-from typing import Optional, Union
+from typing import Dict, List, Optional
 
-from src.algorithm import Algorithm, RandomWalk, RandomDescent, SimulatedAnnealing, \
-    TabuSearch, GeneticAlgorithm
+# pylint: disable=wildcard-import
+from src.algorithm import *
 from src.view.score_visualizer import ScoreVisualizer
 from src.model import RouterProblem
 from src.view import Cli
@@ -51,9 +51,7 @@ class Controller:
         self.__cli.print_success(f'Problem loaded from \'{filename}\'')
         return CommandResult.SUCCESS
 
-    # Pylint ignore inserted, because this functions behaves as a switch-case
-    # pylint: disable=too-many-branches
-    def process_command(self, tokens: list[str]) -> CommandResult:
+    def process_command(self, tokens: List[str]) -> CommandResult:
         command = tokens[0]
         if command in ['exit', 'quit']:
             return CommandResult.EXIT
@@ -87,43 +85,19 @@ class Controller:
 
             problem = deepcopy(self.__problem)
 
-            algorithm_name = None if len(tokens) < 2 else tokens[1]
-            max_iterations: Union[int, None]
-            algorithm: Algorithm
-
-
-            if algorithm_name == 'random-walk':
-                max_iterations = 200 if len(tokens) < 3 else int(tokens[2])
-                algorithm = RandomWalk(problem, max_iterations=max_iterations)
-            elif algorithm_name == 'random-descent':
-                algorithm = RandomDescent(problem)
-            elif algorithm_name == 'simulated-annealing':
-                temperature = 100000 if len(tokens) < 3 else int(tokens[2])
-                cooling_schedule = 0.99 if len(tokens) < 4 else float(tokens[3])
-                max_iterations = 200 if len(tokens) < 5 else int(tokens[4])
-                algorithm = SimulatedAnnealing(problem, temperature=temperature,
-                    cooling_schedule=cooling_schedule, max_iterations=max_iterations)
-            elif algorithm_name == 'tabu':
-                tabu_tenure = None if len(tokens) < 3 else int(tokens[2])
-                neighborhood_len = 10 if len(tokens) < 4 else int(tokens[3])
-                max_iterations = None if len(tokens) < 5 else int(tokens[4])
-                algorithm = TabuSearch(problem, tabu_tenure=tabu_tenure,
-                    neighborhood_len=neighborhood_len, max_iterations=max_iterations)
-            elif algorithm_name == 'genetic':
-                population_size = 10 if len(tokens) < 3 else int(tokens[2])
-                max_generations = 1000 if len(tokens) < 4 else int(tokens[3])
-                algorithm = GeneticAlgorithm(problem, population_size=population_size,
-                    max_generations=max_generations)
-            else:
+            algorithm = self.receive_algorithm(problem, tokens)
+            if not algorithm:
                 print_solve_usage()
                 return CommandResult.FAILURE
 
-            visualizer = ScoreVisualizer()
-            visualizer.show()
-            opt_win = OptimizationWindow(problem, algorithm, visualizer)
+            score_visualizer = ScoreVisualizer()
+            opt_win = OptimizationWindow(problem, algorithm, score_visualizer)
             opt_win.launch()
             opt_win.cleanup()
 
+            print(f"Best score: {opt_win.get_best_score()} ({opt_win.get_duration()} s)")
+            opt_win.dump_to_file('results.txt')
+            print('Score saved to results.txt')
             problem.dump_to_file('solution.txt')
             print('Output saved to solution.txt')
 
@@ -131,3 +105,86 @@ class Controller:
 
         self.__cli.print_error(f'Unknown command \'{command}\'')
         return CommandResult.FAILURE
+
+    @staticmethod
+    def receive_algorithm(problem: RouterProblem, tokens: List[str]) -> Optional[Algorithm]:
+        algorithm_name = None if len(tokens) < 2 else tokens[1]
+        algorithm: Algorithm
+        config: Optional[AlgorithmConfig]
+
+        flags = Controller.parse_algorithm_flags(tokens[2:])
+        if flags is None:
+            return None
+
+        if algorithm_name == 'random-walk':
+            config = RandomWalkConfig.from_flags(flags)
+            if not config:
+                return None
+
+            algorithm = RandomWalk(problem, config)
+
+        elif algorithm_name == 'random-descent':
+            config = RandomDescentConfig.from_flags(flags)
+            if not config:
+                return None
+
+            algorithm = RandomDescent(problem, config)
+
+        elif algorithm_name == 'simulated-annealing':
+            config = SimulatedAnnealingConfig.from_flags(flags)
+            if not config:
+                return None
+
+            algorithm = SimulatedAnnealing(problem, config)
+
+        elif algorithm_name == 'tabu':
+            default_tabu_tenure = TabuSearch.get_default_tenure(problem)
+            config = TabuSearchConfig.from_flags(flags, default_tabu_tenure)
+            if not config:
+                return None
+
+            algorithm = TabuSearch(problem, config)
+
+        elif algorithm_name == 'genetic':
+            default_init_routers = GeneticAlgorithm.get_default_init_routers(problem)
+            config = GeneticAlgorithmConfig.from_flags(flags, default_init_routers)
+            if not config:
+                return None
+
+            algorithm = GeneticAlgorithm(problem, config)
+
+        else:
+            return None
+
+        return algorithm
+
+    @staticmethod
+    def parse_algorithm_flags(tokens: List[str]) -> Optional[Dict[str, str]]:
+        '''
+        Parse flags from tokens. Flags are expected to start with '--'.
+        They can be specified in either of two formats:
+            --flag=value    (an inline value)
+            --flag value    (the value is the next token)
+        Returns a dictionary mapping flag names to their string values.
+        If a flag is provided without a value, it is set as "True".
+        '''
+        flags = {}
+        i = 0
+        while i < len(tokens):
+            token = tokens[i]
+            if token.startswith('--'):
+                if '=' in token:
+                    flag, value = token[2:].split('=', 1)
+                    flags[flag] = value
+                else:
+                    flag = token[2:]
+                    # Check if a value follows and it isn't another flag:
+                    if i + 1 < len(tokens) and not tokens[i + 1].startswith('--'):
+                        flags[flag] = tokens[i + 1]
+                        i += 1
+                    else:
+                        flags[flag] = 'True'
+            else:
+                return None
+            i += 1
+        return flags
