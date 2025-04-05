@@ -45,7 +45,8 @@ class Operator:
             building (Building): The building instance to apply the operation to.
 
         Returns:
-            Optional[Building]: A new building with the operation applied, or None if the operation failed.
+            Optional[Building]: A new building with the operation applied,
+            or None if the operation failed.
         """
         new_building = building.copy()
 
@@ -74,15 +75,18 @@ class CellType(Enum):
 
 class Building(GenericBuilding):
     """
-    Represents a building grid with routers, targets, walls, and a backbone. The building allows placing
-    and removing routers, covering neighboring cells, and checking for valid configurations.
+    Represents a building grid with routers, targets, walls, and a backbone.
+    The building allows placing and removing routers, covering neighboring cells,
+    and checking for valid configurations.
 
     Attributes:
         cells (CellArray): A 2D array representing the building grid.
         backbone_root (Pos): The position of the backbone in the grid.
         new_router_probability (float): The probability of placing a new router in the grid.
-        problem (Optional[GenericRouterProblem]): The problem associated with the building (used for validation).
-        score (Optional[int]): A score representing the quality of the current building configuration.
+        problem (Optional[GenericRouterProblem]): The problem associated
+        with the building (used for validation).
+        score (Optional[int]): A score representing the quality of the current
+        building configuration.
     """
     BACKBONE_BIT = np.uint8(1 << 7)  # Marks a cell connected to the backbone
     COVERED_BIT = np.uint8(1 << 6)  # Marks a cell covered by a router
@@ -279,7 +283,8 @@ class Building(GenericBuilding):
         yielding the row, column, and cell value (converted to an integer).
         
         Yields:
-            Tuple[int, int, int]: A tuple of the row index, column index, and cell value as an integer.
+            Tuple[int, int, int]: A tuple of the row index, column index,
+            and cell value as an integer.
         """
         return ((row, column, int(cell)) for (row, column), cell in np.ndenumerate(self.__cells))
 
@@ -287,7 +292,8 @@ class Building(GenericBuilding):
         """
         Finds all routers connected to the given root position.
 
-        Uses a breadth-first search (BFS) to traverse through the grid starting from the root position
+        Uses a breadth-first search (BFS) to traverse through the
+        grid starting from the root position
         and collects all connected routers.
 
         Args:
@@ -347,7 +353,8 @@ class Building(GenericBuilding):
         # Mark the router itself as covered
         neighborhood[ctr_row, ctr_col] |= self.COVERED_BIT
 
-        # Iterate over the four cardinal directions (left, right, up, down) to mark neighbors as covered
+        # Iterate over the four cardinal directions (left, right, up, down)
+        # to mark neighbors as covered
         line_iters = [
             ((ctr_row, ncol) for ncol in range(ctr_col + 1, col_len)),
             ((ctr_row, ncol) for ncol in range(ctr_col - 1, -1, -1)),
@@ -362,7 +369,8 @@ class Building(GenericBuilding):
                     break # Stop if a wall is encountered
                 neighborhood[nrow, ncol] |= self.COVERED_BIT
 
-        # Iterate over the four diagonal directions and mark neighbors if they are covered by both row and column
+        # Iterate over the four diagonal directions and mark neighbors
+        # if they are covered by both row and column
         square_iters = [
             (((nrow, ncol) for nrow in range(ctr_row - 1, -1, -1)
                 for ncol in range(ctr_col - 1, -1, -1)), 1, 1),
@@ -374,7 +382,8 @@ class Building(GenericBuilding):
                 for ncol in range(ctr_col + 1, col_len)), -1, -1),
         ]
 
-        # For each diagonal direction, check the coverage based on neighbors in both row and column direction
+        # For each diagonal direction, check the coverage based on neighbors
+        # in both row and column direction
         for square_iter, rstep, cstep in square_iters:
             for nrow, ncol in square_iter:
                 if neighborhood[nrow, ncol] & self.CELL_TYPE_MASK != CellType.WALL.value \
@@ -447,10 +456,12 @@ class Building(GenericBuilding):
 
     def update_neighbor_coverage(self, row: int, column: int) -> None:
         """
-        Updates the coverage of neighbors around the specified cell after a router placement or removal.
+        Updates the coverage of neighbors around the specified cell
+        after a router placement or removal.
 
         This method recalculates the coverage area of the neighbors surrounding the given router. It 
-        marks the neighbors as covered if they are within the router's range and are not blocked by walls. 
+        marks the neighbors as covered if they are within the router's range
+        and are not blocked by walls. 
         The coverage is updated after a router has been added or removed from a position.
 
         Args:
@@ -487,16 +498,20 @@ class Building(GenericBuilding):
         """
         Removes a router from the specified position and disconnects it from the network.
 
-        This method removes the router at the given position and clears its coverage and backbone connections.
-        It then attempts to maintain the integrity of the network by ensuring the remaining routers are still 
-        connected to the backbone. The router is removed only if it exists at the specified position.
+        This method removes the router at the given position and clears its 
+        coverage and backbone connections.
+        It then attempts to maintain the integrity of the network by ensuring 
+        the remaining routers are still 
+        connected to the backbone. The router is removed only if it exists at
+        the specified position.
 
         Args:
             row (int): The row index of the router's position to be removed.
             column (int): The column index of the router's position to be removed.
 
         Returns:
-            bool: True if the router was successfully removed, False otherwise (e.g., no router at the position).
+            bool: True if the router was successfully removed, False
+            otherwise (e.g., no router at the position).
         """
         if (self.__cells[row, column] & self.ROUTER_BIT) == 0:
             return False
@@ -798,7 +813,8 @@ class Building(GenericBuilding):
 
     def check_is_valid(self) -> bool:
         """
-        Checks if the current building configuration is valid according to the problem's constraints.
+        Checks if the current building configuration is valid according
+        to the problem's constraints.
 
         Returns:
             bool: `True` if the configuration is valid, `False` otherwise.
