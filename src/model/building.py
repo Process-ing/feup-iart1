@@ -127,14 +127,14 @@ class Building(GenericBuilding):
         backbones = set()
         queue = deque([root])
         backbones.add(root)
-        directions = [-1, -1, -1, 0, -1, 1, 0, -1, 0, 1, 1, -1, 1, 0, 1, 1]
+        directions = [(-1, 0), (1, 0), (0, -1), (0, 1), (-1, -1), (-1, 1), (1, -1), (1, 1)]
 
         while queue:
             row, col = queue.popleft()
             if (self.__cells[row, col] & self.ROUTER_BIT) != 0:
                 routers.add((row,col))
-            for i in range(0, len(directions), 2):
-                nr, nc = row + directions[i], col + directions[i+1]
+            for dr, dc in directions:
+                nr, nc = row + dr, col + dc
                 if 0 <= nr < self.rows and 0 <= nc < self.columns and \
                         (nr, nc) not in backbones and \
                         self.__cells[nr, nc] & self.BACKBONE_BIT:
