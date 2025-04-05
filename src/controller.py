@@ -91,7 +91,7 @@ class Controller:
                 return CommandResult.FAILURE
 
             score_visualizer = ScoreVisualizer()
-            opt_win = OptimizationWindow(problem, algorithm, score_visualizer)
+            opt_win = OptimizationWindow(problem, algorithm)
             opt_win.launch()
             opt_win.cleanup()
 

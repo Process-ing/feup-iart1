@@ -7,12 +7,11 @@ from src.algorithm import Algorithm
 from src.model import RouterProblem
 from src.view.viewer import BuildingViewer, PauseButton
 from src.view.window.pygamewindow import PygameWindow
-from src.view.viewer import ChartButton
-from src.view.score_visualizer import ScoreVisualizer
+from src.view.viewer import ChartButton, ChartViewer
 
 class OptimizationWindow(PygameWindow):
     def __init__(self, problem: RouterProblem, algorithm: Algorithm,
-                 score_visualizer: ScoreVisualizer, max_framerate: float = 60) -> None:
+                 max_framerate: float = 60) -> None:
 
         super().__init__(max_framerate)
 
@@ -25,11 +24,12 @@ class OptimizationWindow(PygameWindow):
         self.__end_time: float = 0
         self.__information_message = ''
         self.__algorithm = algorithm
-        self.__score_visualizer = score_visualizer
         self.__font: Optional[pygame.font.Font] = None
         self.__building_viewer = BuildingViewer()
+        self.__show_chart = False
         self.__pause_button: Optional[PauseButton] = None
         self.__chart_button: Optional[ChartButton] = None
+        self.__chart_viewer: ChartViewer
 
         self.__execution_thread: Optional[Thread] = None
         self.__continue_event = Event()
@@ -53,6 +53,9 @@ class OptimizationWindow(PygameWindow):
 
     def __run_algorithm(self) -> None:
         self.__start_time = time.perf_counter()
+        self.__chart_viewer.set_start_time()
+        self.__chart_viewer.add_score(self.__score)
+
         for information_message in self.__algorithm.run():
             if self.__stop_execution:
                 break
@@ -65,17 +68,19 @@ class OptimizationWindow(PygameWindow):
             self.__max_score = max(self.__max_score, self.__score)
             self.__num_covered_cells = self.__problem.building.get_coverage()
             self.__num_routers = self.__problem.building.get_num_routers()
-            self.__score_visualizer.update_scores(self.__score)
+            self.__chart_viewer.add_score(self.__score)
 
         self.__problem.building = self.__problem.best_building
         self.__information_message = 'Done!'
         self.__end_time = time.perf_counter()
 
     def on_init(self, screen: pygame.Surface) -> None:
-        width = self.get_window_size()[0]
+        width, height = self.get_window_size()
         self.__pause_button = PauseButton(width - (48 + 8) * 2, 8)
         self.__chart_button = ChartButton(width - (48 + 8), 8)
         self.__font = pygame.font.Font('BigBlueTerm437NerdFont-Regular.ttf', 20)
+
+        self.__chart_viewer = ChartViewer(width, height)
 
         self.__execution_thread = Thread(target=self.__run_algorithm)
         self.__execution_thread.start()
@@ -170,15 +175,19 @@ class OptimizationWindow(PygameWindow):
 
     def __display(self, screen: pygame.Surface) -> None:
         # Optimization thread might send an update before fully pausing
-        if self.__continue_event.is_set():
+        if not self.__show_chart and self.__continue_event.is_set():
             problem_screen = self.__building_viewer.render(self.__problem.building)
             scaled_problem = pygame.transform.scale(problem_screen, screen.get_size())
             screen.blit(scaled_problem, (0, 0))
+            self.__draw_info_message(screen)
+
+        if self.__show_chart:
+            chart = self.__chart_viewer.render(None)
+            screen.blit(chart, (0, 0))
 
         self.__draw_info(screen)
-        if self.__continue_event.is_set():
-            self.__draw_info_message(screen)
         self.__draw_buttons(screen)
+
 
     def on_update(self, events: List[pygame.event.Event], screen: pygame.Surface) -> None:
         for event in events:
@@ -200,7 +209,7 @@ class OptimizationWindow(PygameWindow):
             self.__continue_event.set()
 
     def toggle_show_chart(self) -> None:
-        self.__score_visualizer.toggle_show_chart()
+        self.__show_chart = not self.__show_chart
 
     def pause(self) -> None:
         self.__continue_event.clear()
@@ -211,7 +220,6 @@ class OptimizationWindow(PygameWindow):
         self.__stop_execution = True
         self.__continue_event.set()
 
-        self.__score_visualizer.cleanup()
         if self.__execution_thread.ident != get_ident():
             self.__execution_thread.join()
 
