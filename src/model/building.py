@@ -16,12 +16,37 @@ type Pos = Tuple[int, int]
 type SteinerTreeQueue = Deque[Tuple[Pos, Pos, Optional[Pos], Optional[Pos]]]
 
 class Operator:
+    """
+    Represents an operation to place or remove a router in a building.
+
+    Attributes:
+        place (bool): True if the operation is to place a router, False to remove.
+        row (int): The row index of the router's position.
+        col (int): The column index of the router's position.
+    """
     def __init__(self, place: bool, row: int, col: int) -> None:
+        """
+        Initializes an Operator instance.
+
+        Args:
+            place (bool): Indicates if the operation is to place a router (True) or remove (False).
+            row (int): Row index of the operation.
+            col (int): Column index of the operation.
+        """
         self.place = place
         self.row = row
         self.col = col
 
     def apply(self, building: 'Building') -> Optional['Building']:
+        """
+        Applies the operation to the given building by either placing or removing a router.
+
+        Args:
+            building (Building): The building instance to apply the operation to.
+
+        Returns:
+            Optional[Building]: A new building with the operation applied, or None if the operation failed.
+        """
         new_building = building.copy()
 
         if self.place:
@@ -34,6 +59,12 @@ class Operator:
 
     @property
     def pos(self) -> Pos:
+        """
+        Returns the position of the operator as a tuple (row, col).
+
+        Returns:
+            Pos: A tuple representing the position of the operator.
+        """
         return (self.row, self.col)
 
 class CellType(Enum):
@@ -42,6 +73,17 @@ class CellType(Enum):
     WALL = 2
 
 class Building(GenericBuilding):
+    """
+    Represents a building grid with routers, targets, walls, and a backbone. The building allows placing
+    and removing routers, covering neighboring cells, and checking for valid configurations.
+
+    Attributes:
+        cells (CellArray): A 2D array representing the building grid.
+        backbone_root (Pos): The position of the backbone in the grid.
+        new_router_probability (float): The probability of placing a new router in the grid.
+        problem (Optional[GenericRouterProblem]): The problem associated with the building (used for validation).
+        score (Optional[int]): A score representing the quality of the current building configuration.
+    """
     BACKBONE_BIT = np.uint8(1 << 7)  # Marks a cell connected to the backbone
     COVERED_BIT = np.uint8(1 << 6)  # Marks a cell covered by a router
     ROUTER_BIT = np.uint8(1 << 5)  # Marks a cell as a router
@@ -55,6 +97,15 @@ class Building(GenericBuilding):
 
     def __init__(self, cells: CellArray, backbone: Pos, new_router_probability: float,
                  problem: Optional[GenericRouterProblem]) -> None:
+        """
+        Initializes a Building instance.
+
+        Args:
+            cells (CellArray): A 2D array representing the building grid.
+            backbone (Pos): The position of the backbone in the grid.
+            new_router_probability (float): The probability of placing a new router in the grid.
+            problem (Optional[GenericRouterProblem]): The problem associated with the building.
+        """
         self.__cells: CellArray = cells
         self.__backbone_root = backbone
         self.__new_router_probability = new_router_probability
@@ -62,12 +113,33 @@ class Building(GenericBuilding):
         self.__score: Optional[int] = None
 
     def copy(self) -> 'Building':
+        """
+        Creates a copy of the current building.
+
+        Returns:
+            Building: A new building instance with the same configuration.
+        """
         return Building(deepcopy(self.__cells), self.__backbone_root,
                    self.__new_router_probability, self.problem)
 
     @classmethod
     def from_text(cls, shape: Tuple[int, int], backbone: Pos,
                   text: str, problem: Optional[GenericRouterProblem]) -> 'Building':
+        """
+        Creates a Building instance from a text representation.
+
+        Args:
+            shape (Tuple[int, int]): The dimensions of the grid (rows, columns).
+            backbone (Pos): The position of the backbone.
+            text (str): A string representing the building's grid.
+            problem (Optional[GenericRouterProblem]): The problem associated with the building.
+
+        Returns:
+            Building: A new Building instance created from the text representation.
+
+        Raises:
+            ProblemLoadError: If there is an error loading the building configuration.
+        """
         rows, columns = shape
         if rows < 1 or columns < 1:
             raise ProblemLoadError(f'Invalid building size {rows}x{columns}')
@@ -93,6 +165,12 @@ class Building(GenericBuilding):
         return cls(cells, backbone, 0.8, problem)
 
     def load_solution(self, text: str) -> None:
+        """
+        Loads a solution for the building from a text representation.
+
+        Args:
+            text (str): A string representing the solution.
+        """
         lines = text.split('\n')
         num_backbones = int(lines[0])
         for i in range(1, num_backbones + 1):
@@ -108,39 +186,116 @@ class Building(GenericBuilding):
 
     @property
     def rows(self) -> int:
+        """
+        Returns the number of rows in the building grid.
+
+        Returns:
+            int: The number of rows.
+        """
         return self.__cells.shape[0]
 
     @property
     def columns(self) -> int:
+        """
+        Returns the number of columns in the building grid.
+
+        Returns:
+            int: The number of columns.
+        """
         return self.__cells.shape[1]
 
     @property
     def shape(self) -> Tuple[int, int]:
+        """
+        Returns the shape of the building grid as a tuple (rows, columns).
+
+        Returns:
+            Tuple[int, int]: The shape of the grid.
+        """
         return cast(Tuple[int, int], self.__cells.shape)
 
     @property
     def backbone(self) -> Pos:
+        """
+        Returns the position of the backbone.
+
+        Returns:
+            Pos: The position of the backbone in the grid.
+        """
         return self.__backbone_root
 
     def get_routers(self) -> List[Tuple[int, int]]:
+        """
+        Returns a list of positions of all routers in the building.
+
+        Returns:
+            List[Tuple[int, int]]: A list of positions of routers.
+        """
         return list(zip(*np.where(self.__cells & self.ROUTER_BIT)))
 
     def get_target_cells(self) -> List[Tuple[int, int]]:
+        """
+        Returns a list of positions of all target cells in the building.
+
+        Returns:
+            List[Tuple[int, int]]: A list of positions of target cells.
+        """
         return list(zip(*np.where(self.__cells & self.CELL_TYPE_MASK == CellType.TARGET.value)))
 
     def __str__(self) -> str:
+        """
+        Returns a string representation of the building grid.
+
+        Returns:
+            str: A string representation of the grid.
+        """
         return '\n'.join(''.join(map(chr, row)) for row in self.__cells)
 
     def as_nparray(self) -> CellArray:
+        """
+        Returns a copy of the building grid as a NumPy array.
+
+        Returns:
+            CellArray: A copy of the grid as a NumPy array.
+        """
         return self.__cells.copy()
 
     def as_nparray_transposed(self) -> CellArray:
+        """
+        Returns the transposed version of the cell array.
+
+        This method transposes the current cell array and returns the result.
+        
+        Returns:
+            CellArray: The transposed cell array.
+        """
         return self.__cells.transpose()
 
     def iter(self) -> Iterator[Tuple[int, int, int]]:
+        """
+        Iterates over the cells in the grid and yields their row, column, and value.
+
+        This method uses numpy's ndenumerate to iterate over the cells of the grid,
+        yielding the row, column, and cell value (converted to an integer).
+        
+        Yields:
+            Tuple[int, int, int]: A tuple of the row index, column index, and cell value as an integer.
+        """
         return ((row, column, int(cell)) for (row, column), cell in np.ndenumerate(self.__cells))
 
     def get_connected_routers(self, root: Pos) -> Set[Pos]:
+        """
+        Finds all routers connected to the given root position.
+
+        Uses a breadth-first search (BFS) to traverse through the grid starting from the root position
+        and collects all connected routers.
+
+        Args:
+            root (Pos): The starting position of the root router.
+
+        Returns:
+            Set[Pos]: A set of positions representing all routers connected to the root.
+        """
         routers = set()
         backbones = set()
         queue = deque([root])
@@ -161,23 +316,38 @@ class Building(GenericBuilding):
         return routers
 
     def cover_neighbors(self, row: int, col: int) -> None:
+        """
+        Updates the coverage of neighbors around the specified cell.
+
+        This method calculates the coverage area of the neighbors around the given cell 
+        and marks them as covered if they are not blocked by walls.
+        
+        Args:
+            row (int): The row index of the target cell.
+            col (int): The column index of the target cell.
+        """
         assert self.problem is not None
         rrange = self.problem.router_range
 
+        # Define the boundaries for the neighborhood based on router's range
         row_start = max(0, row - rrange)
         row_len = min(self.__cells.shape[0] - row_start, 2 * rrange + 1)
         col_start = max(0, col - rrange)
         col_len = min(self.__cells.shape[1] - col_start, 2 * rrange + 1)
 
+        # Calculate center position of the router within the neighborhood
         ctr_row = row - row_start
         ctr_col = col - col_start
 
+        # Initialize a neighborhood matrix to store the coverage status
         neighborhood = np.zeros((row_len, col_len), dtype=np.uint8)
         neighborhood |= self.__cells[row_start:row_start + row_len, \
             col_start:col_start + col_len] & Building.CELL_TYPE_MASK
 
+        # Mark the router itself as covered
         neighborhood[ctr_row, ctr_col] |= self.COVERED_BIT
 
+        # Iterate over the four cardinal directions (left, right, up, down) to mark neighbors as covered
         line_iters = [
             ((ctr_row, ncol) for ncol in range(ctr_col + 1, col_len)),
             ((ctr_row, ncol) for ncol in range(ctr_col - 1, -1, -1)),
@@ -185,12 +355,14 @@ class Building(GenericBuilding):
             ((nrow, ctr_col) for nrow in range(ctr_row - 1, -1, -1))
         ]
 
+        # For each line direction, mark neighbors until a wall is encountered
         for line_iter in line_iters:
             for nrow, ncol in line_iter:
                 if neighborhood[nrow, ncol] & self.CELL_TYPE_MASK == CellType.WALL.value:
-                    break
+                    break # Stop if a wall is encountered
                 neighborhood[nrow, ncol] |= self.COVERED_BIT
 
+        # Iterate over the four diagonal directions and mark neighbors if they are covered by both row and column
         square_iters = [
             (((nrow, ncol) for nrow in range(ctr_row - 1, -1, -1)
                 for ncol in range(ctr_col - 1, -1, -1)), 1, 1),
@@ -202,6 +374,7 @@ class Building(GenericBuilding):
                 for ncol in range(ctr_col + 1, col_len)), -1, -1),
         ]
 
+        # For each diagonal direction, check the coverage based on neighbors in both row and column direction
         for square_iter, rstep, cstep in square_iters:
             for nrow, ncol in square_iter:
                 if neighborhood[nrow, ncol] & self.CELL_TYPE_MASK != CellType.WALL.value \
@@ -209,9 +382,23 @@ class Building(GenericBuilding):
                     and neighborhood[nrow, ncol + cstep] & self.COVERED_BIT:
                     neighborhood[nrow, ncol] |= self.COVERED_BIT
 
+        # Update the cells with the new coverage information
         self.__cells[row_start:row_start + row_len, col_start:col_start + col_len] |= neighborhood
 
     def place_router(self, row: int, column: int) -> bool:
+        """
+        Places a router at the specified position and connects it to the backbone.
+
+        This method checks if the position is valid, places a router if possible, 
+        and then connects it to the nearest backbone using a breadth-first search (BFS).
+        
+        Args:
+            row (int): The row index of the target cell.
+            column (int): The column index of the target cell.
+        
+        Returns:
+            bool: True if the router was successfully placed, False otherwise.
+        """
 
         current_cell = self.__cells[row, column]
 
@@ -259,21 +446,37 @@ class Building(GenericBuilding):
         return True
 
     def update_neighbor_coverage(self, row: int, column: int) -> None:
+        """
+        Updates the coverage of neighbors around the specified cell after a router placement or removal.
+
+        This method recalculates the coverage area of the neighbors surrounding the given router. It 
+        marks the neighbors as covered if they are within the router's range and are not blocked by walls. 
+        The coverage is updated after a router has been added or removed from a position.
+
+        Args:
+            row (int): The row index of the target router's position.
+            column (int): The column index of the target router's position.
+        """
+
         assert self.problem is not None
         router_range = self.problem.router_range
 
+        # Define the bounds for the area surrounding the router that needs coverage updates
         cell_row_start = max(0, row - router_range)
         cell_row_end = min(self.__cells.shape[0], row + router_range + 1)
         cell_col_start = max(0, column - router_range)
         cell_col_end = min(self.__cells.shape[1], column + router_range + 1)
 
+        # Remove coverage from the previously covered area around the router
         self.__cells[cell_row_start:cell_row_end, cell_col_start:cell_col_end] &= ~self.COVERED_BIT
 
+        # Define the bounds for the router's extended coverage area (double the router range)
         router_row_start = max(0, row - 2 * router_range)
         router_row_end = min(self.__cells.shape[0], row + 2 * router_range + 1)
         router_col_start = max(0, column - 2 * router_range)
         router_col_end = min(self.__cells.shape[1], column + 2 * router_range + 1)
 
+        # Update coverage for each cell in the extended range
         for rrow in range(router_row_start, router_row_end):
             for rcol in range(router_col_start, router_col_end):
                 if self.__cells[rrow, rcol] & self.ROUTER_BIT:
@@ -281,21 +484,39 @@ class Building(GenericBuilding):
                     self.cover_neighbors(rrow, rcol)
 
     def remove_router(self, row: int, column: int) -> bool:
+        """
+        Removes a router from the specified position and disconnects it from the network.
+
+        This method removes the router at the given position and clears its coverage and backbone connections.
+        It then attempts to maintain the integrity of the network by ensuring the remaining routers are still 
+        connected to the backbone. The router is removed only if it exists at the specified position.
+
+        Args:
+            row (int): The row index of the router's position to be removed.
+            column (int): The column index of the router's position to be removed.
+
+        Returns:
+            bool: True if the router was successfully removed, False otherwise (e.g., no router at the position).
+        """
         if (self.__cells[row, column] & self.ROUTER_BIT) == 0:
             return False
 
+        # Initialize grid boundaries and movement directions
         max_row, max_col = self.rows, self.columns
         directions = [(-1, 0), (1, 0), (0, -1), (0, 1), (-1, -1), (-1, 1), (1, -1), (1, 1)]
         queue: Deque[Tuple[int, int]] = deque()
         queue.append((row, column))
 
+        # Start the process of removing the router and clearing its connections
         while queue:
             r, c = queue.popleft()
 
+            # Remove the router and its backbone connection (except for the backbone root)
             self.__cells[r, c] &= ~(self.ROUTER_BIT | self.BACKBONE_BIT) \
                 if (r, c) != self.__backbone_root \
                 else ~self.ROUTER_BIT
 
+            # Check the neighboring cells to propagate the router removal
             for dr, dc in directions:
                 new_r, new_c = r + dr, c + dc
                 if 0 <= new_r < max_row and 0 <= new_c < max_col and \
@@ -304,6 +525,7 @@ class Building(GenericBuilding):
                     (new_r, new_c) != self.__backbone_root:
                     queue.append((new_r, new_c))
 
+        # Reconnect the routers to maintain network integrity
         self.reconnect_routers()
         self.update_neighbor_coverage(row, column)
         return True
@@ -367,7 +589,7 @@ class Building(GenericBuilding):
             self.__cells[row, col] |= self.BACKBONE_BIT
 
     def get_neighborhood(self) -> Iterator[Operator]:
-        '''
+        """
         Generates neighboring building configurations by placing or removing routers.
 
         This method shuffles the list of routers and target cells, then iteratively
@@ -377,7 +599,7 @@ class Building(GenericBuilding):
 
         Yields:
             Building: A new building configuration with a router placed or removed.
-        '''
+        """
         routers = self.get_routers()
         targets = self.get_target_cells()
         random.shuffle(routers)
@@ -394,6 +616,13 @@ class Building(GenericBuilding):
                 yield Operator(False, row, col)
 
     def get_placement_neighborhood(self) -> Iterator[Operator]:
+        """
+        Yields a sequence of `Operator` objects representing potential placement positions 
+        for routers in the grid. The targets are shuffled to introduce randomness.
+
+        Yields:
+            Operator: The operator corresponding to a potential placement at a target cell.
+        """
         targets = self.get_target_cells()
         random.shuffle(targets)
 
@@ -401,6 +630,18 @@ class Building(GenericBuilding):
             yield Operator(True, row, col)
 
     def crossover(self, other: 'Building') -> Optional[Tuple['Building', 'Building']]:
+        """
+        Performs a crossover between the current building and another building, 
+        generating two offspring. The crossover is done by swapping subgrids between 
+        the two buildings while ensuring they remain valid.
+
+        Args:
+            other (Building): The other building to perform the crossover with.
+
+        Returns:
+            Optional[Tuple['Building', 'Building']]: A tuple of two new `Building` objects
+            created after the crossover. Returns `None` if the resulting buildings are invalid.
+        """
         max_row, max_col = self.rows, self.columns
 
         lower_row = random.randint(0, max_row - 2)
@@ -409,6 +650,13 @@ class Building(GenericBuilding):
         upper_col = random.randint(lower_col + 1, max_col - 1)
 
         def clear_edges(grid: CellArray) -> None:
+            """
+            Clears the edges of a given subgrid, ensuring no backbone cells remain 
+            on the edges.
+
+            Args:
+                grid (CellArray): The grid to modify.
+            """
             directions = [(-1, 0), (1, 0), (0, -1), (0, 1), (-1, -1), (-1, 1), (1, -1), (1, 1)]
             queue: Deque[Tuple[int, int]] = deque()
 
@@ -473,37 +721,89 @@ class Building(GenericBuilding):
         return child1, child2
 
     def is_same(self, other: 'Building') -> bool:
+        """
+        Compares the current building with another building to check if they are identical.
+
+        Args:
+            other (Building): The other building to compare with.
+
+        Returns:
+            bool: `True` if the buildings are the same, `False` otherwise.
+        """
         # pylint: disable=protected-access
         return np.array_equal(self.__cells, other.__cells)
 
     def get_num_targets(self) -> int:
+        """
+        Returns the number of target cells in the building grid.
+
+        Returns:
+            int: The number of target cells.
+        """
         return np.count_nonzero(self.__cells & self.CELL_TYPE_MASK == CellType.TARGET.value)
 
     @override
     def get_num_routers(self) -> int:
+        """
+        Returns the number of router cells in the building grid.
+
+        Returns:
+            int: The number of router cells.
+        """
         return np.count_nonzero(self.__cells & self.ROUTER_BIT)
 
     @override
     def get_num_connected_cells(self) -> int:
+        """
+        Returns the number of connected backbone cells in the building grid, excluding the root.
+
+        Returns:
+            int: The number of connected backbone cells.
+        """
         return np.count_nonzero(self.__cells & self.BACKBONE_BIT) - 1
 
     @override
     def get_coverage(self) -> int:
+        """
+        Returns the number of covered target cells in the building grid.
+
+        Returns:
+            int: The number of covered target cells.
+        """
         return np.count_nonzero(self.__cells & (self.CELL_TYPE_MASK | self.COVERED_BIT)
                                 == CellType.TARGET.value | self.COVERED_BIT)
 
     def get_num_uncovered_targets(self) -> int:
+        """
+        Returns the number of uncovered target cells in the building grid.
+
+        Returns:
+            int: The number of uncovered target cells.
+        """
         return np.count_nonzero(self.__cells & (self.CELL_TYPE_MASK | self.COVERED_BIT)
                                 == CellType.TARGET.value)
 
     @property
     def score(self) -> int:
+        """
+        Computes and returns the score of the building, if it hasn't been computed yet.
+
+        Returns:
+            int: The score of the building.
+        """
         if self.__score is None:
             assert self.problem is not None
             self.__score = self.problem.get_score(self)
         return self.__score
 
     def check_is_valid(self) -> bool:
+        """
+        Checks if the current building configuration is valid according to the problem's constraints.
+
+        Returns:
+            bool: `True` if the configuration is valid, `False` otherwise.
+        """
+
         # Check budget
         assert self.problem is not None
         if not self.problem.check_budget(self):
