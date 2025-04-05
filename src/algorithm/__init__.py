@@ -1,4 +1,4 @@
-from src.algorithm.algorithm import Algorithm
+from src.algorithm.algorithm import Algorithm, AlgorithmConfig
 from src.algorithm.random_walk import RandomWalk, RandomWalkConfig
 from src.algorithm.random_descent import RandomDescent, RandomDescentConfig
 from src.algorithm.simulated_annealing import SimulatedAnnealing, SimulatedAnnealingConfig
@@ -7,6 +7,7 @@ from src.algorithm.genetic_algorithm import GeneticAlgorithm, GeneticAlgorithmCo
 
 __all__ = [
     'Algorithm',
+    'AlgorithmConfig',
     'RandomWalk',
     'RandomWalkConfig',
     'RandomDescent',

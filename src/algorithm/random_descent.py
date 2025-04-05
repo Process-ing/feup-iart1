@@ -1,11 +1,11 @@
 from dataclasses import dataclass
 from typing import Dict, Iterator, Optional, override
 
-from src.algorithm.algorithm import Algorithm
+from src.algorithm.algorithm import Algorithm, AlgorithmConfig
 from src.model import RouterProblem
 
 @dataclass
-class RandomDescentConfig:
+class RandomDescentConfig(AlgorithmConfig):
     max_neighborhood: Optional[int]
     max_iterations: Optional[int]
 

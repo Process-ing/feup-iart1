@@ -4,10 +4,10 @@ import math
 import random
 
 from src.model.problem import RouterProblem
-from src.algorithm.algorithm import Algorithm
+from src.algorithm.algorithm import Algorithm, AlgorithmConfig
 
 @dataclass
-class SimulatedAnnealingConfig:
+class SimulatedAnnealingConfig(AlgorithmConfig):
     max_iterations: Optional[int]
     init_temperature: float
     cooling_schedule: float

@@ -3,12 +3,12 @@ from collections import deque
 import math
 from typing import Deque, Iterator, Optional, Tuple, override
 from src.model import RouterProblem
-from src.algorithm.algorithm import Algorithm
+from src.algorithm.algorithm import Algorithm, AlgorithmConfig
 
 type TabuList = Deque[Tuple[int, int]]
 
 @dataclass
-class TabuSearchConfig:
+class TabuSearchConfig(AlgorithmConfig):
     tabu_tenure: int
     max_iterations: Optional[int]
     max_neighborhood: Optional[int]

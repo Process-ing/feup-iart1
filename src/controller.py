@@ -107,6 +107,7 @@ class Controller:
     def receive_algorithm(problem: RouterProblem, tokens: List[str]) -> Optional[Algorithm]:
         algorithm_name = None if len(tokens) < 2 else tokens[1]
         algorithm: Algorithm
+        config: Optional[AlgorithmConfig]
 
         flags = Controller.parse_algorithm_flags(tokens[2:])
         if flags is None:
