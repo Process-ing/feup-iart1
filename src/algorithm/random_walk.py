@@ -26,7 +26,7 @@ class RandomWalk(Algorithm):
         self.__config = config
 
     @override
-    def run(self) -> Iterator[str]:
+    def run(self) -> Iterator[Optional[str]]:
         max_iterations = self.__config.max_iterations
 
         round_iter = range(max_iterations) if max_iterations else iter(int, 1)
@@ -35,8 +35,9 @@ class RandomWalk(Algorithm):
             for operator in self.__problem.building.get_neighborhood():
                 neighbor = operator.apply(self.__problem.building)
                 if not neighbor:
-                    yield 'No neighbor found'
+                    yield
                     continue
+                
                 self.__problem.building = neighbor
                 yield f"{'Placed' if operator.place else 'Removed'} router at " \
                 f"({operator.row}, {operator.col})"

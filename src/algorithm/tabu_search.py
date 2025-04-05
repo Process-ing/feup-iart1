@@ -44,7 +44,7 @@ class TabuSearch(Algorithm):
                    for trow, tcol in tabu_list)
 
     @override
-    def run(self) -> Iterator[str]:
+    def run(self) -> Iterator[Optional[str]]:
         max_iterations = self.__config.max_iterations
         max_neighborhood = self.__config.max_neighborhood
         tabu_tenure = self.__config.tabu_tenure
@@ -64,7 +64,7 @@ class TabuSearch(Algorithm):
 
                 neighbor = operator.apply(self.__problem.building)
                 if not neighbor:
-                    yield 'No neighbor found'
+                    yield
                     continue
 
                 if neighbor.score > best_score:
@@ -75,6 +75,8 @@ class TabuSearch(Algorithm):
                 neighbor_count += 1
                 if max_neighborhood is not None and neighbor_count >= max_neighborhood:
                     break
+
+                yield
 
             if best_neighbor is None or best_operator is None:
                 # Tabu tenure too long, whole neighborhood is tabu

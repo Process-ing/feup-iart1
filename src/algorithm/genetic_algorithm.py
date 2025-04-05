@@ -41,7 +41,7 @@ class GeneticAlgorithm(Algorithm):
         self.__problem = problem
         self.__config = config
 
-    def placement_descent(self) -> Iterator[str]:
+    def placement_descent(self) -> Iterator[Optional[str]]:
         init_routers = self.__config.init_routers
         max_neighborhood = self.__config.max_neighborhood
 
@@ -53,11 +53,11 @@ class GeneticAlgorithm(Algorithm):
             best_neighbor = None
             current_score = self.__problem.building.score
 
-            num_neighbors = 0
+            neighbor_count = 0
             for operator in self.__problem.building.get_placement_neighborhood():
                 neighbor = operator.apply(self.__problem.building)
                 if not neighbor:
-                    yield 'No neighbor found'
+                    yield
                     continue
 
                 if neighbor.score > current_score:
@@ -65,11 +65,12 @@ class GeneticAlgorithm(Algorithm):
                         best_score = neighbor.score
                         best_neighbor = neighbor
 
-                    num_neighbors += 1
-                    if num_neighbors == max_neighborhood:
+                    neighbor_count += 1
+                    if neighbor_count == max_neighborhood:
                         yield f"{'Placed' if operator.place else 'Removed'} router at " \
                             f"({operator.row}, {operator.col})"
                         break
+                yield
 
             if best_neighbor is not None:
                 self.__problem.building = best_neighbor
@@ -82,7 +83,7 @@ class GeneticAlgorithm(Algorithm):
     def get_best_individual(self, population: List[Building]) -> Building:
         return max(population, key=lambda individual: individual.score)
 
-    def crossover(self, population: List[Building], offspring: List[Building]) -> Iterator[str]:
+    def crossover(self, population: List[Building], offspring: List[Building]) -> Iterator[Optional[str]]:
         min_score = min(individual.score for individual in population)
         fitness_scores = [individual.score - min_score + 1 for individual in population]
 
@@ -91,13 +92,13 @@ class GeneticAlgorithm(Algorithm):
 
             children = parent1.crossover(parent2)
             if children is None:
-                yield 'Crossover failed'
+                yield 'Crossover failed, offspring size: {len(offspring)}'
                 continue
 
             offspring.extend(children)
             yield f'Crossover successful, offspring size: {len(offspring)}'
 
-    def mutate(self, offspring: List[Building]) -> Iterator[str]:
+    def mutate(self, offspring: List[Building]) -> Iterator[Optional[str]]:
         mutation_prob = self.__config.mutation_prob
 
         for i, child in enumerate(offspring):
@@ -106,13 +107,13 @@ class GeneticAlgorithm(Algorithm):
                     neighbor = operator.apply(child)
                     if neighbor is not None:
                         child = neighbor
-                        yield 'Mutation successful'
+                        yield 'Mutated child'
                         break
-                    yield 'Mutation failed'
+                    yield
 
             offspring[i] = child
 
-    def deletion(self, population: List[Building], offspring: List[Building]) -> Iterator[str]:
+    def deletion(self, population: List[Building], offspring: List[Building]) -> Iterator[Optional[str]]:
         # Check similarity of individuals
         filtered_offspring: List[Building] = []
         for i, child in enumerate(offspring):
@@ -129,6 +130,7 @@ class GeneticAlgorithm(Algorithm):
 
             if not_similar:
                 filtered_offspring.append(child)
+            yield
 
         # Replace the worst individuals in the population
         i = 0
@@ -140,7 +142,7 @@ class GeneticAlgorithm(Algorithm):
             i += 1
             yield 'Individual replaced'
 
-    def mimetic_phase(self) -> Iterator[str]:
+    def mimetic_phase(self) -> Iterator[Optional[str]]:
         yield 'Mimetic phase started'
         random_descent = RandomDescent(self.__problem, RandomDescentConfig(
             max_neighborhood=self.__config.max_neighborhood,
@@ -150,7 +152,7 @@ class GeneticAlgorithm(Algorithm):
         yield from random_descent.run()
 
     @override
-    def run(self) -> Iterator[str]:
+    def run(self) -> Iterator[Optional[str]]:
         max_generations = self.__config.max_generations
         population_size = self.__config.population_size
         mimetic = self.__config.mimetic

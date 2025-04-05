@@ -38,7 +38,7 @@ class SimulatedAnnealing(Algorithm):
         self.__config = config
 
     @override
-    def run(self) -> Iterator[str]:
+    def run(self) -> Iterator[Optional[str]]:
         max_iterations = self.__config.max_iterations
         temperature = self.__config.init_temperature
         cooling_schedule = self.__config.cooling_schedule
@@ -50,7 +50,7 @@ class SimulatedAnnealing(Algorithm):
             for operator in self.__problem.building.get_neighborhood():
                 neighbor = operator.apply(self.__problem.building)
                 if not neighbor:
-                    yield 'No neighbor found'
+                    yield
                     continue
 
                 neighbor_score = neighbor.score
@@ -68,6 +68,6 @@ class SimulatedAnnealing(Algorithm):
                     position = f'({operator.row}, {operator.col})'
                     yield f'{action} router at {position}'
                     break
-                yield 'Rejected worse neighbor'
+                yield
 
             temperature *= cooling_schedule

@@ -41,11 +41,11 @@ class RandomDescent(Algorithm):
             best_neighbor = None
             current_score = self.__problem.building.score
 
-            num_neighbors = 0
+            neighbor_count = 0
             for operator in self.__problem.building.get_neighborhood():
                 neighbor = operator.apply(self.__problem.building)
                 if not neighbor:
-                    yield 'No neighbor found'
+                    yield
                     continue
 
                 if neighbor.score > current_score:
@@ -55,12 +55,11 @@ class RandomDescent(Algorithm):
                         yield f"{'Placed' if operator.place else 'Removed'} router at " \
                             f"({operator.row}, {operator.col})"
 
-                    num_neighbors += 1
-                    if num_neighbors == max_neighborhood:
+                    neighbor_count += 1
+                    if neighbor_count == max_neighborhood:
                         break
 
-                yield 'Neighbor not improving score'
-
+                yield
 
             if best_neighbor is not None:
                 self.__problem.building = best_neighbor

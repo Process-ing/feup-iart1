@@ -42,7 +42,7 @@ class ScoreVisualizer:
         self.__fig.canvas.draw()
         self.__fig.canvas.flush_events()
 
-    def toggle_show_graph(self) -> None:
+    def toggle_show_chart(self) -> None:
         if self.__enabled:
             plt.close(self.__fig)
             self.__enabled = False

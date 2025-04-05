@@ -57,11 +57,12 @@ class OptimizationWindow(PygameWindow):
             if self.__stop_execution:
                 break
 
-            self.__information_message = information_message
             self.__continue_event.wait()
+
+            if information_message is not None:
+                self.__information_message = information_message
             self.__score = self.__problem.building.score
             if self.__score > self.__max_score:
-                self.__end_time = time.perf_counter()
                 self.__max_score = self.__score
             self.__num_covered_cells = self.__problem.building.get_coverage()
             self.__num_routers = self.__problem.building.get_num_routers()
@@ -69,6 +70,7 @@ class OptimizationWindow(PygameWindow):
 
         self.__problem.building = self.__problem.best_building
         self.__information_message = 'Done!'
+        self.__end_time = time.perf_counter()
 
     def on_init(self, screen: pygame.Surface) -> None:
         width = self.get_window_size()[0]
@@ -187,7 +189,7 @@ class OptimizationWindow(PygameWindow):
 
                 click_pos = pygame.mouse.get_pos()
                 self.__pause_button.handle_click(click_pos, self.toggle_pause)
-                self.__chart_button.handle_click(click_pos, self.toggle_show_graf)
+                self.__chart_button.handle_click(click_pos, self.toggle_show_chart)
 
         self.__display(screen)
         pygame.display.flip()
@@ -198,8 +200,8 @@ class OptimizationWindow(PygameWindow):
         else:
             self.__continue_event.set()
 
-    def toggle_show_graf(self) -> None:
-        self.__score_visualizer.toggle_show_graph()
+    def toggle_show_chart(self) -> None:
+        self.__score_visualizer.toggle_show_chart()
 
     def pause(self) -> None:
         self.__continue_event.clear()
@@ -214,7 +216,10 @@ class OptimizationWindow(PygameWindow):
         if self.__execution_thread.ident != get_ident():
             self.__execution_thread.join()
 
+            if self.__end_time == 0:
+                self.__end_time = time.perf_counter()
+
     def dump_to_file(self, filename: str) -> None:
         with open(filename, 'w', encoding='utf-8') as file:
-            file.write(f'{self.__max_score}\n')
-            file.write(f'{self.__end_time - self.__start_time}\n')
+            file.write(f'Score: {self.__max_score}\n')
+            file.write(f'Time: {self.__end_time - self.__start_time} s\n')
