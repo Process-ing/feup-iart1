@@ -98,10 +98,14 @@ class Controller:
                 return CommandResult.FAILURE
 
             filename = tokens[1]
-            self.load_solution(filename)
+            result = self.load_solution(filename)
+            if result != CommandResult.SUCCESS:
+                self.__cli.print_error('Error loading solution')
+                return result
 
             problem_win = ProblemWindow(self.__problem)
             problem_win.launch()
+            return CommandResult.SUCCESS
 
 
 
