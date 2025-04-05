@@ -493,30 +493,22 @@ class Building(GenericBuilding):
             return False
 
         # Check if every router is placed on a backbone cell
-        routers_without_backbone = list(
-            zip(
-                *np.where(
-                    ((self.__cells & self.ROUTER_BIT) != 0) &
-                    ((self.__cells & self.BACKBONE_BIT) == 0)
-                )
-            )
+        routers_without_backbone_count = np.count_nonzero(
+            ((self.__cells & self.ROUTER_BIT) != 0) &
+            ((self.__cells & self.BACKBONE_BIT) == 0)
         )
-        if routers_without_backbone:
+            
+        
+        if routers_without_backbone_count > 0:
             print('Routers without backbone')
             return False
 
         # Check if no routers are placed on walls
-        routers_in_walls = list(
-            zip(
-                *np.where(
-                    (
-                        ((self.__cells & self.ROUTER_BIT) != 0) &
-                        ((self.__cells & self.CELL_TYPE_MASK) == CellType.WALL.value)
-                    )
-                )
-            )
+        routers_in_walls_count = np.count_nonzero(
+            ((self.__cells & self.ROUTER_BIT) != 0) &
+            ((self.__cells & self.CELL_TYPE_MASK) == CellType.WALL.value)
         )
-        if routers_in_walls:
+        if routers_in_walls_count > 0:
             print('Routers in walls')
             return False
 
