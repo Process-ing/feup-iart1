@@ -122,26 +122,25 @@ class Building(GenericBuilding):
     def iter(self) -> Iterator[Tuple[int, int, int]]:
         return ((row, column, int(cell)) for (row, column), cell in np.ndenumerate(self.__cells))
 
-    def get_connected_routers(self, root: Pos) \
-        -> Tuple[Set[Pos], Set[Tuple[int, int]]]:
+    def get_connected_routers(self, root: Pos) -> Set[Pos]:
         routers = set()
         backbones = set()
         queue = deque([root])
         backbones.add(root)
-        directions = [0, 1, 0, -1, 0]
+        directions = [(-1, 0), (1, 0), (0, -1), (0, 1), (-1, -1), (-1, 1), (1, -1), (1, 1)]
 
         while queue:
             row, col = queue.popleft()
             if (self.__cells[row, col] & self.ROUTER_BIT) != 0:
                 routers.add((row,col))
-            for i in range(4):
-                nr, nc = row + directions[i], col + directions[i+1]
+            for dr, dc in directions:
+                nr, nc = row + dr, col + dc
                 if 0 <= nr < self.rows and 0 <= nc < self.columns and \
                         (nr, nc) not in backbones and \
                         self.__cells[nr, nc] & self.BACKBONE_BIT:
                     queue.append((nr, nc))
                     backbones.add((nr, nc))
-        return routers, backbones
+        return routers
 
     def cover_neighbors(self, row: int, col: int) -> None:
         assert self.problem is not None
@@ -350,7 +349,7 @@ class Building(GenericBuilding):
             self.__cells[row, col] |= self.BACKBONE_BIT
 
     def get_neighborhood(self) -> Iterator[Operator]:
-        """
+        '''
         Generates neighboring building configurations by placing or removing routers.
 
         This method shuffles the list of routers and target cells, then iteratively
@@ -360,7 +359,7 @@ class Building(GenericBuilding):
 
         Yields:
             Building: A new building configuration with a router placed or removed.
-        """
+        '''
         routers = self.get_routers()
         targets = self.get_target_cells()
         random.shuffle(routers)
@@ -485,3 +484,50 @@ class Building(GenericBuilding):
             assert self.problem is not None
             self.__score = self.problem.get_score(self)
         return self.__score
+
+    def check_is_valid(self) -> bool:
+        # Check budget
+        assert self.problem is not None
+        if not self.problem.check_budget(self):
+            print('Budget exceeded')
+            return False
+
+        # Check if every router is placed on a backbone cell
+        routers_without_backbone_count = np.count_nonzero(
+            ((self.__cells & self.ROUTER_BIT) != 0) &
+            ((self.__cells & self.BACKBONE_BIT) == 0)
+        )
+
+
+        if routers_without_backbone_count > 0:
+            print('Routers without backbone')
+            return False
+
+        # Check if no routers are placed on walls
+        routers_in_walls_count = np.count_nonzero(
+            ((self.__cells & self.ROUTER_BIT) != 0) &
+            ((self.__cells & self.CELL_TYPE_MASK) == CellType.WALL.value)
+        )
+        if routers_in_walls_count > 0:
+            print('Routers in walls')
+            return False
+
+        # Check if the root backbone is connected
+        if (self.__cells[self.__backbone_root] & self.BACKBONE_BIT) == 0:
+            print('Root backbone not connected')
+            return False
+
+        # Check if every router is connected to the original backbone
+        connected_routers = self.get_connected_routers(self.__backbone_root)
+        routers = set(self.get_routers())
+
+
+        if len(connected_routers) != len(routers):
+            print('Routers not connected (length mismatch)')
+            return False
+
+        if routers - connected_routers:
+            print('Routers not connected (set mismatch)')
+            return False
+
+        return True
