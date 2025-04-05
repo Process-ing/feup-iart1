@@ -92,7 +92,7 @@ class Building(GenericBuilding):
 
         return cls(cells, backbone, 0.8, problem)
 
-    def load_solution(self, text: str):
+    def load_solution(self, text: str) -> None:
         lines = text.split('\n')
         num_backbones = int(lines[0])
         for i in range(1, num_backbones + 1):

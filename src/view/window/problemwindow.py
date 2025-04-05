@@ -80,4 +80,3 @@ class ProblemWindow(PygameWindow):
     @override
     def on_update(self, events: List[pygame.event.Event], screen: pygame.Surface) -> None:
         pass
-

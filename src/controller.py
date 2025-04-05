@@ -5,7 +5,7 @@ from typing import Dict, List, Optional
 # pylint: disable=wildcard-import
 from src.algorithm import *
 from src.view.score_visualizer import ScoreVisualizer
-from src.model import RouterProblem, Building
+from src.model import RouterProblem
 from src.view import Cli
 from src.view.solve_usage import print_solve_usage
 from src.view.window import OptimizationWindow, ProblemWindow
@@ -89,7 +89,7 @@ class Controller:
         if command in ['load-solution']:
             # Ensure the problem is loaded
             if not self.__problem:
-                self.__cli.print_error("No problem loaded")
+                self.__cli.print_error('No problem loaded')
                 return CommandResult.FAILURE
 
             # Load the solution
