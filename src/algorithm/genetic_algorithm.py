@@ -80,8 +80,8 @@ class GeneticAlgorithm(Algorithm):
             else:
                 break
 
-    def sort_population(self, population: List[Building]) -> None:
-        population.sort(key=lambda individual: individual.score)
+    def sort_population(self, population: List[Building], reverse: bool = False) -> None:
+        population.sort(key=lambda individual: individual.score, reverse=reverse)
 
     def get_best_individual(self, population: List[Building]) -> Building:
         return max(population, key=lambda individual: individual.score)
@@ -119,6 +119,8 @@ class GeneticAlgorithm(Algorithm):
 
     def deletion(self, population: List[Building],
                  offspring: List[Building]) -> Iterator[Optional[str]]:
+        population_size = self.__config.population_size
+
         # Check similarity of individuals
         filtered_offspring: List[Building] = []
         for i, child in enumerate(offspring):
@@ -138,14 +140,9 @@ class GeneticAlgorithm(Algorithm):
             yield None
 
         # Replace the worst individuals in the population
-        i = 0
-        for j in range(len(filtered_offspring) - 1, -1, -1):
-            if filtered_offspring[j].score <= population[i].score:
-                break
-
-            population[i] = filtered_offspring[j]
-            i += 1
-            yield 'Individual replaced'
+        population.extend(filtered_offspring)
+        self.sort_population(population, reverse=True)
+        del population[population_size:]
 
     def mimetic_phase(self) -> Iterator[Optional[str]]:
         yield 'Mimetic phase started'
@@ -189,12 +186,9 @@ class GeneticAlgorithm(Algorithm):
             yield from self.crossover(population, offspring)
             yield from self.mutate(population)
 
-            self.sort_population(population)
-            self.sort_population(offspring)
-
             yield from self.deletion(population, offspring)
 
-            best_individual = self.get_best_individual([population[0], population[-1]])
+            best_individual = population[0]  # Population comes out sorted in decreasing order
             # Best individual is either the first or last in the population
             best_gen_score = best_individual.score
 

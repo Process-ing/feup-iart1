@@ -15,6 +15,9 @@ class ChartViewer(PygameViewer[None]):
 
         self.__screen = pygame.Surface((width, height))
         self.__figure = pyc.Figure(self.__screen, 0, 0, width, height)
+        self.__figure.add_title('Score Chart')
+        self.__figure.add_xaxis_label('Time (s)')
+        self.__figure.add_yaxis_label('Score')
 
     def set_start_time(self) -> None:
         """
