@@ -512,6 +512,11 @@ class Building(GenericBuilding):
             print('Routers in walls')
             return False
 
+        # Check if the root backbone is connected
+        if (self.__cells[self.__backbone_root] & self.BACKBONE_BIT) == 0:
+            print('Root backbone not connected')
+            return False
+
         # Check if every router is connected to the original backbone
         connected_routers = self.get_connected_routers(self.__backbone_root)
         routers = set(self.get_routers())
