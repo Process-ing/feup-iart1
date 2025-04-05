@@ -10,7 +10,6 @@ class Cli:
         """
         Initialize the CLI instance.
         """
-        pass
 
     @staticmethod
     def __get_tokens(text: str) -> List[str]:
