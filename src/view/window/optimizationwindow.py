@@ -155,13 +155,9 @@ class OptimizationWindow(PygameWindow):
         quad_height = 12 + 2 + 3
 
         quad = pygame.Surface((quad_width, quad_height), pygame.SRCALPHA)
-        pygame.draw.polygon(quad, (0, 0, 0), [
+        pygame.draw.polygon(quad, (0, 0, 0, 128), [
             (0, 0), (quad_width - 1, 0), (quad_width - 1, quad_height - 1),
             (3, quad_height - 1), (0, quad_height - 4)
-        ])
-        pygame.draw.lines(quad, (255, 255, 255), False, [
-            (quad_width - 1, quad_height - 1), (3, quad_height - 1),
-            (0, quad_height - 4), (0, 0)
         ])
 
         quad = pygame.transform.scale(quad, (quad_width * 4, quad_height * 4))

@@ -31,14 +31,18 @@ class ChartButton(ButtonViewer[None, Callable[[], None]]):
 
     @override
     def render(self, entity: None) -> pygame.Surface:
-        screen = pygame.Surface((self.WIDTH, self.HEIGHT))
-
-        icon_screen = pygame.Surface((self.ICON_WIDTH, self.ICON_HEIGHT))
-        pygame.pixelcopy.array_to_surface(icon_screen, self.ICON)
-        icon_screen = pygame.transform.scale(icon_screen, (self.WIDTH, self.HEIGHT))
-
-        screen.blit(icon_screen, (0, 0))
-
+        screen = pygame.Surface((self.WIDTH, self.HEIGHT), pygame.SRCALPHA)
+        icon_surface = pygame.Surface((self.ICON_WIDTH, self.ICON_HEIGHT), pygame.SRCALPHA)
+        for y in range(self.ICON_HEIGHT):
+            for x in range(self.ICON_WIDTH):
+                if self.ICON[x][y] != 0:
+                    icon_surface.set_at((x, y), (255, 255, 255, 255))
+                else:
+                    icon_surface.set_at((x, y), (0, 0, 0, 0))
+    
+        icon_surface = pygame.transform.scale(icon_surface, (self.WIDTH, self.HEIGHT))
+        screen.blit(icon_surface, (0, 0))
+    
         return screen
 
     @override
