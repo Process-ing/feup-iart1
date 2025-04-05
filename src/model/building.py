@@ -497,8 +497,8 @@ class Building(GenericBuilding):
             ((self.__cells & self.ROUTER_BIT) != 0) &
             ((self.__cells & self.BACKBONE_BIT) == 0)
         )
-            
-        
+
+
         if routers_without_backbone_count > 0:
             print('Routers without backbone')
             return False
