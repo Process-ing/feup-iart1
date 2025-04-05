@@ -122,26 +122,25 @@ class Building(GenericBuilding):
     def iter(self) -> Iterator[Tuple[int, int, int]]:
         return ((row, column, int(cell)) for (row, column), cell in np.ndenumerate(self.__cells))
 
-    def get_connected_routers(self, root: Pos) \
-        -> Tuple[Set[Pos], Set[Tuple[int, int]]]:
+    def get_connected_routers(self, root: Pos) -> Set[Pos]:
         routers = set()
         backbones = set()
         queue = deque([root])
         backbones.add(root)
-        directions = [0, 1, 0, -1, 0]
+        directions = [-1, -1, -1, 0, -1, 1, 0, -1, 0, 1, 1, -1, 1, 0, 1, 1]
 
         while queue:
             row, col = queue.popleft()
             if (self.__cells[row, col] & self.ROUTER_BIT) != 0:
                 routers.add((row,col))
-            for i in range(4):
+            for i in range(0, len(directions), 2):
                 nr, nc = row + directions[i], col + directions[i+1]
                 if 0 <= nr < self.rows and 0 <= nc < self.columns and \
                         (nr, nc) not in backbones and \
                         self.__cells[nr, nc] & self.BACKBONE_BIT:
                     queue.append((nr, nc))
                     backbones.add((nr, nc))
-        return routers, backbones
+        return routers 
 
     def cover_neighbors(self, row: int, col: int) -> None:
         assert self.problem is not None
@@ -485,3 +484,42 @@ class Building(GenericBuilding):
             assert self.problem is not None
             self.__score = self.problem.get_score(self)
         return self.__score
+
+    def check_is_valid(self) -> bool:
+        # Check budget
+        assert self.problem is not None
+        if not self.problem.check_budget(self):
+            print("Budget exceeded")
+            return False
+
+        # Check if every router is placed on a backbone cell
+        routers_without_backbone = list(zip(*np.where(((self.__cells & self.ROUTER_BIT) != 0) & (((self.__cells & self.BACKBONE_BIT) == 0)))))
+        if routers_without_backbone:
+            print("Routers without backbone")
+            return False
+
+        # Check if no routers are placed on walls
+        routers_in_walls = list(zip(*np.where(((self.__cells & self.ROUTER_BIT) != 0) & ((self.__cells & self.CELL_TYPE_MASK) == CellType.WALL.value))))
+        if routers_in_walls:
+            print("Routers in walls")
+            return False
+
+        # Check if every router is connected to the original backbone
+        print(self.get_connected_routers(self.__backbone_root))
+        connected_routers = self.get_connected_routers(self.__backbone_root)
+        routers = set(self.get_routers())
+
+        print("connected routers: ", connected_routers)
+        print("routers: ", routers)
+
+
+        if len(connected_routers) != len(routers):
+            print("Routers not connected (length mismatch)")
+            return False
+
+        if (routers - connected_routers):
+            print("Routers not connected (set mismatch)")
+            return False
+
+        return True
+
