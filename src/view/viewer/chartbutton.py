@@ -14,7 +14,9 @@ class ChartButton(ButtonViewer[None, Callable[[], None]]):
         HEIGHT (int): The height of the button.
         ICON_WIDTH (int): The width of the chart icon.
         ICON_HEIGHT (int): The height of the chart icon.
-        ICON (np.ndarray): The icon representing the chart, a 2D array of values where non-zero values are rendered as white pixels.
+        ICON (np.ndarray): The icon representing the chart,
+        a 2D array of values where non-zero values
+        are rendered as white pixels.
     """
 
     WIDTH = 48
@@ -53,7 +55,8 @@ class ChartButton(ButtonViewer[None, Callable[[], None]]):
         Renders the chart icon onto a surface.
 
         Args:
-            entity (None): This argument is unused in this method, as no specific entity is being rendered.
+            entity (None): This argument is unused in this method,
+            as no specific entity is being rendered.
 
         Returns:
             pygame.Surface: The surface containing the rendered chart icon.
@@ -78,6 +81,7 @@ class ChartButton(ButtonViewer[None, Callable[[], None]]):
         Executes the provided callable function when the button is clicked.
 
         Args:
-            toggle_graph (Callable[[], None]): A callable function that is triggered when the button is clicked.
+            toggle_graph (Callable[[], None]): A callable function that
+            is triggered when the button is clicked.
         """
         toggle_graph()

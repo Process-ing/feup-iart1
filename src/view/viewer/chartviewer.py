@@ -75,7 +75,8 @@ class ChartViewer(PygameViewer[None]):
         Renders the chart by drawing the score and maximum score over time.
 
         Args:
-            _ (None): This argument is required by the PygameViewer interface, but it's not used in this method.
+            _ (None): This argument is required by the PygameViewer interface,
+            but it's not used in this method.
 
         Returns:
             pygame.Surface: The surface that contains the rendered chart.
