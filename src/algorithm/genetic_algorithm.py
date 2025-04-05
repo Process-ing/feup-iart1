@@ -93,7 +93,7 @@ class GeneticAlgorithm(Algorithm):
 
             children = parent1.crossover(parent2)
             if children is None:
-                yield 'Crossover failed, offspring size: {len(offspring)}'
+                yield f'Crossover failed, offspring size: {len(offspring)}'
                 continue
 
             offspring.extend(children)
