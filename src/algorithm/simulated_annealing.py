@@ -14,6 +14,10 @@ class SimulatedAnnealingConfig(AlgorithmConfig):
 
     @classmethod
     def from_flags(cls, flags: dict[str, str]) -> Optional['SimulatedAnnealingConfig']:
+        if any(key not in ['max-iterations', 'init-temperature',
+                            'cooling-schedule'] for key in flags):
+            return None
+
         try:
             max_iterations = int(flags['max-iterations']) if 'max-iterations' in flags else None
             init_temperature = float(flags['init-temperature']) \

@@ -18,6 +18,10 @@ class GeneticAlgorithmConfig(AlgorithmConfig):
     @classmethod
     def from_flags(cls, flags: dict[str, str],
                    default_init_routers: int) -> Optional['GeneticAlgorithmConfig']:
+        if any(key not in ['population-size', 'init-routers', 'mutation-prob',
+                   'max-generations', 'max-neighborhood', 'mimetic'] for key in flags):
+            return None
+
         try:
             population_size = int(flags['population-size']) if 'population-size' in flags else 10
             init_routers = int(flags['init-routers']) \
