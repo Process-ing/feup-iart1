@@ -509,9 +509,6 @@ class Building(GenericBuilding):
         connected_routers = self.get_connected_routers(self.__backbone_root)
         routers = set(self.get_routers())
 
-        print("connected routers: ", connected_routers)
-        print("routers: ", routers)
-
 
         if len(connected_routers) != len(routers):
             print("Routers not connected (length mismatch)")
