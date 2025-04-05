@@ -291,11 +291,14 @@ class Building(GenericBuilding):
         self.update_neighbor_coverage(row, column)
         return True
 
+    # Reconnect routers to the backbone using a Steiner tree approximation
+    # This method assumes that some portion is already disconnected
     def reconnect_routers(self) -> None:
-        routers = list(zip(*np.where(self.__cells & self.BACKBONE_BIT)))
-        if not routers:
+        cells = list(zip(*np.where(self.__cells & self.BACKBONE_BIT)))
+        if not cells:
             return
 
+        # Reconstruct path of cells needed for the reconnection
         def reconstruct_path(pred: Dict[Tuple[int, int], Optional[Tuple[int, int]]],
                              p: Optional[Tuple[int, int]]) -> Set[Tuple[int, int]]:
             res = set()
@@ -305,23 +308,52 @@ class Building(GenericBuilding):
             return res
 
         def steiner_tree(grid: CellArray, terminals: List[Tuple[int, int]]) -> Set[Tuple[int, int]]:
+            '''
+            Steiner tree approximation (based on Wu, Widmayer and Wong)
+
+            This algorithm is an adaptation on the original heuristic
+            Since the graph is a grid and every step is a unit distance, the algorithm only needs to
+            perform a BFS from all terminals and retrace the point of connection
+            between two different terminals to the sources (making them connected)
+            The algorithm also uses a disjoint set to keep track of the connected components
+            '''
             rows, cols = len(grid), len(grid[0])
             directions = [(1, 0), (-1, 0), (0, 1), (0, -1), (1, 1), (-1, -1), (1, -1), (-1, 1)]
 
+            # Custom disjoint set data structure to keep track of the connected terminals
             terminal_indices = {t: i for i, t in enumerate(terminals)}
             dsu = DisjointSet(len(terminals))
+
+            # BFS queue used to explore the grid
+            # Each element in the queue is a tuple of the form (cell, source, pred1, pred2) where
+            # cell is the current cell being explored,
+            # source is the original terminal,
+            # pred1 is the predecessor of the current search
+            # pred2 is the node that connects the two terminal searches
             queue: SteinerTreeQueue = deque()
+
+            # Map of a given cell to the source terminal
             source = {}
+
+            # Map of a given cell to the predecessor
             pred = {}
+
+            # Set of cells that are part of the steiner tree
             res = set(terminals)
 
+            # Initialize the queue with all terminals
             for (x, y) in terminals:
                 queue.append(((x, y), (x, y), None, None))
 
+            # Perform BFS until all terminals are connected or the queue is empty
             while queue and dsu.forests > 1:
                 (x, y), src, p1, p2 = queue.popleft()
 
                 if (x,y) not in source:
+                    # If the cell has not been visited yet
+                    # Add the cell to the source map and predecessor map
+                    # and add the unvisited neighbors to the queue
+
                     source[(x, y)] = src
                     pred[(x, y)] = p1
 
@@ -333,19 +365,29 @@ class Building(GenericBuilding):
                     continue
 
                 if dsu.connected(terminal_indices[source[(x,y)]], terminal_indices[src]):
+                    # If the cell has been reached from the same source, ignore it
+
                     continue
 
                 if (x, y) in terminals:
+                    # If the cells has reached a terminal from a different source
+                    # Connect the two terminals and add the paths to the result
+
                     dsu.union(terminal_indices[source[(x, y)]], terminal_indices[src])
                     res |= reconstruct_path(pred, p1)
                     res |= reconstruct_path(pred, p2)
                 else:
+                    # The cell reached belongs to a different source
+                    # This means that two terminals can now be connected
+
                     queue.append((source[(x, y)], src, p1, (x, y)))
 
             return res
 
-        tree_cells = steiner_tree(self.__cells, [self.__backbone_root] + routers)
+        # Initialize the steiner tree approximation with backbone root and routers
+        tree_cells = steiner_tree(self.__cells, [self.__backbone_root] + cells)
 
+        # Mark the cells in the grid as part of the backbone
         for row, col in tree_cells:
             self.__cells[row, col] |= self.BACKBONE_BIT
 
