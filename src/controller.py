@@ -16,11 +16,28 @@ class CommandResult(Enum):
     EXIT = 3
 
 class Controller:
+    """
+    Controller class for handling CLI commands and managing problem solving and visualization.
+
+    Attributes:
+        __problem (Optional[RouterProblem]): The currently loaded router problem.
+        __cli (Cli): The CLI interface for reading user commands and displaying output.
+    """
     def __init__(self, cli: Cli, problem: Optional[RouterProblem] = None):
+        """
+        Initialize the Controller with a CLI interface and an optional router problem.
+
+        Args:
+            cli (Cli): CLI interface for input/output.
+            problem (Optional[RouterProblem]): Optional problem instance to load initially.
+        """
         self.__problem = problem
         self.__cli = cli
 
     def run_cli(self) -> None:
+        """
+        Run the main CLI loop, reading and processing user commands until 'exit' is received.
+        """
         while True:
             tokens = self.__cli.read_input()
             if not tokens:
@@ -30,6 +47,15 @@ class Controller:
                 break
 
     def load_problem(self, filename: str) -> CommandResult:
+        """
+        Load a problem definition from a file.
+
+        Args:
+            filename (str): Path to the file containing the problem definition.
+
+        Returns:
+            CommandResult: SUCCESS if loaded correctly, FILE_ERROR on file issue, FAILURE otherwise.
+        """
         try:
             with open(filename, 'r', encoding='utf-8') as file:
                 text = file.read()
@@ -51,6 +77,15 @@ class Controller:
         return CommandResult.SUCCESS
 
     def load_solution(self, filename: str) -> CommandResult:
+        """
+        Load a precomputed solution into the current problem from a file.
+
+        Args:
+            filename (str): Path to the file containing the solution.
+
+        Returns:
+            CommandResult: SUCCESS if successful, FILE_ERROR if file issues, FAILURE otherwise.
+        """
         try:
             with open(filename, 'r', encoding='utf-8') as file:
                 text = file.read()
@@ -69,6 +104,15 @@ class Controller:
         return CommandResult.SUCCESS
 
     def process_command(self, tokens: List[str]) -> CommandResult: # pylint: disable=too-many-branches
+        """
+        Process a list of command tokens input by the user.
+
+        Args:
+            tokens (List[str]): The list of command and arguments.
+
+        Returns:
+            CommandResult: Result of command execution (e.g., SUCCESS, FAILURE, EXIT).
+        """
         command = tokens[0]
         if command in ['exit', 'quit']:
             return CommandResult.EXIT
@@ -102,6 +146,7 @@ class Controller:
                 self.__cli.print_error('Error loading solution')
                 return result
 
+            # Launch the visualization window
             problem_win = ProblemWindow(self.__problem)
             problem_win.launch()
             return CommandResult.SUCCESS
@@ -145,6 +190,16 @@ class Controller:
 
     @staticmethod
     def receive_algorithm(problem: RouterProblem, tokens: List[str]) -> Optional[Algorithm]:
+        """
+        Parse the algorithm type and its configuration from CLI tokens.
+
+        Args:
+            problem (RouterProblem): Problem to solve.
+            tokens (List[str]): CLI tokens including the algorithm name and flags.
+
+        Returns:
+            Optional[Algorithm]: Configured algorithm instance, or None if invalid.
+        """
         algorithm_name = None if len(tokens) < 2 else tokens[1]
         algorithm: Algorithm
         config: Optional[AlgorithmConfig]
@@ -197,14 +252,22 @@ class Controller:
 
     @staticmethod
     def parse_algorithm_flags(tokens: List[str]) -> Optional[Dict[str, str]]:
-        '''
-        Parse flags from tokens. Flags are expected to start with '--'.
-        They can be specified in either of two formats:
-            --flag=value    (an inline value)
-            --flag value    (the value is the next token)
-        Returns a dictionary mapping flag names to their string values.
-        If a flag is provided without a value, it is set as "True".
-        '''
+        """
+        Parse algorithm configuration flags from command-line tokens.
+
+        Flags must start with '--' and may include:
+            --flag=value    (inline)
+            --flag value    (space-separated)
+
+        If a flag is specified without a value, it is set to 'True'.
+
+        Args:
+            tokens (List[str]): List of CLI tokens representing flags and their values.
+
+        Returns:
+            Optional[Dict[str, str]]: A dictionary of flag names and their string values,
+                                      or None if a syntax error is found.
+        """
         flags = {}
         i = 0
         while i < len(tokens):
