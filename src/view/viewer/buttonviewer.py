@@ -53,7 +53,6 @@ class ButtonViewer(PygameViewer[T], Generic[T, U]):
         Args:
             entity (U): The entity associated with the button click action.
         """
-        pass
 
     def handle_click(self, click_pos: Tuple[int, int], entity: U) -> None:
         """

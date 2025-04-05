@@ -120,4 +120,3 @@ class ProblemWindow(PygameWindow):
             events (List[pygame.event.Event]): The list of events since the last frame.
             screen (pygame.Surface): The surface to draw the updated frame on.
         """
-        pass

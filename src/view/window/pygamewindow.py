@@ -27,7 +27,6 @@ class PygameWindow:
         Returns:
             Tuple[int, int]: Width and height of the window in pixels.
         """
-        pass
 
     @abstractmethod
     def get_window_caption(self) -> str:
@@ -37,7 +36,6 @@ class PygameWindow:
         Returns:
             str: The title text shown in the window bar.
         """
-        pass
 
     @abstractmethod
     def on_init(self, screen: pygame.Surface) -> None:
@@ -48,7 +46,6 @@ class PygameWindow:
         Args:
             screen (pygame.Surface): The main drawing surface for the window.
         """
-        pass
 
     @abstractmethod
     def on_update(self, event: List[pygame.event.Event], screen: pygame.Surface) -> None:
@@ -59,7 +56,6 @@ class PygameWindow:
             event (List[pygame.event.Event]): The list of Pygame events since the last frame.
             screen (pygame.Surface): The main drawing surface for the window.
         """
-        pass
 
     def launch(self) -> None:
         """
