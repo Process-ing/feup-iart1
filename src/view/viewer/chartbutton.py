@@ -39,10 +39,10 @@ class ChartButton(ButtonViewer[None, Callable[[], None]]):
                     icon_surface.set_at((x, y), (255, 255, 255, 255))
                 else:
                     icon_surface.set_at((x, y), (0, 0, 0, 0))
-    
+
         icon_surface = pygame.transform.scale(icon_surface, (self.WIDTH, self.HEIGHT))
         screen.blit(icon_surface, (0, 0))
-    
+
         return screen
 
     @override
