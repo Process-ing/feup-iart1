@@ -1,7 +1,7 @@
 class DisjointSet:
     '''
     A class to represent a disjoint set (or union-find) data structure.
-    
+
     It supports union and find operations, along with path compression
     and union by rank optimizations.
     '''
@@ -65,5 +65,5 @@ class DisjointSet:
         
         Returns:
             bool: True if u and v are in the same set, False otherwise.
-        '''        
+        '''
         return self.find(u) == self.find(v)

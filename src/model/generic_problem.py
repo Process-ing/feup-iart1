@@ -4,11 +4,11 @@ from src.model.generic_building import GenericBuilding
 class GenericRouterProblem:
     '''
     Abstract class representing a generic router problem.
-    
+
     This class defines the basic structure and methods that any router
     problem implementation should follow.
     '''
-    
+
     @property
     @abstractmethod
     def router_range(self) -> int:
@@ -18,7 +18,6 @@ class GenericRouterProblem:
         Returns:
             int: The range of the router.
         '''
-        pass
 
     @abstractmethod
     def check_budget(self, building: GenericBuilding) -> bool:
@@ -31,7 +30,6 @@ class GenericRouterProblem:
         Returns:
             bool: True if the budget is sufficient, False otherwise.
         '''
-        pass
 
     @abstractmethod
     def get_score(self, building: GenericBuilding) -> int:
@@ -44,4 +42,3 @@ class GenericRouterProblem:
         Returns:
             int: The score of the building.
         '''
-        pass

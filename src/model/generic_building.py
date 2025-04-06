@@ -15,7 +15,6 @@ class GenericBuilding:
         Returns:
             int: The number of routers in the building.
         '''
-        pass
 
     @abstractmethod
     def get_num_connected_cells(self) -> int:
@@ -25,7 +24,6 @@ class GenericBuilding:
         Returns:
             int: The number of connected cells in the building.
         '''
-        pass
 
     @abstractmethod
     def get_coverage(self) -> int:
@@ -35,4 +33,3 @@ class GenericBuilding:
         Returns:
             int: The coverage of the building.
         '''
-        pass
