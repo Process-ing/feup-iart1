@@ -1,6 +1,7 @@
 class DisjointSet:
     '''
     A class to represent a disjoint set (or union-find) data structure.
+    
     It supports union and find operations, along with path compression
     and union by rank optimizations.
     '''
@@ -37,6 +38,7 @@ class DisjointSet:
         Args:
             u (int): The first element to unite.
             v (int): The second element to unite.
+        
         Returns:
             bool: True if the sets were united, False if they were already connected.
         '''
@@ -60,6 +62,7 @@ class DisjointSet:
         Args:
             u (int): The first element to check.
             v (int): The second element to check.
+        
         Returns:
             bool: True if u and v are in the same set, False otherwise.
         '''        
