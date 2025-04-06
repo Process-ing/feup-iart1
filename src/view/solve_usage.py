@@ -42,7 +42,7 @@ Options:
             --max-generations <int>     Maximum number of generations to run.
             --mutation-prob <float>     Mutation probability.
             --max-neighborhood <int>    Maximum number of better neighbors to explore.
-            --mimetic <bool>            Whether to use mimetic crossover.
+            --memetic <bool>            Whether to use memetic crossover.
 
     -h --help
         Show this help and exit.
