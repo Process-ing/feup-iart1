@@ -13,13 +13,13 @@ class GeneticAlgorithmConfig(AlgorithmConfig):
     mutation_prob: float
     max_generations: Optional[int]
     max_neighborhood: Optional[int]
-    mimetic: bool
+    memetic: bool
 
     @classmethod
     def from_flags(cls, flags: dict[str, str],
                    default_init_routers: int) -> Optional['GeneticAlgorithmConfig']:
         if any(key not in ['population-size', 'init-routers', 'mutation-prob',
-                   'max-generations', 'max-neighborhood', 'mimetic'] for key in flags):
+                   'max-generations', 'max-neighborhood', 'memetic'] for key in flags):
             return None
 
         try:
@@ -30,12 +30,12 @@ class GeneticAlgorithmConfig(AlgorithmConfig):
             max_generations = int(flags['max-generations']) if 'max-generations' in flags else None
             max_neighborhood = int(flags['max-neighborhood']) \
                 if 'max-neighborhood' in flags else 5
-            mimetic = bool(flags['mimetic']) if 'mimetic' in flags else False
+            memetic = bool(flags['memetic']) if 'memetic' in flags else False
         except ValueError:
             return None
 
         return cls(population_size, init_routers, mutation_prob,
-                   max_generations, max_neighborhood, mimetic)
+                   max_generations, max_neighborhood, memetic)
 
 class GeneticAlgorithm(Algorithm):
     '''
@@ -148,8 +148,8 @@ class GeneticAlgorithm(Algorithm):
         self.sort_population(population, reverse=True)
         del population[population_size:]
 
-    def mimetic_phase(self) -> Iterator[Optional[str]]:
-        yield 'Mimetic phase started'
+    def memetic_phase(self) -> Iterator[Optional[str]]:
+        yield 'Memetic phase started'
         random_descent = RandomDescent(self.__problem, RandomDescentConfig(
             max_neighborhood=self.__config.max_neighborhood,
             max_iterations=None
@@ -161,7 +161,7 @@ class GeneticAlgorithm(Algorithm):
     def run(self) -> Iterator[Optional[str]]:
         max_generations = self.__config.max_generations
         population_size = self.__config.population_size
-        mimetic = self.__config.mimetic
+        memetic = self.__config.memetic
 
         original_building = self.__problem.building
         population = []
@@ -202,8 +202,8 @@ class GeneticAlgorithm(Algorithm):
 
             yield 'Best individual found'
 
-        if mimetic:
-            yield from self.mimetic_phase()
+        if memetic:
+            yield from self.memetic_phase()
 
     @staticmethod
     def get_default_init_routers(problem: RouterProblem) -> int:
