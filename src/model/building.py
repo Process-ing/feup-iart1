@@ -545,16 +545,30 @@ class Building(GenericBuilding):
         self.update_neighbor_coverage(row, column)
         return True
 
-    # Reconnect routers to the backbone using a Steiner tree approximation
-    # This method assumes that some portion is already disconnected
     def reconnect_routers(self) -> None:
+        '''
+        Reconnect routers to the backbone using a Steiner tree approximation
+        This method assumes that some portion of the grid is already disconnected
+        '''
         cells = list(zip(*np.where(self.__cells & self.BACKBONE_BIT)))
         if not cells:
             return
 
-        # Reconstruct path of cells needed for the reconnection
         def reconstruct_path(pred: Dict[Tuple[int, int], Optional[Tuple[int, int]]],
                              p: Optional[Tuple[int, int]]) -> Set[Tuple[int, int]]:
+            '''
+            Reconstruct path of cells needed for the reconnection
+
+            This method uses the predecessor map to reconstruct the path
+            from the source to the target
+            The result is a set of cells that are part of the path
+
+            Args:
+                pred (Dict[Tuple[int, int], Optional[Tuple[int, int]]]): The predecessor map.
+                p (Optional[Tuple[int, int]]): The target cell to reconstruct the path from.
+            Returns:
+                Set[Tuple[int, int]]: A set of cells that are part of the path
+            '''
             res = set()
             while p:
                 res.add(p)
@@ -564,12 +578,20 @@ class Building(GenericBuilding):
         def steiner_tree(grid: CellArray, terminals: List[Tuple[int, int]]) -> Set[Tuple[int, int]]:
             '''
             Steiner tree approximation (based on Wu, Widmayer and Wong)
-
             This algorithm is an adaptation on the original heuristic
-            Since the graph is a grid and every step is a unit distance, the algorithm only needs to
-            perform a BFS from all terminals and retrace the point of connection
-            between two different terminals to the sources (making them connected)
-            The algorithm also uses a disjoint set to keep track of the connected components
+
+            Since the graph is a grid and every step is a unit distance,
+            this method uses a breadth-first search (BFS) to find the shortest
+            path connecting all terminals in the grid. It uses a disjoint set
+            data structure to keep track of the connected components and
+            reconstructs the path from the source to the target.
+            The result is a set of cells that are part of the steiner tree
+
+            Args:
+                grid (CellArray): The grid to search in.
+                terminals (List[Tuple[int, int]]): The list of terminals to connect.
+            Returns:
+                Set[Tuple[int, int]]: A set of cells that are part of the steiner tree
             '''
             rows, cols = len(grid), len(grid[0])
             directions = [(1, 0), (-1, 0), (0, 1), (0, -1), (1, 1), (-1, -1), (1, -1), (-1, 1)]
