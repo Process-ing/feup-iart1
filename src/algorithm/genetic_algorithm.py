@@ -17,14 +17,14 @@ class GeneticAlgorithmConfig(AlgorithmConfig):
         mutation_prob (float): The probability of mutation during the algorithm.
         max_generations (Optional[int]): The maximum number of generations to run the algorithm.
         max_neighborhood (Optional[int]): The maximum neighborhood size for placement descent.
-        mimetic (bool): Whether to perform a mimetic phase after the genetic algorithm steps.
+        memetic (bool): Whether to perform a memetic phase after the genetic algorithm steps.
     """
     population_size: int
     init_routers: int
     mutation_prob: float
     max_generations: Optional[int]
     max_neighborhood: Optional[int]
-    mimetic: bool
+    memetic: bool
 
     @classmethod
     def from_flags(cls, flags: dict[str, str],
@@ -42,7 +42,7 @@ class GeneticAlgorithmConfig(AlgorithmConfig):
             or None if flags are invalid.
         """
         if any(key not in ['population-size', 'init-routers', 'mutation-prob',
-                   'max-generations', 'max-neighborhood', 'mimetic'] for key in flags):
+                   'max-generations', 'max-neighborhood', 'memetic'] for key in flags):
             return None
 
         try:
@@ -53,12 +53,12 @@ class GeneticAlgorithmConfig(AlgorithmConfig):
             max_generations = int(flags['max-generations']) if 'max-generations' in flags else None
             max_neighborhood = int(flags['max-neighborhood']) \
                 if 'max-neighborhood' in flags else 5
-            mimetic = bool(flags['mimetic']) if 'mimetic' in flags else False
+            memetic = bool(flags['memetic']) if 'memetic' in flags else False
         except ValueError:
             return None
 
         return cls(population_size, init_routers, mutation_prob,
-                   max_generations, max_neighborhood, mimetic)
+                   max_generations, max_neighborhood, memetic)
 
 class GeneticAlgorithm(Algorithm):
     """
@@ -241,16 +241,16 @@ class GeneticAlgorithm(Algorithm):
         self.sort_population(population, reverse=True)
         del population[population_size:]
 
-    def mimetic_phase(self) -> Iterator[Optional[str]]:
+    def memetic_phase(self) -> Iterator[Optional[str]]:
         """
-        Performs a random descent optimization phase as a mimetic phase after
+        Performs a random descent optimization phase as a memetic phase after
         the genetic algorithm steps.
 
         Yields:
-            Optional[str]: A message indicating the start of the mimetic phase
+            Optional[str]: A message indicating the start of the memetic phase
             and its progress.
         """
-        yield 'Mimetic phase started'
+        yield 'memetic phase started'
         random_descent = RandomDescent(self.__problem, RandomDescentConfig(
             max_neighborhood=self.__config.max_neighborhood,
             max_iterations=None
@@ -263,7 +263,7 @@ class GeneticAlgorithm(Algorithm):
         """
         Executes the full genetic algorithm process, including placement
         descent, crossover, mutation, deletion, 
-        and optional mimetic phase.
+        and optional memetic phase.
 
         Yields:
             Optional[str]: Messages indicating the progress of the algorithm,
@@ -272,7 +272,7 @@ class GeneticAlgorithm(Algorithm):
         """
         max_generations = self.__config.max_generations
         population_size = self.__config.population_size
-        mimetic = self.__config.mimetic
+        memetic = self.__config.memetic
 
         original_building = self.__problem.building
         population = []
@@ -313,8 +313,8 @@ class GeneticAlgorithm(Algorithm):
 
             yield 'Best individual found'
 
-        if mimetic:
-            yield from self.mimetic_phase()
+        if memetic:
+            yield from self.memetic_phase()
 
     @staticmethod
     def get_default_init_routers(problem: RouterProblem) -> int:
