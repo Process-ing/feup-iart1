@@ -44,15 +44,3 @@ mypy **/*.py
 ```bash
 pylint **/*.py
 ```
-
-3. Run all tests:
-
-```bash
-python3 -m unittest
-```
-
-4. Run a specific test:
-
-```bash
-python3 -m unittest test.<test_module>
-```
