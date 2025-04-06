@@ -250,7 +250,7 @@ class GeneticAlgorithm(Algorithm):
             Optional[str]: A message indicating the start of the memetic phase
             and its progress.
         """
-        yield 'memetic phase started'
+        yield 'Memetic phase started'
         random_descent = RandomDescent(self.__problem, RandomDescentConfig(
             max_neighborhood=self.__config.max_neighborhood,
             max_iterations=None
