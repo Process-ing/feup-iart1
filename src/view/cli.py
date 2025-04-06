@@ -42,6 +42,7 @@ class Cli:
         try:
             text = input()
         except EOFError:
+            print('\r', end='')
             self.__print_prefix()
             print('quit')
             return ['quit']
