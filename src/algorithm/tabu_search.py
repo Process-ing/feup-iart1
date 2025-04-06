@@ -9,6 +9,17 @@ type TabuList = Deque[Tuple[int, int]]
 
 @dataclass
 class TabuSearchConfig(AlgorithmConfig):
+    """
+    Configuration class for the Tabu Search algorithm.
+
+    Attributes:
+        tabu_tenure (int): The maximum number of iterations a solution is
+        forbidden (tabu) before it can be revisited.
+        max_iterations (Optional[int]): The maximum number of iterations
+        to run the algorithm.
+        max_neighborhood (Optional[int]): The maximum number of neighbors
+        to explore in each iteration.
+    """
     tabu_tenure: int
     max_iterations: Optional[int]
     max_neighborhood: Optional[int]
@@ -16,6 +27,18 @@ class TabuSearchConfig(AlgorithmConfig):
     @classmethod
     def from_flags(cls, flags: dict[str, str],
                    default_tabu_tenure: int) -> Optional['TabuSearchConfig']:
+        """
+        Creates a TabuSearchConfig instance from a dictionary of flags.
+
+        Args:
+            flags (dict[str, str]): A dictionary where keys are configuration
+            option names and values are their string representations.
+            default_tabu_tenure (int): The default tabu tenure value.
+
+        Returns:
+            Optional[TabuSearchConfig]: An instance of TabuSearchConfig
+            or None if flags are invalid.
+        """
         if any(key not in ['tabu-tenure', 'max-iterations', 'max-neighborhood'] for key in flags):
             return None
 
@@ -31,15 +54,46 @@ class TabuSearchConfig(AlgorithmConfig):
         return cls(tabu_tenure, max_iterations, max_neighborhood)
 
 class TabuSearch(Algorithm):
-    '''
-    Tabu Search Algorithm
-    Keeps track of visited solutions to avoid cycles and local optima.
-    '''
+    """
+    Tabu Search algorithm for solving router placement problems.
+
+    This algorithm explores neighbors of the current solution while keeping
+    track of visited solutions to avoid cycles and local optima. 
+    The algorithm uses a tabu list to forbid revisiting recent solutions for
+    a specified number of iterations.
+
+    Methods:
+        is_tabu: Checks if a given solution is in the tabu list.
+        run: Executes the Tabu Search algorithm by exploring neighbors and
+        applying the best solution while respecting the tabu list.
+        get_default_tenure: Calculates the default tabu tenure based on the
+        problem's parameters.
+    """
     def __init__(self, problem: RouterProblem, config: TabuSearchConfig) -> None:
+        """
+        Initializes the TabuSearch instance with the given problem and configuration.
+
+        Args:
+            problem (RouterProblem): The problem instance containing the
+            current building and constraints.
+            config (TabuSearchConfig): The configuration parameters for
+            the tabu search algorithm.
+        """
         self.__problem = problem
         self.__config = config
 
     def is_tabu(self, tabu_list: TabuList, pos: Tuple[int, int]) -> bool:
+        """
+        Checks if a given position is in the tabu list, indicating it
+        is forbidden for exploration.
+
+        Args:
+            tabu_list (TabuList): The list of positions that are currently forbidden.
+            pos (Tuple[int, int]): The position to check.
+
+        Returns:
+            bool: True if the position is tabu, False otherwise.
+        """
         tabu_range = (self.__problem.router_range + 1) // 2
         row, col = pos
 
@@ -48,6 +102,19 @@ class TabuSearch(Algorithm):
 
     @override
     def run(self) -> Iterator[Optional[str]]:
+        """
+        Executes the Tabu Search algorithm by selecting the best neighboring
+        solution while considering the tabu list.
+
+        The algorithm explores a neighborhood of solutions and keeps track
+        of the best one that is not tabu. If no valid solution is found,
+        the algorithm moves to the next iteration. The tabu list is updated
+        with the current solution's position after each iteration.
+
+        Yields:
+            Optional[str]: A message indicating the placement or removal of
+            a router, or a status message like "Tabu tenure too long."
+        """
         max_iterations = self.__config.max_iterations
         max_neighborhood = self.__config.max_neighborhood
         tabu_tenure = self.__config.tabu_tenure
@@ -100,6 +167,16 @@ class TabuSearch(Algorithm):
 
     @staticmethod
     def get_default_tenure(problem: RouterProblem) -> int:
+        """
+        Calculates the default tabu tenure based on the problem's parameters.
+
+        Args:
+            problem (RouterProblem): The problem instance containing
+            the current building and constraints.
+
+        Returns:
+            int: The default tabu tenure value based on the problem's characteristics.
+        """
         targets = problem.building.get_num_targets()
         router_range = problem.router_range
 

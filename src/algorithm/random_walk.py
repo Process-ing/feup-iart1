@@ -5,10 +5,27 @@ from src.model import RouterProblem
 
 @dataclass
 class RandomWalkConfig(AlgorithmConfig):
+    """
+    Configuration class for the Random Walk algorithm.
+
+    Attributes:
+        max_iterations (Optional[int]): The maximum number of iterations to run the algorithm.
+    """
     max_iterations: Optional[int]
 
     @classmethod
     def from_flags(cls, flags: Dict[str, str]) -> Optional['RandomWalkConfig']:
+        """
+        Creates a RandomWalkConfig instance from a dictionary of flags.
+
+        Args:
+            flags (Dict[str, str]): A dictionary where keys are configuration
+            option names and values are their string representations.
+
+        Returns:
+            Optional[RandomWalkConfig]: An instance of RandomWalkConfig or
+            None if flags are invalid.
+        """
         if any(key not in ['max-iterations'] for key in flags):
             return None
 
@@ -20,16 +37,36 @@ class RandomWalkConfig(AlgorithmConfig):
         return cls(max_iterations)
 
 class RandomWalk(Algorithm):
-    '''
-    Random Walk Algorithm
-    Picks a random neighbor to explore (despite the score)
-    '''
+    """
+    Random Walk algorithm for solving router placement problems.
+
+    This algorithm explores random neighbors in the problem space, regardless
+    of whether the neighbor improves the score.
+    The process continues for a set number of iterations or until the algorithm is terminated.
+    """
     def __init__(self, problem: RouterProblem, config: RandomWalkConfig) -> None:
+        """
+        Initializes the RandomWalk instance with the given problem and configuration.
+
+        Args:
+            problem (RouterProblem): The problem instance containing the
+            current building and constraints.
+            config (RandomWalkConfig): The configuration parameters for
+            the random walk algorithm.
+        """
         self.__problem = problem
         self.__config = config
 
     @override
     def run(self) -> Iterator[Optional[str]]:
+        """
+        Executes the Random Walk algorithm by randomly selecting a neighbor
+        and making the move.
+
+        Yields:
+            Optional[str]: A message indicating the placement or removal of
+            a router, or `None` if no valid neighbor is found.
+        """
         max_iterations = self.__config.max_iterations
 
         round_iter = range(max_iterations) if max_iterations else iter(int, 1)

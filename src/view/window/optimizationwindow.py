@@ -10,8 +10,20 @@ from src.view.window.pygamewindow import PygameWindow
 from src.view.viewer import ChartButton, ChartViewer
 
 class OptimizationWindow(PygameWindow):
+    """
+    A Pygame window that runs and visualizes the optimization process of router placement
+    using a given algorithm on a building model.
+    """
     def __init__(self, problem: RouterProblem, algorithm: Algorithm,
                  max_framerate: float = 60) -> None:
+        """
+        Initialize the optimization window with the problem and algorithm.
+
+        Args:
+            problem (RouterProblem): The router placement problem instance.
+            algorithm (Algorithm): The optimization algorithm to be run.
+            max_framerate (float): The maximum frame rate of the window.
+        """
 
         super().__init__(max_framerate)
 
@@ -38,20 +50,48 @@ class OptimizationWindow(PygameWindow):
 
     @override
     def get_window_size(self) -> Tuple[int, int]:
+        """
+        Get the preferred window size based on the building dimensions.
+
+        Returns:
+            Tuple[int, int]: Width and height of the window.
+        """
         building = self.__problem.building
         return self.__building_viewer.get_preferred_size(building)
 
     @override
     def get_window_caption(self) -> str:
+        """
+        Get the caption for the window.
+
+        Returns:
+            str: The window caption.
+        """
         return 'Router Optimization'
 
     def get_best_score(self) -> int:
+        """
+        Get the best score achieved during optimization.
+
+        Returns:
+            int: The highest score achieved.
+        """
         return self.__max_score
 
     def get_duration(self) -> float:
+        """
+        Get the total duration of the optimization process.
+
+        Returns:
+            float: Time in seconds from start to end of execution.
+        """
         return self.__end_time - self.__start_time
 
     def __run_algorithm(self) -> None:
+        """
+        Run the optimization algorithm in a separate thread, updating
+        the visualization and statistics throughout execution.
+        """
         self.__start_time = time.perf_counter()
         self.__chart_viewer.set_start_time()
         self.__chart_viewer.add_score(self.__score)
@@ -62,8 +102,11 @@ class OptimizationWindow(PygameWindow):
 
             self.__continue_event.wait()
 
+            # Sets the information message (bottom right corner)
             if information_message is not None:
                 self.__information_message = information_message
+
+            # Updates the score and other information (top left corner)
             self.__score = self.__problem.building.score
             self.__max_score = max(self.__max_score, self.__score)
             self.__num_covered_cells = self.__problem.building.get_coverage()
@@ -75,6 +118,12 @@ class OptimizationWindow(PygameWindow):
         self.__end_time = time.perf_counter()
 
     def on_init(self, screen: pygame.Surface) -> None:
+        """
+        Initialize the window components and start the optimization thread.
+
+        Args:
+            screen (pygame.Surface): The surface to render the window on.
+        """
         width, height = self.get_window_size()
         self.__pause_button = PauseButton(width - (48 + 8) * 2, 8)
         self.__chart_button = ChartButton(width - (48 + 8), 8)
@@ -86,6 +135,12 @@ class OptimizationWindow(PygameWindow):
         self.__execution_thread.start()
 
     def __draw_info_message(self, screen: pygame.Surface) -> None:
+        """
+        Draw a temporary information message on the screen.
+
+        Args:
+            screen (pygame.Surface): The surface to render on.
+        """
         assert self.__font is not None
 
         message_text = self.__font.render(self.__information_message, True, (255, 255, 255))
@@ -103,6 +158,12 @@ class OptimizationWindow(PygameWindow):
                                    screen_height - message_height - 5))
 
     def __draw_info(self, screen: pygame.Surface) -> None:
+        """
+        Draw score, number of routers, and coverage statistics on the screen.
+
+        Args:
+            screen (pygame.Surface): The surface to render on.
+        """
         assert self.__font is not None
 
         score_text = self.__font.render(f'Score: {self.__score}',
@@ -147,6 +208,12 @@ class OptimizationWindow(PygameWindow):
 
 
     def __draw_buttons(self, screen: pygame.Surface) -> None:
+        """
+        Draw pause and chart toggle buttons on the screen.
+
+        Args:
+            screen (pygame.Surface): The surface to render on.
+        """
         assert self.__pause_button is not None
         assert self.__chart_button is not None
 
@@ -170,6 +237,14 @@ class OptimizationWindow(PygameWindow):
         screen.blit(pause_button_screen, self.__pause_button.top_left_corner)
 
     def __display(self, screen: pygame.Surface) -> None:
+        """
+        Handle rendering logic depending on the current display mode
+        (building view or chart).
+
+        Args:
+            screen (pygame.Surface): The surface to render on.
+        """
+
         # Optimization thread might send an update before fully pausing
         if not self.__show_chart and self.__continue_event.is_set():
             problem_screen = self.__building_viewer.render(self.__problem.building)
@@ -186,6 +261,13 @@ class OptimizationWindow(PygameWindow):
 
 
     def on_update(self, events: List[pygame.event.Event], screen: pygame.Surface) -> None:
+        """
+        Process input events and update the display accordingly.
+
+        Args:
+            events (List[pygame.event.Event]): A list of Pygame events.
+            screen (pygame.Surface): The surface to render on.
+        """
         for event in events:
             if event.type == pygame.MOUSEBUTTONDOWN and event.button == 1:
                 assert self.__pause_button is not None
@@ -199,18 +281,30 @@ class OptimizationWindow(PygameWindow):
         pygame.display.flip()
 
     def toggle_pause(self) -> None:
+        """
+        Toggle the execution pause state of the optimization algorithm.
+        """
         if self.__continue_event.is_set():
             self.__continue_event.clear()
         else:
             self.__continue_event.set()
 
     def toggle_show_chart(self) -> None:
+        """
+        Toggle the display mode between building view and chart.
+        """
         self.__show_chart = not self.__show_chart
 
     def pause(self) -> None:
+        """
+        Pause the optimization process.
+        """
         self.__continue_event.clear()
 
     def cleanup(self) -> None:
+        """
+        Stop the optimization thread and clean up before exiting.
+        """
         assert self.__execution_thread is not None
 
         self.__stop_execution = True
@@ -223,6 +317,12 @@ class OptimizationWindow(PygameWindow):
                 self.__end_time = time.perf_counter()
 
     def dump_to_file(self, filename: str) -> None:
+        """
+        Save the results of the optimization to a text file.
+
+        Args:
+            filename (str): The output filename.
+        """
         with open(filename, 'w', encoding='utf-8') as file:
             file.write(f'Score: {self.__max_score}\n')
             file.write(f'Time: {self.__end_time - self.__start_time} s\n')

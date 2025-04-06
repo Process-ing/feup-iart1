@@ -8,6 +8,17 @@ from src.algorithm.algorithm import Algorithm, AlgorithmConfig
 
 @dataclass
 class GeneticAlgorithmConfig(AlgorithmConfig):
+    """
+    Configuration class for the Genetic Algorithm.
+
+    Attributes:
+        population_size (int): The size of the population in the algorithm.
+        init_routers (int): The initial number of routers to place in the problem.
+        mutation_prob (float): The probability of mutation during the algorithm.
+        max_generations (Optional[int]): The maximum number of generations to run the algorithm.
+        max_neighborhood (Optional[int]): The maximum neighborhood size for placement descent.
+        memetic (bool): Whether to perform a memetic phase after the genetic algorithm steps.
+    """
     population_size: int
     init_routers: int
     mutation_prob: float
@@ -18,6 +29,18 @@ class GeneticAlgorithmConfig(AlgorithmConfig):
     @classmethod
     def from_flags(cls, flags: dict[str, str],
                    default_init_routers: int) -> Optional['GeneticAlgorithmConfig']:
+        """
+        Creates a GeneticAlgorithmConfig instance from a dictionary of flags.
+
+        Args:
+            flags (dict): A dictionary where keys are configuration option names
+            and values are their string representations.
+            default_init_routers (int): The default number of routers if not specified in the flags.
+
+        Returns:
+            Optional[GeneticAlgorithmConfig]: An instance of GeneticAlgorithmConfig
+            or None if flags are invalid.
+        """
         if any(key not in ['population-size', 'init-routers', 'mutation-prob',
                    'max-generations', 'max-neighborhood', 'memetic'] for key in flags):
             return None
@@ -38,14 +61,36 @@ class GeneticAlgorithmConfig(AlgorithmConfig):
                    max_generations, max_neighborhood, memetic)
 
 class GeneticAlgorithm(Algorithm):
-    '''
-    Genetic Algorithm
-    '''
+    """
+    Genetic Algorithm for solving router placement problems.
+
+    This class uses a genetic algorithm to optimize router placements in a building
+    to maximize coverage
+    and minimize costs, while considering constraints like available budget and placement rules.
+    """
+
     def __init__(self, problem: RouterProblem, config: GeneticAlgorithmConfig) -> None:
+        """
+        Initializes the GeneticAlgorithm instance with the given problem and configuration.
+
+        Args:
+            problem (RouterProblem): The problem instance containing the current
+            building and constraints.
+            config (GeneticAlgorithmConfig): The configuration parameters for the
+            genetic algorithm.
+        """
         self.__problem = problem
         self.__config = config
 
     def placement_descent(self) -> Iterator[Optional[str]]:
+        """
+        Performs a greedy descent algorithm to place routers in the building,
+        optimizing for coverage.
+
+        Yields:
+            Optional[str]: A message indicating the placement or removal of a router,
+            or `None` if no improvement is made.
+        """
         init_routers = self.__config.init_routers
         max_neighborhood = self.__config.max_neighborhood
 
@@ -85,13 +130,40 @@ class GeneticAlgorithm(Algorithm):
                 break
 
     def sort_population(self, population: List[Building], reverse: bool = False) -> None:
+        """
+        Sorts a population of buildings by their score.
+
+        Args:
+            population (List[Building]): The population of buildings to be sorted.
+            reverse (bool): Whether to sort in reverse order (from highest to lowest
+            score). Defaults to False.
+        """
         population.sort(key=lambda individual: individual.score, reverse=reverse)
 
     def get_best_individual(self, population: List[Building]) -> Building:
+        """
+        Returns the building with the highest score from a population.
+
+        Args:
+            population (List[Building]): The population of buildings.
+
+        Returns:
+            Building: The building with the highest score in the population.
+        """
         return max(population, key=lambda individual: individual.score)
 
     def crossover(self, population: List[Building],
                   offspring: List[Building]) -> Iterator[Optional[str]]:
+        """
+        Performs crossover between parent buildings to generate offspring.
+
+        Args:
+            population (List[Building]): The population of parent buildings.
+            offspring (List[Building]): The list to store the generated offspring.
+
+        Yields:
+            Optional[str]: A message indicating whether crossover was successful or failed.
+        """
         min_score = min(individual.score for individual in population)
         fitness_scores = [individual.score - min_score + 1 for individual in population]
 
@@ -107,6 +179,16 @@ class GeneticAlgorithm(Algorithm):
             yield f'Crossover successful, offspring size: {len(offspring)}'
 
     def mutate(self, offspring: List[Building]) -> Iterator[Optional[str]]:
+        """
+        Mutates the offspring buildings based on the mutation probability.
+
+        Args:
+            offspring (List[Building]): The list of offspring to mutate.
+
+        Yields:
+            Optional[str]: A message indicating if a mutation has occurred or `None`
+            if no mutation took place.
+        """
         mutation_prob = self.__config.mutation_prob
 
         for i, child in enumerate(offspring):
@@ -123,6 +205,17 @@ class GeneticAlgorithm(Algorithm):
 
     def deletion(self, population: List[Building],
                  offspring: List[Building]) -> Iterator[Optional[str]]:
+        """
+        Replaces the worst individuals in the population with new, non-similar offspring.
+
+        Args:
+            population (List[Building]): The current population of buildings.
+            offspring (List[Building]): The list of offspring to be evaluated
+            and potentially added.
+
+        Yields:
+            Optional[str]: A message indicating the result of the deletion process.
+        """
         population_size = self.__config.population_size
 
         # Check similarity of individuals
@@ -149,6 +242,14 @@ class GeneticAlgorithm(Algorithm):
         del population[population_size:]
 
     def memetic_phase(self) -> Iterator[Optional[str]]:
+        """
+        Performs a random descent optimization phase as a memetic phase after
+        the genetic algorithm steps.
+
+        Yields:
+            Optional[str]: A message indicating the start of the memetic phase
+            and its progress.
+        """
         yield 'Memetic phase started'
         random_descent = RandomDescent(self.__problem, RandomDescentConfig(
             max_neighborhood=self.__config.max_neighborhood,
@@ -159,6 +260,16 @@ class GeneticAlgorithm(Algorithm):
 
     @override
     def run(self) -> Iterator[Optional[str]]:
+        """
+        Executes the full genetic algorithm process, including placement
+        descent, crossover, mutation, deletion, 
+        and optional memetic phase.
+
+        Yields:
+            Optional[str]: Messages indicating the progress of the algorithm,
+            such as population generation, 
+            crossover success, and best individual updates.
+        """
         max_generations = self.__config.max_generations
         population_size = self.__config.population_size
         memetic = self.__config.memetic
@@ -207,5 +318,15 @@ class GeneticAlgorithm(Algorithm):
 
     @staticmethod
     def get_default_init_routers(problem: RouterProblem) -> int:
-        """Returns the maximum possible number of routers, according to the budget"""
+        """
+        Returns the maximum possible number of routers that can be placed
+        according to the available budget.
+
+        Args:
+            problem (RouterProblem): The problem instance containing the
+            budget and router price information.
+
+        Returns:
+            int: The maximum number of routers that can be placed within the budget.
+        """
         return problem.budget // (problem.router_price + problem.backbone_price)
