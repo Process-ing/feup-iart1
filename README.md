@@ -1,5 +1,4 @@
-# feup-iart1
-1st project for the IART course at FEUP
+# Artificial Intelligence Project 1 - Router Placement
 
 ## Usage
 
